@@ -221,9 +221,9 @@ VO
 固定流程：
 
 ```text
-ChatGPT
+需求设计
 ↓
-Codex
+开发实现
 ↓
 Compile
 ↓
