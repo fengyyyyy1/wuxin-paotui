@@ -35,6 +35,7 @@ Authorization: Bearer <token>
 | 409 | 订单已被其他骑手接单 | 并发接单失败 |
 | 409 | 当前订单状态不可接单 | 订单状态不允许当前操作 |
 | 409 | 当前订单状态不可完成配送 | 订单状态不允许完成配送 |
+| 409 | 当前订单状态不可确认收货 | 订单状态不允许确认收货 |
 | 500 | 服务器内部错误 | 未知系统异常 |
 
 ## 二、用户模块
@@ -410,6 +411,39 @@ Authorization: Bearer <token>
 | --- | --- |
 | 404 | 订单不存在 |
 
+### 用户确认收货
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 用户确认收货 |
+| 请求方式 | POST |
+| URL | `/api/order/confirm/{id}` |
+| Authorization | 需要 |
+
+请求参数：路径参数 `id`。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "确认收货成功",
+  "data": {
+    "orderId": 2,
+    "status": 4,
+    "statusText": "已完成",
+    "confirmTime": "2026-07-13T20:00:00"
+  }
+}
+```
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 404 | 订单不存在 |
+| 409 | 当前订单状态不可确认收货 |
+
 ## 五、骑手模块
 
 ### 骑手大厅
@@ -541,10 +575,10 @@ Authorization: Bearer <token>
 {
   "code": 200,
   "message": "成功",
-  "data": {
+    "data": {
     "orderId": 2,
     "status": 3,
-    "statusText": "已完成",
+    "statusText": "待确认收货",
     "finishTime": "2026-07-13T19:00:00"
   }
 }

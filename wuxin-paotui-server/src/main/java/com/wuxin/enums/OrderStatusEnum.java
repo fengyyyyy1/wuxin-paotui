@@ -5,8 +5,9 @@ public enum OrderStatusEnum {
     WAITING_ACCEPT(0, "\u5f85\u63a5\u5355"),
     ACCEPTED(1, "\u5df2\u63a5\u5355"),
     DELIVERING(2, "\u914d\u9001\u4e2d"),
-    COMPLETED(3, "\u5df2\u5b8c\u6210"),
-    CANCELLED(4, "\u5df2\u53d6\u6d88");
+    WAITING_CONFIRM(3, "\u5f85\u786e\u8ba4\u6536\u8d27"),
+    COMPLETED(4, "\u5df2\u5b8c\u6210"),
+    CANCELLED(5, "\u5df2\u53d6\u6d88");
 
     private final Integer code;
 
@@ -25,12 +26,24 @@ public enum OrderStatusEnum {
         return text;
     }
 
-    public static String getTextByCode(Integer code) {
+    public static OrderStatusEnum of(Integer code) {
         for (OrderStatusEnum statusEnum : values()) {
             if (statusEnum.getCode().equals(code)) {
-                return statusEnum.getText();
+                return statusEnum;
             }
         }
-        return "\u672a\u77e5\u72b6\u6001";
+        return null;
+    }
+
+    public static String getDescriptionByCode(Integer code) {
+        OrderStatusEnum statusEnum = of(code);
+        if (statusEnum == null) {
+            return "\u672a\u77e5\u72b6\u6001";
+        }
+        return statusEnum.getText();
+    }
+
+    public static String getTextByCode(Integer code) {
+        return getDescriptionByCode(code);
     }
 }

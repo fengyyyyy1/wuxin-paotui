@@ -3,6 +3,7 @@ package com.wuxin.controller;
 import com.wuxin.common.Result;
 import com.wuxin.dto.order.CreateOrderDTO;
 import com.wuxin.service.OrderService;
+import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
 import com.wuxin.vo.PageResultVO;
@@ -41,5 +42,10 @@ public class OrderController {
     @GetMapping("/{id}")
     public Result<OrderDetailVO> detail(@PathVariable Long id) {
         return Result.success(orderService.getOrderDetail(id));
+    }
+
+    @PostMapping("/confirm/{id}")
+    public Result<ConfirmOrderVO> confirm(@PathVariable Long id) {
+        return Result.success("\u786e\u8ba4\u6536\u8d27\u6210\u529f", orderService.confirmOrder(id));
     }
 }

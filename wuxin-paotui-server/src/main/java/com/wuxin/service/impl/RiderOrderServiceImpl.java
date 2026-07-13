@@ -182,7 +182,7 @@ public class RiderOrderServiceImpl implements RiderOrderService {
                 .eq(OrderEntity::getRiderId, riderInfo.getId())
                 .eq(OrderEntity::getStatus, OrderStatusEnum.ACCEPTED.getCode())
                 .eq(OrderEntity::getDeleted, 0)
-                .set(OrderEntity::getStatus, OrderStatusEnum.COMPLETED.getCode())
+                .set(OrderEntity::getStatus, OrderStatusEnum.WAITING_CONFIRM.getCode())
                 .set(OrderEntity::getFinishTime, now)
                 .set(OrderEntity::getUpdateTime, now);
 
@@ -194,7 +194,7 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         OrderLogEntity orderLog = new OrderLogEntity();
         orderLog.setOrderId(id);
         orderLog.setOldStatus(OrderStatusEnum.ACCEPTED.getCode());
-        orderLog.setNewStatus(OrderStatusEnum.COMPLETED.getCode());
+        orderLog.setNewStatus(OrderStatusEnum.WAITING_CONFIRM.getCode());
         orderLog.setOperatorId(userId);
         orderLog.setOperatorType(OPERATOR_TYPE_RIDER);
         orderLog.setRemark("\u9a91\u624b\u5b8c\u6210\u914d\u9001");
@@ -206,8 +206,8 @@ public class RiderOrderServiceImpl implements RiderOrderService {
 
         FinishOrderVO finishOrderVO = new FinishOrderVO();
         finishOrderVO.setOrderId(id);
-        finishOrderVO.setStatus(OrderStatusEnum.COMPLETED.getCode());
-        finishOrderVO.setStatusText(OrderStatusEnum.COMPLETED.getText());
+        finishOrderVO.setStatus(OrderStatusEnum.WAITING_CONFIRM.getCode());
+        finishOrderVO.setStatusText(OrderStatusEnum.WAITING_CONFIRM.getText());
         finishOrderVO.setFinishTime(now);
         return finishOrderVO;
     }

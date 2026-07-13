@@ -1,20 +1,24 @@
 package com.wuxin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wuxin.common.ResultCode;
 import com.wuxin.dto.order.CreateOrderDTO;
+import com.wuxin.entity.OrderLogEntity;
 import com.wuxin.entity.OrderEntity;
 import com.wuxin.entity.UserAddressEntity;
 import com.wuxin.entity.UserEntity;
 import com.wuxin.enums.OrderStatusEnum;
 import com.wuxin.exception.BusinessException;
+import com.wuxin.mapper.OrderLogMapper;
 import com.wuxin.mapper.OrderMapper;
 import com.wuxin.mapper.UserAddressMapper;
 import com.wuxin.mapper.UserMapper;
 import com.wuxin.service.OrderService;
 import com.wuxin.utils.UserContext;
+import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
 import com.wuxin.vo.PageResultVO;
@@ -30,6 +34,10 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> implements OrderService {
 
+    private static final String OPERATOR_TYPE_USER = "USER";
+
+    private static final String CONFIRM_STATUS_ERROR_MESSAGE = "\u5f53\u524d\u8ba2\u5355\u72b6\u6001\u4e0d\u53ef\u786e\u8ba4\u6536\u8d27";
+
     private static final DateTimeFormatter ORDER_NO_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private static final int MAX_ORDER_NO_RETRY = 5;
@@ -38,9 +46,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
 
     private final UserAddressMapper userAddressMapper;
 
-    public OrderServiceImpl(UserMapper userMapper, UserAddressMapper userAddressMapper) {
+    private final OrderLogMapper orderLogMapper;
+
+    public OrderServiceImpl(UserMapper userMapper, UserAddressMapper userAddressMapper, OrderLogMapper orderLogMapper) {
         this.userMapper = userMapper;
         this.userAddressMapper = userAddressMapper;
+        this.orderLogMapper = orderLogMapper;
     }
 
     @Override
@@ -128,6 +139,67 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         }
 
         return toOrderDetailVO(orderEntity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ConfirmOrderVO confirmOrder(Long id) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(ResultCode.PARAM_ERROR);
+        }
+
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderEntity::getId, id)
+                .eq(OrderEntity::getUserId, userId)
+                .eq(OrderEntity::getStatus, OrderStatusEnum.WAITING_CONFIRM.getCode())
+                .eq(OrderEntity::getDeleted, 0)
+                .set(OrderEntity::getStatus, OrderStatusEnum.COMPLETED.getCode())
+                .set(OrderEntity::getUpdateTime, now);
+
+        int affectedRows = getBaseMapper().update(null, updateWrapper);
+        if (affectedRows != 1) {
+            handleConfirmFailed(id, userId);
+        }
+
+        OrderLogEntity orderLog = new OrderLogEntity();
+        orderLog.setOrderId(id);
+        orderLog.setOldStatus(OrderStatusEnum.WAITING_CONFIRM.getCode());
+        orderLog.setNewStatus(OrderStatusEnum.COMPLETED.getCode());
+        orderLog.setOperatorId(userId);
+        orderLog.setOperatorType(OPERATOR_TYPE_USER);
+        orderLog.setRemark("\u7528\u6237\u786e\u8ba4\u6536\u8d27");
+        orderLog.setCreateTime(now);
+        int insertedRows = orderLogMapper.insert(orderLog);
+        if (insertedRows != 1) {
+            throw new BusinessException(ResultCode.FAIL, "order log save failed");
+        }
+
+        ConfirmOrderVO confirmOrderVO = new ConfirmOrderVO();
+        confirmOrderVO.setOrderId(id);
+        confirmOrderVO.setStatus(OrderStatusEnum.COMPLETED.getCode());
+        confirmOrderVO.setStatusText(OrderStatusEnum.COMPLETED.getText());
+        confirmOrderVO.setConfirmTime(now);
+        return confirmOrderVO;
+    }
+
+    private void handleConfirmFailed(Long id, Long userId) {
+        LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderEntity::getId, id)
+                .eq(OrderEntity::getUserId, userId)
+                .eq(OrderEntity::getDeleted, 0)
+                .last("LIMIT 1");
+
+        OrderEntity orderEntity = getOne(queryWrapper, false);
+        if (orderEntity == null) {
+            throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
+        }
+        throw new BusinessException(ResultCode.ORDER_STATUS_ERROR, CONFIRM_STATUS_ERROR_MESSAGE);
     }
 
     private void validateAddress(Long addressId, Long userId, String notExistMessage) {

@@ -15,9 +15,12 @@
 - 骑手接单接口：`POST /api/rider/order/accept/{id}`
 - 骑手我的订单接口：`GET /api/rider/order/my`
 - 骑手完成配送接口：`POST /api/rider/order/finish/{id}`
+- 用户确认收货接口：`POST /api/order/confirm/{id}`
 - 订单日志写入：骑手接单成功后写入 `order_log`
 - 订单日志写入：骑手完成配送成功后写入 `order_log`
+- 订单日志写入：用户确认收货成功后写入 `order_log`
 - 数据库升级：`order_info.accept_time`、`order_info.finish_time`
+- 订单状态模型修正：`3` 调整为待确认收货，`4` 调整为已完成，`5` 调整为已取消。
 
 ### 修复
 

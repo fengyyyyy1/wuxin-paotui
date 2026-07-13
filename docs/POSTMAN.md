@@ -229,11 +229,41 @@ Bearer {{token}}
 预期结果：
 
 - 返回 `status = 3`
-- 返回 `statusText = 已完成`
+- 返回 `statusText = 待确认收货`
 - 返回 `finishTime`
 - `order_info.status` 更新为 `3`
 - `order_info.finish_time` 写入
 - `order_log` 写入完成配送日志
+
+### 10. 用户确认收货
+
+请求：
+
+```http
+POST {{host}}/api/order/confirm/2
+```
+
+Authorization：
+
+```http
+Bearer {{token}}
+```
+
+测试说明：
+
+- 当前用户必须是订单发布用户。
+- 订单状态必须是 `3`（待确认收货）。
+- 不需要 Body。
+
+预期结果：
+
+- 返回 `message = 确认收货成功`
+- 返回 `status = 4`
+- 返回 `statusText = 已完成`
+- 返回 `confirmTime`
+- `order_info.status` 更新为 `4`
+- `order_info.update_time` 更新为确认时间
+- `order_log` 写入用户确认收货日志
 
 ## 三、异常测试
 
@@ -245,4 +275,5 @@ Bearer {{token}}
 | 重复接单 | `409 订单已被其他骑手接单` |
 | 状态不可接单 | `409 当前订单状态不可接单` |
 | 状态不可完成配送 | `409 当前订单状态不可完成配送` |
+| 状态不可确认收货 | `409 当前订单状态不可确认收货` |
 | 未知异常 | `500 服务器内部错误` |
