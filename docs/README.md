@@ -1,27 +1,51 @@
 # 五鑫跑腿（Wuxin Paotui）
 
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)
+![MyBatis Plus](https://img.shields.io/badge/MyBatis--Plus-3.5-blue)
+![MySQL](https://img.shields.io/badge/MySQL-8-blue)
+![JWT](https://img.shields.io/badge/JWT-Authentication-red)
+![Git](https://img.shields.io/badge/Git-Version_Control-black)
+
 ## 项目简介
 
-五鑫跑腿（Wuxin Paotui）是一套基于 Spring Boot 的企业级校园跑腿平台。
+五鑫跑腿（Wuxin Paotui）是一套基于 Spring Boot 构建的企业级跑腿服务平台。
 
-项目目标不是课程设计，而是按照真实互联网项目标准持续开发，最终完成部署上线。
+项目采用前后端分离架构，围绕用户、骑手、订单、商家等核心业务进行设计，注重系统的可维护性、扩展性、安全性以及后续持续迭代能力。
 
-采用前后端分离架构，后续将支持微信小程序、管理后台、微信支付、Redis 缓存、Docker 部署等能力。
+项目严格按照真实企业开发流程进行开发，涵盖接口设计、数据库设计、权限认证、业务流程、接口文档、数据库文档、版本管理等完整的软件工程实践。
+
+最终目标是完成一套具备实际运营能力的跑腿服务平台，并支持部署上线。
 
 ## 项目特点
 
-- 企业级项目结构
+- 企业级项目架构
 - Spring Boot 3
 - MyBatis Plus
-- JWT 登录认证
+- JWT 身份认证
 - BCrypt 密码加密
-- 统一异常处理
-- 统一返回结构
-- VO / DTO 分层
+- RESTful API
 - MyBatis Plus 分页
+- 统一异常处理
 - 数据库增量升级
-- Postman 接口测试
-- 完整开发文档
+- Git 版本管理
+- 完整开发文档体系
+- 企业级开发流程
+
+## 项目目标
+
+打造一套高性能、高可用、可扩展、可持续迭代的企业级跑腿服务平台。
+
+后续支持：
+
+- 微信小程序
+- 管理后台
+- Redis
+- OSS
+- Docker
+- Nginx
+- 微信支付
+- 腾讯云部署
 
 ## 技术栈
 
@@ -31,7 +55,7 @@
 | 数据库 | MySQL 8 |
 | 认证 | JWT、BCrypt |
 | 构建 | Maven |
-| 规划 | Redis、Vue3 Admin、微信小程序、Docker、Nginx、OSS、微信支付 |
+| 规划 | Redis、Vue3 Admin、微信小程序、Docker、Nginx、OSS、微信支付、腾讯云部署 |
 
 ## 已完成模块
 
