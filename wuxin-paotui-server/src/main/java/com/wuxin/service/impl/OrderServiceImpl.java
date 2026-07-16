@@ -13,6 +13,7 @@ import com.wuxin.entity.OrderEntity;
 import com.wuxin.entity.UserAddressEntity;
 import com.wuxin.entity.UserEntity;
 import com.wuxin.enums.OrderStatusEnum;
+import com.wuxin.enums.PaymentStatusEnum;
 import com.wuxin.exception.BusinessException;
 import com.wuxin.mapper.OrderLogMapper;
 import com.wuxin.mapper.OrderCommentMapper;
@@ -26,6 +27,7 @@ import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.CommentOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
+import com.wuxin.vo.PayOrderVO;
 import com.wuxin.vo.PageResultVO;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -46,6 +48,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
     private static final DateTimeFormatter ORDER_NO_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private static final int MAX_ORDER_NO_RETRY = 5;
+
+    private static final int MAX_PAYMENT_NO_RETRY = 5;
 
     private final UserMapper userMapper;
 
@@ -308,6 +312,52 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         return commentOrderVO;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PayOrderVO payOrder(Long id) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(ResultCode.PARAM_ERROR);
+        }
+
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        OrderEntity orderEntity = getUserOrder(id, userId);
+        if (PaymentStatusEnum.PAID.getCode().equals(orderEntity.getPayStatus())) {
+            throw new BusinessException(ResultCode.ORDER_ALREADY_PAID);
+        }
+        if (!OrderStatusEnum.WAITING_ACCEPT.getCode().equals(orderEntity.getStatus())) {
+            throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_PAY);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String paymentNo = updateOrderPayment(id, userId, now);
+
+        OrderLogEntity orderLog = new OrderLogEntity();
+        orderLog.setOrderId(id);
+        orderLog.setOldStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setNewStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setOperatorId(userId);
+        orderLog.setOperatorType(OPERATOR_TYPE_USER);
+        orderLog.setRemark("用户模拟支付订单");
+        orderLog.setCreateTime(now);
+        int insertedRows = orderLogMapper.insert(orderLog);
+        if (insertedRows != 1) {
+            throw new IllegalStateException("order log save failed");
+        }
+
+        PayOrderVO payOrderVO = new PayOrderVO();
+        payOrderVO.setOrderId(id);
+        payOrderVO.setPaymentNo(paymentNo);
+        payOrderVO.setPayStatus(PaymentStatusEnum.PAID.getCode());
+        payOrderVO.setPayStatusText(PaymentStatusEnum.PAID.getText());
+        payOrderVO.setAmount(orderEntity.getPrice());
+        payOrderVO.setPayTime(now);
+        return payOrderVO;
+    }
+
     private void handleConfirmFailed(Long id, Long userId) {
         LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(OrderEntity::getId, id)
@@ -334,6 +384,57 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
             throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
         }
         throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_CANCEL);
+    }
+
+    private OrderEntity getUserOrder(Long id, Long userId) {
+        LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderEntity::getId, id)
+                .eq(OrderEntity::getUserId, userId)
+                .eq(OrderEntity::getDeleted, 0)
+                .last("LIMIT 1");
+
+        OrderEntity orderEntity = getOne(queryWrapper, false);
+        if (orderEntity == null) {
+            throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
+        }
+        return orderEntity;
+    }
+
+    private String updateOrderPayment(Long id, Long userId, LocalDateTime now) {
+        for (int retry = 0; retry < MAX_PAYMENT_NO_RETRY; retry++) {
+            String paymentNo = generatePaymentNo(now);
+            LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.eq(OrderEntity::getId, id)
+                    .eq(OrderEntity::getUserId, userId)
+                    .eq(OrderEntity::getPayStatus, PaymentStatusEnum.UNPAID.getCode())
+                    .eq(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                    .eq(OrderEntity::getDeleted, 0)
+                    .set(OrderEntity::getPayStatus, PaymentStatusEnum.PAID.getCode())
+                    .set(OrderEntity::getPayTime, now)
+                    .set(OrderEntity::getPaymentNo, paymentNo)
+                    .set(OrderEntity::getUpdateTime, now);
+
+            try {
+                int affectedRows = getBaseMapper().update(null, updateWrapper);
+                if (affectedRows == 1) {
+                    return paymentNo;
+                }
+                handlePayFailed(id, userId);
+            } catch (DuplicateKeyException exception) {
+                if (retry == MAX_PAYMENT_NO_RETRY - 1) {
+                    throw new IllegalStateException("payment number generation failed", exception);
+                }
+            }
+        }
+        throw new IllegalStateException("payment number generation failed");
+    }
+
+    private void handlePayFailed(Long id, Long userId) {
+        OrderEntity orderEntity = getUserOrder(id, userId);
+        if (PaymentStatusEnum.PAID.getCode().equals(orderEntity.getPayStatus())) {
+            throw new BusinessException(ResultCode.ORDER_ALREADY_PAID);
+        }
+        throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_PAY);
     }
 
     private void validateAddress(Long addressId, Long userId, String notExistMessage) {
@@ -364,6 +465,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderEntity.setDistance(createOrderDTO.getDistance());
         orderEntity.setPrice(createOrderDTO.getPrice());
         orderEntity.setStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderEntity.setPayStatus(PaymentStatusEnum.UNPAID.getCode());
+        orderEntity.setPayTime(null);
+        orderEntity.setPaymentNo(null);
         orderEntity.setRemark(createOrderDTO.getRemark());
         orderEntity.setCreateTime(now);
         orderEntity.setUpdateTime(now);
@@ -384,6 +488,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderListVO.setPrice(orderEntity.getPrice());
         orderListVO.setStatus(orderEntity.getStatus());
         orderListVO.setStatusText(getStatusText(orderEntity.getStatus()));
+        orderListVO.setPayStatus(orderEntity.getPayStatus());
+        orderListVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
+        orderListVO.setPayTime(orderEntity.getPayTime());
+        orderListVO.setPaymentNo(orderEntity.getPaymentNo());
         orderListVO.setRemark(orderEntity.getRemark());
         orderListVO.setCreateTime(orderEntity.getCreateTime());
         orderListVO.setUpdateTime(orderEntity.getUpdateTime());
@@ -403,6 +511,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderDetailVO.setPrice(orderEntity.getPrice());
         orderDetailVO.setStatus(orderEntity.getStatus());
         orderDetailVO.setStatusText(getStatusText(orderEntity.getStatus()));
+        orderDetailVO.setPayStatus(orderEntity.getPayStatus());
+        orderDetailVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
+        orderDetailVO.setPayTime(orderEntity.getPayTime());
+        orderDetailVO.setPaymentNo(orderEntity.getPaymentNo());
         orderDetailVO.setRemark(orderEntity.getRemark());
         orderDetailVO.setCreateTime(orderEntity.getCreateTime());
         orderDetailVO.setUpdateTime(orderEntity.getUpdateTime());
@@ -430,5 +542,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
     private String generateOrderNo() {
         int randomNumber = ThreadLocalRandom.current().nextInt(0, 1_000_000);
         return "WX" + LocalDateTime.now().format(ORDER_NO_TIME_FORMATTER) + String.format("%06d", randomNumber);
+    }
+
+    private String generatePaymentNo(LocalDateTime payTime) {
+        int randomNumber = ThreadLocalRandom.current().nextInt(0, 1_000_000);
+        return "PAY" + payTime.format(ORDER_NO_TIME_FORMATTER) + String.format("%06d", randomNumber);
     }
 }

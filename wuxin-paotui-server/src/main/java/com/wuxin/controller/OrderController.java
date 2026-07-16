@@ -9,6 +9,7 @@ import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.CommentOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
+import com.wuxin.vo.PayOrderVO;
 import com.wuxin.vo.PageResultVO;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,5 +61,10 @@ public class OrderController {
     @PostMapping("/comment")
     public Result<CommentOrderVO> comment(@Valid @RequestBody CommentOrderDTO commentOrderDTO) {
         return Result.success("评价成功", orderService.commentOrder(commentOrderDTO));
+    }
+
+    @PostMapping("/pay/{id}")
+    public Result<PayOrderVO> pay(@PathVariable Long id) {
+        return Result.success("支付成功", orderService.payOrder(id));
     }
 }

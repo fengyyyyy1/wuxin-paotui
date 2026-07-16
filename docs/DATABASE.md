@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V0.5（开发中）
+> 当前版本：V0.6（开发中）
 
 ## 一、sys_user
 
@@ -95,6 +95,9 @@
 | update_time | 更新时间 |
 | accept_time | 接单时间 |
 | finish_time | 完成时间 |
+| pay_status | 支付状态，0 未支付、1 已支付 |
+| pay_time | 支付时间 |
+| payment_no | 支付单号 |
 | deleted | 逻辑删除 |
 
 索引：
@@ -105,12 +108,24 @@
 | uk_order_no(order_no) | 订单号唯一 |
 | idx_order_rider_status_deleted | 骑手订单查询 |
 | idx_order_status_deleted_create_time | 骑手大厅查询 |
+| idx_order_pay_status_deleted_create_time | 按支付状态查询订单 |
+| uk_order_payment_no(payment_no) | 支付单号唯一 |
 
 说明：
 
 - `accept_time` 在骑手接单成功后写入。
 - `finish_time` 预留给骑手完成配送。
 - 订单查询统一过滤 `deleted = 0`。
+- 新订单默认 `pay_status = 0`，支付成功后写入支付时间和支付单号。
+- `status` 表示配送业务状态，`pay_status` 表示支付状态，两者独立。
+- 骑手大厅和骑手接单均要求 `pay_status = 1`。
+
+### 支付状态
+
+| pay_status | 说明 |
+| --- | --- |
+| 0 | 未支付 |
+| 1 | 已支付 |
 
 ### 订单状态
 
@@ -154,6 +169,7 @@
 - 用户取消订单成功后写入 `0 → 5` 状态日志，`operator_type = USER`。
 - 骑手放弃订单成功后写入 `1 → 0` 状态日志，`operator_type = RIDER`。
 - 用户评价订单成功后写入 `4 → 4` 状态日志，`operator_type = USER`。
+- 用户模拟支付成功后写入 `0 → 0` 状态日志，`operator_type = USER`。
 
 ## 五、order_comment
 
@@ -220,6 +236,14 @@
 - `RiderInfoEntity` 不包含 `status`、`deleted`。
 
 ## 七、数据库升级历史
+
+### V0.6
+
+- `order_info` 新增 `pay_status`、`pay_time`、`payment_no`。
+- 新增索引 `idx_order_pay_status_deleted_create_time(pay_status, deleted, create_time)`。
+- 新增唯一索引 `uk_order_payment_no(payment_no)`。
+- 新增幂等升级脚本：`wuxin-paotui-server/src/main/resources/sql/06_update_order_payment.sql`。
+- 脚本不包含业务数据更新语句，需要在 Navicat 手动执行。
 
 ### V0.5
 

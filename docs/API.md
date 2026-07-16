@@ -1,7 +1,7 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V0.5（开发中）
+> 当前版本：V0.6（开发中）
 
 ## 一、通用规范
 
@@ -40,6 +40,9 @@ Authorization: Bearer <token>
 | 409 | 当前订单状态不可放弃 | 订单状态不允许骑手放弃 |
 | 409 | 当前订单状态不可评价 | 订单尚未完成，不能评价 |
 | 409 | 订单已评价 | 同一订单不能重复评价 |
+| 409 | 订单已支付 | 订单不能重复支付 |
+| 409 | 当前订单状态不可支付 | 配送业务状态不允许支付 |
+| 409 | 订单未支付 | 未支付订单不能被骑手接单 |
 | 500 | 服务器内部错误 | 未知系统异常 |
 
 ## 二、用户模块
@@ -337,11 +340,51 @@ Authorization: Bearer <token>
 }
 ```
 
+订单创建后默认 `status = 0`（待接单）、`payStatus = 0`（未支付）。未支付订单不会进入骑手大厅。
+
 异常返回：
 
 | code | message |
 | --- | --- |
 | 401 | 未登录或登录已过期 |
+| 1004 | 参数错误 |
+
+### 模拟支付
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 订单模拟支付 |
+| 请求方式 | POST |
+| URL | `/api/order/pay/{id}` |
+| Authorization | 需要 |
+
+请求参数：路径参数 `id`，必须大于 0。不需要请求体。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "支付成功",
+  "data": {
+    "orderId": 5,
+    "paymentNo": "PAY20260716170000123456",
+    "payStatus": 1,
+    "payStatusText": "已支付",
+    "amount": 10.00,
+    "payTime": "2026-07-16T17:00:00"
+  }
+}
+```
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 401 | 未登录或登录已过期 |
+| 404 | 订单不存在 |
+| 409 | 订单已支付 |
+| 409 | 当前订单状态不可支付 |
 | 1004 | 参数错误 |
 
 ### 我的订单
@@ -377,6 +420,8 @@ Authorization: Bearer <token>
 }
 ```
 
+订单记录包含 `payStatus`、`payStatusText`、`payTime`、`paymentNo`。
+
 异常返回：
 
 | code | message |
@@ -404,7 +449,11 @@ Authorization: Bearer <token>
     "id": 2,
     "orderNo": "WX20260710183025123456",
     "status": 1,
-    "statusText": "已接单"
+    "statusText": "已接单",
+    "payStatus": 1,
+    "payStatusText": "已支付",
+    "payTime": "2026-07-16T17:00:00",
+    "paymentNo": "PAY20260716170000123456"
   }
 }
 ```
@@ -555,6 +604,8 @@ Authorization: Bearer <token>
 | pageNum | Integer | 否 | 1 | 当前页 |
 | pageSize | Integer | 否 | 10 | 每页数量，最大 50 |
 
+查询条件固定包含 `status = 0`、`pay_status = 1`、`deleted = 0`，未支付订单不会返回。
+
 成功返回：
 
 ```json
@@ -570,6 +621,8 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+大厅订单记录包含 `payStatus = 1` 和 `payStatusText = 已支付`，不返回支付单号。
 
 异常返回：
 
@@ -611,6 +664,7 @@ Authorization: Bearer <token>
 | 404 | 订单不存在 |
 | 409 | 订单已被其他骑手接单 |
 | 409 | 当前订单状态不可接单 |
+| 409 | 订单未支付 |
 
 ### 骑手我的订单
 

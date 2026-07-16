@@ -65,6 +65,15 @@ public class OrderEntity {
     @TableField("finish_time")
     private LocalDateTime finishTime;
 
+    @TableField("pay_status")
+    private Integer payStatus;
+
+    @TableField("pay_time")
+    private LocalDateTime payTime;
+
+    @TableField("payment_no")
+    private String paymentNo;
+
     @TableLogic
     @TableField("deleted")
     private Integer deleted;

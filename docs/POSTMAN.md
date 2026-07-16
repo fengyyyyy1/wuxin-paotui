@@ -1,6 +1,6 @@
 # Postman 测试文档
 
-> 当前版本：V0.5（开发中）
+> 当前版本：V0.6（开发中）
 
 ## 一、环境变量
 
@@ -12,6 +12,8 @@
 | `cancelOrderId` | `1` | 待取消的当前用户待接单订单 ID |
 | `giveUpOrderId` | `4` | 当前骑手已接单且待放弃的订单 ID |
 | `commentOrderId` | `4` | 当前用户已完成且未评价的订单 ID |
+| `paymentOrderId` | `5` | 当前用户新发布的模拟支付订单 ID |
+| `paymentNo` | 支付成功后返回 | 模拟支付单号 |
 
 登录后接口统一使用：
 
@@ -87,8 +89,58 @@ Bearer {{token}}
 
 - 返回订单 ID
 - `order_info.status = 0`
+- `order_info.pay_status = 0`
+- `order_info.pay_time` 和 `payment_no` 为 `NULL`
+- 将订单 ID 保存到 `{{paymentOrderId}}`
 
-### 4. 我的订单
+### 4. 确认未支付订单不可接单
+
+请求：
+
+```http
+GET {{host}}/api/rider/order/hall?pageNum=1&pageSize=50
+```
+
+Authorization：
+
+```http
+Bearer {{token}}
+```
+
+预期结果：
+
+- 骑手大厅中不存在 `{{paymentOrderId}}`
+- 直接请求 `POST {{host}}/api/rider/order/accept/{{paymentOrderId}}` 返回 `409 订单未支付`
+
+### 5. 模拟支付
+
+请求：
+
+```http
+POST {{host}}/api/order/pay/{{paymentOrderId}}
+```
+
+Authorization：
+
+```http
+Bearer {{token}}
+```
+
+测试说明：
+
+- 不需要 Body。
+- 订单必须属于当前用户、未支付且配送状态为 `0`。
+
+预期结果：
+
+- 返回 `message = 支付成功`
+- 返回 `payStatus = 1`、`payStatusText = 已支付`
+- 返回支付单号、订单金额和支付时间
+- 将支付单号保存到 `{{paymentNo}}`
+- 重复请求返回 `409 订单已支付`
+- `order_log` 新增一条 `0 → 0` 的模拟支付日志
+
+### 6. 我的订单
 
 请求：
 
@@ -111,8 +163,9 @@ Bearer {{token}}
 
 - 返回分页结构
 - 只返回当前用户订单
+- 返回 `payStatus`、`payStatusText`、`payTime`、`paymentNo`
 
-### 5. 订单详情
+### 7. 订单详情
 
 请求：
 
@@ -135,7 +188,7 @@ Bearer {{token}}
 - 返回订单详情
 - 不存在或无权限返回 `404 订单不存在`
 
-### 6. 骑手大厅
+### 8. 骑手大厅
 
 请求：
 
@@ -156,9 +209,11 @@ Bearer {{token}}
 预期结果：
 
 - 返回 `status = 0` 的订单
+- 只返回 `payStatus = 1` 的订单
+- 支付后的 `{{paymentOrderId}}` 可以被查询到
 - 按创建时间倒序
 
-### 7. 骑手接单
+### 9. 骑手接单
 
 请求：
 
@@ -176,6 +231,7 @@ Bearer {{token}}
 
 - 当前用户必须是骑手。
 - 骑手需要满足 `audit_status = 1`、`rider_status = 1`。
+- 订单必须已经支付。
 
 预期结果：
 
@@ -185,7 +241,7 @@ Bearer {{token}}
 - `order_info.accept_time` 写入
 - `order_log` 写入订单日志
 
-### 8. 骑手我的订单
+### 10. 骑手我的订单
 
 请求：
 
@@ -209,7 +265,7 @@ Bearer {{token}}
 - 返回分页结构
 - 返回当前骑手订单
 
-### 9. 骑手完成配送
+### 11. 骑手完成配送
 
 请求：
 
@@ -238,7 +294,7 @@ Bearer {{token}}
 - `order_info.finish_time` 写入
 - `order_log` 写入完成配送日志
 
-### 10. 用户确认收货
+### 12. 用户确认收货
 
 请求：
 
@@ -268,7 +324,7 @@ Bearer {{token}}
 - `order_info.update_time` 更新为确认时间
 - `order_log` 写入用户确认收货日志
 
-### 11. 用户取消订单
+### 13. 用户取消订单
 
 准备数据：
 
@@ -302,7 +358,7 @@ Bearer {{token}}
 - `order_log` 只新增一条用户取消日志
 - 重复请求返回 `409 当前订单状态不可取消`
 
-### 12. 骑手放弃订单
+### 14. 骑手放弃订单
 
 准备数据：
 
@@ -338,7 +394,7 @@ Bearer {{token}}
 - `order_log` 只新增一条骑手放弃日志
 - 重复请求返回 `409 当前订单状态不可放弃`
 
-### 13. 用户评价订单
+### 15. 用户评价订单
 
 准备数据：
 
@@ -394,4 +450,7 @@ Body：
 | 状态不可放弃或重复放弃 | `409 当前订单状态不可放弃` |
 | 非已完成订单评价 | `409 当前订单状态不可评价` |
 | 重复评价 | `409 订单已评价` |
+| 重复支付 | `409 订单已支付` |
+| 业务状态不可支付 | `409 当前订单状态不可支付` |
+| 未支付订单接单 | `409 订单未支付` |
 | 未知异常 | `500 服务器内部错误` |

@@ -8,6 +8,7 @@ import com.wuxin.entity.OrderLogEntity;
 import com.wuxin.entity.OrderEntity;
 import com.wuxin.entity.RiderInfoEntity;
 import com.wuxin.enums.OrderStatusEnum;
+import com.wuxin.enums.PaymentStatusEnum;
 import com.wuxin.exception.BusinessException;
 import com.wuxin.mapper.OrderLogMapper;
 import com.wuxin.mapper.OrderMapper;
@@ -61,6 +62,7 @@ public class RiderOrderServiceImpl implements RiderOrderService {
 
         LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .eq(OrderEntity::getPayStatus, PaymentStatusEnum.PAID.getCode())
                 .eq(OrderEntity::getDeleted, 0)
                 .orderByDesc(OrderEntity::getCreateTime);
 
@@ -96,6 +98,7 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(OrderEntity::getId, id)
                 .eq(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .eq(OrderEntity::getPayStatus, PaymentStatusEnum.PAID.getCode())
                 .eq(OrderEntity::getDeleted, 0)
                 .set(OrderEntity::getRiderId, riderInfo.getId())
                 .set(OrderEntity::getStatus, OrderStatusEnum.ACCEPTED.getCode())
@@ -277,6 +280,8 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         hallOrderVO.setDeliveryAddressId(orderEntity.getDeliveryAddressId());
         hallOrderVO.setStatus(orderEntity.getStatus());
         hallOrderVO.setStatusText(OrderStatusEnum.getTextByCode(orderEntity.getStatus()));
+        hallOrderVO.setPayStatus(orderEntity.getPayStatus());
+        hallOrderVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
         hallOrderVO.setCreateTime(orderEntity.getCreateTime());
         return hallOrderVO;
     }
@@ -294,6 +299,8 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         riderOrderVO.setDeliveryAddressId(orderEntity.getDeliveryAddressId());
         riderOrderVO.setStatus(orderEntity.getStatus());
         riderOrderVO.setStatusText(OrderStatusEnum.getTextByCode(orderEntity.getStatus()));
+        riderOrderVO.setPayStatus(orderEntity.getPayStatus());
+        riderOrderVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
         riderOrderVO.setAcceptTime(orderEntity.getAcceptTime());
         riderOrderVO.setFinishTime(orderEntity.getFinishTime());
         riderOrderVO.setCreateTime(orderEntity.getCreateTime());
@@ -357,6 +364,9 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         OrderEntity orderEntity = orderMapper.selectById(id);
         if (orderEntity == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
+        }
+        if (!PaymentStatusEnum.PAID.getCode().equals(orderEntity.getPayStatus())) {
+            throw new BusinessException(ResultCode.ORDER_NOT_PAID);
         }
         if (OrderStatusEnum.CANCELLED.getCode().equals(orderEntity.getStatus())) {
             throw new BusinessException(ResultCode.ORDER_STATUS_ERROR);

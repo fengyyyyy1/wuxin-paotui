@@ -6,7 +6,7 @@
 
 最后更新时间：2026-07-16
 
-当前版本：V0.5（开发中）
+当前版本：V0.6（开发中）
 
 项目状态：开发中
 
@@ -50,6 +50,8 @@
 - [x] 用户确认收货
 - [x] 用户取消订单
 - [x] 用户评价订单
+- [x] PaymentStatusEnum
+- [x] 订单模拟支付
 
 ### 骑手模块
 
@@ -93,6 +95,15 @@ V0.5 新增：
 - `order_comment` 订单评价表
 - `uk_order_comment_order_id` 订单唯一评价索引
 - 升级脚本 `05_create_order_comment.sql`
+
+V0.6 新增：
+
+- `order_info.pay_status`
+- `order_info.pay_time`
+- `order_info.payment_no`
+- `idx_order_pay_status_deleted_create_time`
+- `uk_order_payment_no`
+- 升级脚本 `06_update_order_payment.sql`
 
 ## 四、当前测试数据
 
@@ -139,6 +150,7 @@ V0.5 新增：
 - [x] 用户确认收货
 - [x] 用户取消订单
 - [x] 用户评价订单
+- [x] 订单模拟支付
 
 ### 骑手
 
@@ -153,25 +165,25 @@ V0.5 新增：
 当前状态：
 
 ```text
-用户评价订单接口已开发，等待执行数据库升级、Postman 与 Navicat 验证。
+模拟支付接口已开发，等待执行 SQL、Postman 和 Navicat 验证。
 ```
 
 本次接口：
 
 ```http
-POST /api/order/comment
+POST /api/order/pay/{id}
 ```
 
 下一步：
 
 ```text
-支付
+真实微信支付接入
 ```
 
 开发顺序：
 
 ```text
-支付
+真实微信支付接入
 ```
 
 ## 七、待开发模块
@@ -214,7 +226,22 @@ POST /api/order/comment
 - [ ] Postman 验证
 - [ ] Navicat 验证
 
-## 十、项目规范
+## 十、V0.6 开发内容
+
+- [x] PaymentStatusEnum
+- [x] 订单创建默认未支付
+- [x] 模拟支付接口
+- [x] 支付原子条件更新与幂等控制
+- [x] 支付单号唯一约束
+- [x] 支付订单日志
+- [x] 骑手大厅过滤未支付订单
+- [x] 骑手接单禁止未支付订单
+- [x] `06_update_order_payment.sql`
+- [ ] SQL 验证
+- [ ] Postman 验证
+- [ ] Navicat 验证
+
+## 十一、项目规范
 
 项目分层：
 
@@ -239,7 +266,7 @@ VO
 - [x] VO 返回前端数据
 - [x] Entity 不直接返回前端
 
-## 十一、开发流程
+## 十二、开发流程
 
 固定流程：
 

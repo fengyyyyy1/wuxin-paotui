@@ -30,6 +30,14 @@ public class OrderDetailVO {
 
     private String statusText;
 
+    private Integer payStatus;
+
+    private String payStatusText;
+
+    private LocalDateTime payTime;
+
+    private String paymentNo;
+
     private String remark;
 
     private LocalDateTime createTime;

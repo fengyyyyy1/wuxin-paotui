@@ -30,6 +30,10 @@ public class RiderOrderVO {
 
     private String statusText;
 
+    private Integer payStatus;
+
+    private String payStatusText;
+
     private LocalDateTime acceptTime;
 
     private LocalDateTime finishTime;

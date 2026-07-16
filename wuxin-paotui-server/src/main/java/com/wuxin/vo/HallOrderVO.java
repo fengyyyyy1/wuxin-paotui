@@ -30,5 +30,9 @@ public class HallOrderVO {
 
     private String statusText;
 
+    private Integer payStatus;
+
+    private String payStatusText;
+
     private LocalDateTime createTime;
 }
