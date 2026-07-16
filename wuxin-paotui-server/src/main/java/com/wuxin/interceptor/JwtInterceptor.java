@@ -25,6 +25,10 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if (isPublicStoreQuery(request)) {
+            return true;
+        }
+
         String authorization = request.getHeader(AUTHORIZATION_HEADER);
         if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
             writeUnauthorized(response);
@@ -51,5 +55,13 @@ public class JwtInterceptor implements HandlerInterceptor {
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(Result.fail(ResultCode.UNAUTHORIZED)));
+    }
+
+    private boolean isPublicStoreQuery(HttpServletRequest request) {
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        String requestPath = request.getRequestURI().substring(request.getContextPath().length());
+        return "/api/store/list".equals(requestPath) || requestPath.matches("^/api/store/\\d+$");
     }
 }

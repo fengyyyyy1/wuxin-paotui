@@ -1,5 +1,29 @@
 # 更新日志
 
+## V0.7（开发中）
+
+日期：2026-07-16
+
+### 新增
+
+- 商家申请入驻接口：`POST /api/merchant/apply`
+- 我的商家资料接口：`GET /api/merchant/me`
+- 店铺资料修改接口：`PUT /api/merchant/store`
+- 营业状态修改接口：`PUT /api/merchant/store/business-status`
+- 公开店铺列表：`GET /api/store/list`
+- 公开店铺详情：`GET /api/store/{id}`
+- `merchant_info` 商家主体表和 `merchant_store` 店铺表
+- 商家审核、商家启用和店铺营业状态枚举
+
+### 安全与一致性
+
+- 商家复用现有 `sys_user`、JWT 和 `UserContext`
+- 商家主体与店铺创建处于同一事务
+- `user_id` 唯一索引和异常转换防止并发重复申请
+- 店铺管理严格校验商家归属、审核和启用状态
+- 公开路由仅按 GET 方法放行店铺列表和数字 ID 详情
+- 公开店铺列表使用数据库联表分页
+
 ## V0.6（开发中）
 
 日期：2026-07-16

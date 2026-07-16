@@ -1,7 +1,7 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V0.6（开发中）
+> 当前版本：V0.7（开发中）
 
 ## 一、通用规范
 
@@ -43,6 +43,10 @@ Authorization: Bearer <token>
 | 409 | 订单已支付 | 订单不能重复支付 |
 | 409 | 当前订单状态不可支付 | 配送业务状态不允许支付 |
 | 409 | 订单未支付 | 未支付订单不能被骑手接单 |
+| 409 | 当前用户已申请商家入驻 | 同一用户重复申请商家 |
+| 404 | 商家信息不存在 | 当前用户没有商家资料 |
+| 403 | 商家尚未通过审核或已被禁用 | 商家不能管理店铺 |
+| 404 | 店铺不存在 | 店铺不存在或不可公开访问 |
 | 500 | 服务器内部错误 | 未知系统异常 |
 
 ## 二、用户模块
@@ -828,3 +832,140 @@ Authorization: Bearer <token>
 | 404 | 订单不存在 |
 | 409 | 当前订单状态不可放弃 |
 | 1004 | 参数错误 |
+
+## 六、商家模块
+
+商家管理接口复用 `sys_user` 登录和 JWT，不提供独立商家账号。
+
+### 商家申请入驻
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/merchant/apply` |
+| Authorization | 需要 |
+
+请求示例：
+
+```json
+{
+  "merchantName": "五鑫便利店",
+  "contactName": "李一",
+  "contactPhone": "13800000000",
+  "businessLicense": "license-url",
+  "idCardFront": "front-url",
+  "idCardBack": "back-url",
+  "storeName": "五鑫便利店",
+  "storeLogo": "logo-url",
+  "storeDescription": "便利店、饮料和日常用品",
+  "storePhone": "13800000000",
+  "province": "重庆市",
+  "city": "重庆市",
+  "district": "渝北区",
+  "detailAddress": "测试地址1号",
+  "latitude": 29.0000000,
+  "longitude": 106.0000000,
+  "openTime": "08:00:00",
+  "closeTime": "22:00:00"
+}
+```
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "商家入驻申请提交成功",
+  "data": {
+    "merchantId": 1,
+    "storeId": 1,
+    "auditStatus": 0,
+    "auditStatusText": "待审核",
+    "applyTime": "2026-07-16T18:00:00"
+  }
+}
+```
+
+异常返回：`401`、`409 当前用户已申请商家入驻`、`1004 参数错误`。
+
+### 我的商家资料
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/merchant/me` |
+| Authorization | 需要 |
+
+返回商家主体、审核状态和店铺资料，不返回身份证图片及逻辑删除字段。
+
+异常返回：`401`、`404 商家信息不存在`、`404 店铺不存在`。
+
+### 修改店铺资料
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | PUT |
+| URL | `/api/merchant/store` |
+| Authorization | 需要 |
+
+请求体包含 `storeName`、`storeLogo`、`storeDescription`、`storePhone`、地址、经纬度和营业时间。`storeName`、`storePhone`、`detailAddress` 必填。
+
+成功返回：`200 更新店铺资料成功`。
+
+异常返回：`401`、`403 商家尚未通过审核或已被禁用`、`404 商家信息不存在`、`404 店铺不存在`、`1004 参数错误`。
+
+### 修改营业状态
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | PUT |
+| URL | `/api/merchant/store/business-status` |
+| Authorization | 需要 |
+
+```json
+{
+  "businessStatus": 1
+}
+```
+
+`businessStatus` 只能为 `0`（休息中）或 `1`（营业中）。成功返回：`200 营业状态更新成功`。
+
+异常返回：`401`、`403 商家尚未通过审核或已被禁用`、`404 商家信息不存在`、`404 店铺不存在`、`1004 参数错误`。
+
+## 七、公开店铺模块
+
+以下接口当前阶段无需 Authorization。
+
+### 店铺列表
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/store/list` |
+| Authorization | 不需要 |
+
+请求参数：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| pageNum | Integer | 否 | 1 | 当前页 |
+| pageSize | Integer | 否 | 10 | 每页数量，最大 50 |
+| keyword | String | 否 | 无 | 店铺名称模糊查询 |
+| district | String | 否 | 无 | 区县筛选 |
+| businessStatus | Integer | 否 | 无 | 0 休息、1 营业 |
+
+只返回审核通过、商家启用、店铺启用且未删除的店铺，按营业状态和创建时间倒序。
+
+成功返回 `PageResultVO<StoreListVO>` 分页结构；非法营业状态返回 `1004 参数错误`。
+
+### 店铺详情
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/store/{id}` |
+| Authorization | 不需要 |
+
+只返回审核通过、商家启用、店铺启用且未删除的店铺资料。
+
+异常返回：`404 店铺不存在`、`1004 参数错误`。

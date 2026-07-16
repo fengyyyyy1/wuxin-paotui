@@ -6,7 +6,7 @@
 
 最后更新时间：2026-07-16
 
-当前版本：V0.6（开发中）
+当前版本：V0.7（开发中）
 
 项目状态：开发中
 
@@ -62,6 +62,15 @@
 - [x] 骑手完成配送
 - [x] 骑手放弃订单
 
+### 商家与店铺模块
+
+- [x] 商家申请入驻
+- [x] 我的商家资料
+- [x] 修改店铺资料
+- [x] 修改营业状态
+- [x] 公开店铺列表
+- [x] 公开店铺详情
+
 ## 三、数据库状态
 
 数据库：
@@ -78,6 +87,8 @@ wuxin_paotui
 - `order_log`
 - `rider_info`
 - `order_comment`
+- `merchant_info`
+- `merchant_store`
 
 数据库升级：
 
@@ -105,6 +116,13 @@ V0.6 新增：
 - `idx_order_pay_status_deleted_create_time`
 - `uk_order_payment_no`
 - 升级脚本 `06_update_order_payment.sql`
+
+V0.7 新增：
+
+- `merchant_info` 商家主体表
+- `merchant_store` 店铺表
+- 商家与用户、店铺与商家一对一唯一索引
+- 升级脚本 `07_create_merchant_store.sql`
 
 ## 四、当前测试数据
 
@@ -162,34 +180,58 @@ V0.6 新增：
 - [x] 完成配送
 - [x] 放弃订单
 
+### 商家
+
+- [x] 申请入驻
+- [x] 我的商家资料
+- [x] 修改店铺资料
+- [x] 修改营业状态
+
+### 店铺
+
+- [x] 公开店铺列表
+- [x] 公开店铺详情
+
 ## 六、当前开发断点（最重要）
 
 当前状态：
 
 ```text
-订单轨迹接口已开发，等待 Postman 验证。
+商家入驻与店铺基础模块已开发，等待 SQL、Postman 和 Navicat 验证。
 ```
 
 本次接口：
 
 ```http
-GET /api/order/timeline/{id}
+POST /api/merchant/apply
+GET /api/merchant/me
+PUT /api/merchant/store
+PUT /api/merchant/store/business-status
+GET /api/store/list
+GET /api/store/{id}
 ```
 
 下一步：
 
 ```text
-用户首页订单统计
+商品分类和商品管理
 ```
 
 开发顺序：
 
 ```text
-用户首页订单统计
+商品分类
+↓
+商品管理
 ```
 
 ## 七、待开发模块
 
+- [ ] 商品分类
+- [ ] 商品管理
+- [ ] 用户购买商品
+- [ ] 商家订单
+- [ ] 总控端商家审核
 - [ ] 微信支付
 - [ ] Redis
 - [ ] OSS
@@ -245,7 +287,19 @@ GET /api/order/timeline/{id}
 - [ ] Postman 验证
 - [ ] Navicat 验证
 
-## 十一、项目规范
+## 十一、V0.7 开发内容
+
+- [x] `merchant_info`、`merchant_store` 增量建表脚本
+- [x] 商家申请和并发重复申请保护
+- [x] 商家主体与店铺同事务创建
+- [x] 商家资料和店铺管理接口
+- [x] 公开店铺联表分页与详情
+- [x] GET 店铺查询精确公开放行
+- [ ] SQL 验证
+- [ ] Postman 验证
+- [ ] Navicat 验证
+
+## 十二、项目规范
 
 项目分层：
 
@@ -270,7 +324,7 @@ VO
 - [x] VO 返回前端数据
 - [x] Entity 不直接返回前端
 
-## 十二、开发流程
+## 十三、开发流程
 
 固定流程：
 

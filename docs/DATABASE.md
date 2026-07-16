@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V0.6（开发中）
+> 当前版本：V0.7（开发中）
 
 ## 一、sys_user
 
@@ -235,7 +235,77 @@
 - 当前约定 `rider_status = 1` 表示骑手启用。
 - `RiderInfoEntity` 不包含 `status`、`deleted`。
 
-## 七、数据库升级历史
+## 七、merchant_info
+
+作用：记录商家主体、联系人和审核信息，通过 `user_id` 关联 `sys_user.id`。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 商家主体 ID |
+| user_id | 关联用户 ID |
+| merchant_name | 商家主体名称 |
+| contact_name | 联系人姓名 |
+| contact_phone | 联系人手机号 |
+| business_license | 营业执照图片地址 |
+| id_card_front | 身份证正面地址 |
+| id_card_back | 身份证反面地址 |
+| audit_status | 审核状态：0 待审核、1 通过、2 驳回 |
+| audit_remark | 审核意见 |
+| merchant_status | 商家状态：0 禁用、1 启用 |
+| create_time | 创建时间 |
+| update_time | 更新时间 |
+| is_deleted | 逻辑删除 |
+
+索引：
+
+| 索引 | 说明 |
+| --- | --- |
+| PRIMARY KEY(id) | 主键 |
+| uk_merchant_user_id(user_id) | 一个用户只能申请一个商家主体 |
+| idx_merchant_audit_status(audit_status, merchant_status, is_deleted) | 审核及启用状态查询 |
+
+## 八、merchant_store
+
+作用：记录店铺展示、地址和营业信息，通过 `merchant_id` 关联 `merchant_info.id`。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 店铺 ID |
+| merchant_id | 商家主体 ID |
+| store_name | 店铺名称 |
+| store_logo | 店铺 Logo |
+| store_description | 店铺简介 |
+| store_phone | 店铺联系电话 |
+| province / city / district | 行政区划 |
+| detail_address | 详细地址 |
+| latitude / longitude | 经纬度 |
+| business_status | 营业状态：0 休息、1 营业 |
+| open_time / close_time | 营业时间 |
+| store_status | 店铺状态：0 禁用、1 启用 |
+| create_time | 创建时间 |
+| update_time | 更新时间 |
+| is_deleted | 逻辑删除 |
+
+索引：
+
+| 索引 | 说明 |
+| --- | --- |
+| PRIMARY KEY(id) | 主键 |
+| uk_store_merchant_id(merchant_id) | 一个商家主体只能拥有一个店铺 |
+| idx_store_business_status(business_status, store_status, is_deleted) | 营业及启用状态查询 |
+
+## 九、数据库升级历史
+
+### V0.7
+
+- 新增 `merchant_info` 和 `merchant_store`。
+- 新增商家用户唯一索引、商家审核状态索引、商家店铺唯一索引和店铺营业状态索引。
+- 新增脚本：`wuxin-paotui-server/src/main/resources/sql/07_create_merchant_store.sql`。
+- 脚本使用 `CREATE TABLE IF NOT EXISTS`，需要在 Navicat 手动执行。
 
 ### V0.6
 

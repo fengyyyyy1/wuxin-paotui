@@ -1,6 +1,6 @@
 # Postman 测试文档
 
-> 当前版本：V0.6（开发中）
+> 当前版本：V0.7（开发中）
 
 ## 一、环境变量
 
@@ -14,6 +14,8 @@
 | `commentOrderId` | `4` | 当前用户已完成且未评价的订单 ID |
 | `paymentOrderId` | `5` | 当前用户新发布的模拟支付订单 ID |
 | `paymentNo` | 支付成功后返回 | 模拟支付单号 |
+| `merchantId` | 商家申请后返回 | 当前用户商家主体 ID |
+| `storeId` | 商家申请后返回 | 当前用户店铺 ID |
 
 登录后接口统一使用：
 
@@ -469,6 +471,117 @@ Bearer {{token}}
 - 不存在的订单返回 `404 订单不存在`
 - 非法订单 ID 返回 `1004 参数错误`
 
+### 17. 执行商家数据库升级
+
+在 Navicat 手动执行：
+
+```text
+wuxin-paotui-server/src/main/resources/sql/07_create_merchant_store.sql
+```
+
+预期结果：创建 `merchant_info` 和 `merchant_store`，重复执行脚本不报错。
+
+### 18. 商家申请入驻
+
+请求：
+
+```http
+POST {{host}}/api/merchant/apply
+Authorization: Bearer {{token}}
+```
+
+Body：
+
+```json
+{
+  "merchantName": "五鑫便利店",
+  "contactName": "李一",
+  "contactPhone": "13800000000",
+  "businessLicense": "license-url",
+  "idCardFront": "front-url",
+  "idCardBack": "back-url",
+  "storeName": "五鑫便利店",
+  "storeLogo": "logo-url",
+  "storeDescription": "便利店、饮料和日常用品",
+  "storePhone": "13800000000",
+  "province": "重庆市",
+  "city": "重庆市",
+  "district": "渝北区",
+  "detailAddress": "测试地址1号",
+  "latitude": 29.0000000,
+  "longitude": 106.0000000,
+  "openTime": "08:00:00",
+  "closeTime": "22:00:00"
+}
+```
+
+预期结果：返回待审核状态及 `merchantId`、`storeId`；重复申请返回 `409 当前用户已申请商家入驻`。
+
+### 19. 查询我的商家资料
+
+```http
+GET {{host}}/api/merchant/me
+Authorization: Bearer {{token}}
+```
+
+预期结果：返回商家主体和店铺资料，不包含身份证图片及逻辑删除字段。
+
+### 20. 手动通过商家审核
+
+当前没有总控端审核接口，在 Navicat 执行：
+
+```sql
+UPDATE merchant_info
+SET audit_status = 1,
+    audit_remark = '测试审核通过'
+WHERE id = {{merchantId}};
+```
+
+审核前调用店铺修改或营业状态接口应返回 `403 商家尚未通过审核或已被禁用`。
+
+### 21. 修改店铺资料
+
+```http
+PUT {{host}}/api/merchant/store
+Authorization: Bearer {{token}}
+```
+
+Body 使用完整店铺资料，不允许传入 `merchantId`、`businessStatus`、`storeStatus` 或审核状态。
+
+预期结果：返回 `更新店铺资料成功`，且只能更新当前用户自己的店铺。
+
+### 22. 修改营业状态
+
+```http
+PUT {{host}}/api/merchant/store/business-status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "businessStatus": 1
+}
+```
+
+预期结果：返回 `营业状态更新成功`；传入非 0/1 值返回 `1004`。
+
+### 23. 公开店铺列表
+
+```http
+GET {{host}}/api/store/list?pageNum=1&pageSize=10&keyword=五鑫&district=渝北区&businessStatus=1
+```
+
+不携带 Authorization。预期返回审核通过、商家启用、店铺启用且未删除的分页数据。
+
+### 24. 公开店铺详情
+
+```http
+GET {{host}}/api/store/{{storeId}}
+```
+
+不携带 Authorization。预期返回店铺详情；待审核、禁用、删除或不存在的店铺统一返回 `404 店铺不存在`。
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -488,4 +601,8 @@ Bearer {{token}}
 | 业务状态不可支付 | `409 当前订单状态不可支付` |
 | 未支付订单接单 | `409 订单未支付` |
 | 查看其他用户订单轨迹 | `404 订单不存在` |
+| 重复申请商家 | `409 当前用户已申请商家入驻` |
+| 未申请商家 | `404 商家信息不存在` |
+| 商家未审核或已禁用 | `403 商家尚未通过审核或已被禁用` |
+| 店铺不可访问 | `404 店铺不存在` |
 | 未知异常 | `500 服务器内部错误` |
