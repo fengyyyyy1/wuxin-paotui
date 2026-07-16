@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wuxin.common.ResultCode;
 import com.wuxin.dto.order.CreateOrderDTO;
+import com.wuxin.dto.order.CommentOrderDTO;
+import com.wuxin.entity.OrderCommentEntity;
 import com.wuxin.entity.OrderLogEntity;
 import com.wuxin.entity.OrderEntity;
 import com.wuxin.entity.UserAddressEntity;
@@ -13,6 +15,7 @@ import com.wuxin.entity.UserEntity;
 import com.wuxin.enums.OrderStatusEnum;
 import com.wuxin.exception.BusinessException;
 import com.wuxin.mapper.OrderLogMapper;
+import com.wuxin.mapper.OrderCommentMapper;
 import com.wuxin.mapper.OrderMapper;
 import com.wuxin.mapper.UserAddressMapper;
 import com.wuxin.mapper.UserMapper;
@@ -20,6 +23,7 @@ import com.wuxin.service.OrderService;
 import com.wuxin.utils.UserContext;
 import com.wuxin.vo.CancelOrderVO;
 import com.wuxin.vo.ConfirmOrderVO;
+import com.wuxin.vo.CommentOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
 import com.wuxin.vo.PageResultVO;
@@ -49,10 +53,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
 
     private final OrderLogMapper orderLogMapper;
 
-    public OrderServiceImpl(UserMapper userMapper, UserAddressMapper userAddressMapper, OrderLogMapper orderLogMapper) {
+    private final OrderCommentMapper orderCommentMapper;
+
+    public OrderServiceImpl(UserMapper userMapper, UserAddressMapper userAddressMapper,
+                            OrderLogMapper orderLogMapper, OrderCommentMapper orderCommentMapper) {
         this.userMapper = userMapper;
         this.userAddressMapper = userAddressMapper;
         this.orderLogMapper = orderLogMapper;
+        this.orderCommentMapper = orderCommentMapper;
     }
 
     @Override
@@ -234,6 +242,70 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         cancelOrderVO.setStatusText(OrderStatusEnum.CANCELLED.getText());
         cancelOrderVO.setCancelTime(now);
         return cancelOrderVO;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public CommentOrderVO commentOrder(CommentOrderDTO commentOrderDTO) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        LambdaQueryWrapper<OrderEntity> orderQueryWrapper = new LambdaQueryWrapper<>();
+        orderQueryWrapper.eq(OrderEntity::getId, commentOrderDTO.getOrderId())
+                .eq(OrderEntity::getUserId, userId)
+                .eq(OrderEntity::getDeleted, 0)
+                .last("LIMIT 1");
+
+        OrderEntity orderEntity = getOne(orderQueryWrapper, false);
+        if (orderEntity == null) {
+            throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
+        }
+        if (!OrderStatusEnum.COMPLETED.getCode().equals(orderEntity.getStatus())) {
+            throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_COMMENT);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        OrderCommentEntity orderComment = new OrderCommentEntity();
+        orderComment.setOrderId(orderEntity.getId());
+        orderComment.setUserId(userId);
+        orderComment.setRiderId(orderEntity.getRiderId());
+        orderComment.setScore(commentOrderDTO.getScore());
+        orderComment.setContent(commentOrderDTO.getContent());
+        orderComment.setIsAnonymous(commentOrderDTO.getAnonymous() == null ? 0 : commentOrderDTO.getAnonymous());
+        orderComment.setCreateTime(now);
+        orderComment.setUpdateTime(now);
+        orderComment.setIsDeleted(0);
+
+        try {
+            int insertedRows = orderCommentMapper.insert(orderComment);
+            if (insertedRows != 1 || orderComment.getId() == null) {
+                throw new IllegalStateException("order comment save failed");
+            }
+        } catch (DuplicateKeyException exception) {
+            throw new BusinessException(ResultCode.ORDER_ALREADY_COMMENTED);
+        }
+
+        OrderLogEntity orderLog = new OrderLogEntity();
+        orderLog.setOrderId(orderEntity.getId());
+        orderLog.setOldStatus(OrderStatusEnum.COMPLETED.getCode());
+        orderLog.setNewStatus(OrderStatusEnum.COMPLETED.getCode());
+        orderLog.setOperatorId(userId);
+        orderLog.setOperatorType(OPERATOR_TYPE_USER);
+        orderLog.setRemark("用户评价订单");
+        orderLog.setCreateTime(now);
+        int insertedLogRows = orderLogMapper.insert(orderLog);
+        if (insertedLogRows != 1) {
+            throw new IllegalStateException("order log save failed");
+        }
+
+        CommentOrderVO commentOrderVO = new CommentOrderVO();
+        commentOrderVO.setCommentId(orderComment.getId());
+        commentOrderVO.setOrderId(orderEntity.getId());
+        commentOrderVO.setScore(orderComment.getScore());
+        commentOrderVO.setCommentTime(now);
+        return commentOrderVO;
     }
 
     private void handleConfirmFailed(Long id, Long userId) {

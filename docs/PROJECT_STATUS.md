@@ -49,6 +49,7 @@
 - [x] GlobalExceptionHandler
 - [x] 用户确认收货
 - [x] 用户取消订单
+- [x] 用户评价订单
 
 ### 骑手模块
 
@@ -73,6 +74,7 @@ wuxin_paotui
 - `order_info`
 - `order_log`
 - `rider_info`
+- `order_comment`
 
 数据库升级：
 
@@ -85,6 +87,12 @@ wuxin_paotui
 
 - `idx_order_rider_status_deleted`
 - `idx_order_status_deleted_create_time`
+
+V0.5 新增：
+
+- `order_comment` 订单评价表
+- `uk_order_comment_order_id` 订单唯一评价索引
+- 升级脚本 `05_create_order_comment.sql`
 
 ## 四、当前测试数据
 
@@ -129,6 +137,8 @@ wuxin_paotui
 - [x] 我的订单
 - [x] 订单详情
 - [x] 用户确认收货
+- [x] 用户取消订单
+- [x] 用户评价订单
 
 ### 骑手
 
@@ -143,32 +153,29 @@ wuxin_paotui
 当前状态：
 
 ```text
-骑手放弃订单接口已开发，等待 Postman 与 Navicat 验证。
+用户评价订单接口已开发，等待执行数据库升级、Postman 与 Navicat 验证。
 ```
 
 本次接口：
 
 ```http
-POST /api/rider/order/give-up/{id}
+POST /api/order/comment
 ```
 
 下一步：
 
 ```text
-用户评价
+支付
 ```
 
 开发顺序：
 
 ```text
-订单评价
-↓
 支付
 ```
 
 ## 七、待开发模块
 
-- [ ] 用户评价
 - [ ] 微信支付
 - [ ] Redis
 - [ ] OSS
@@ -200,6 +207,10 @@ POST /api/rider/order/give-up/{id}
 - [x] 骑手放弃订单接口
 - [x] 骑手放弃原子条件更新
 - [x] 骑手放弃订单日志
+- [x] 用户评价订单接口
+- [x] `order_comment` 增量建表脚本
+- [x] 一单一评唯一约束
+- [x] 用户评价订单日志
 - [ ] Postman 验证
 - [ ] Navicat 验证
 

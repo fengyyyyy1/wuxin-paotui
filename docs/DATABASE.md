@@ -153,8 +153,41 @@
 - `operator_type = RIDER` 表示骑手操作。
 - 用户取消订单成功后写入 `0 → 5` 状态日志，`operator_type = USER`。
 - 骑手放弃订单成功后写入 `1 → 0` 状态日志，`operator_type = RIDER`。
+- 用户评价订单成功后写入 `4 → 4` 状态日志，`operator_type = USER`。
 
-## 五、rider_info
+## 五、order_comment
+
+作用：订单评价表，一个订单只能评价一次。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 评价 ID |
+| order_id | 订单 ID |
+| user_id | 评价用户 ID |
+| rider_id | 被评价骑手 ID |
+| score | 评分，范围 1～5 |
+| content | 评价内容，最长 500 字 |
+| is_anonymous | 是否匿名，0 否、1 是 |
+| create_time | 评价时间 |
+| update_time | 更新时间 |
+| is_deleted | 逻辑删除 |
+
+索引：
+
+| 索引 | 说明 |
+| --- | --- |
+| PRIMARY KEY(id) | 主键 |
+| uk_order_comment_order_id(order_id) | 订单唯一评价索引 |
+
+说明：
+
+- 仅订单发布用户可以评价自己的已完成订单。
+- `order_id` 唯一索引负责防止并发重复评价。
+- 默认 `is_anonymous = 0`、`is_deleted = 0`。
+
+## 六、rider_info
 
 作用：骑手信息表。
 
@@ -186,14 +219,15 @@
 - 当前约定 `rider_status = 1` 表示骑手启用。
 - `RiderInfoEntity` 不包含 `status`、`deleted`。
 
-## 六、数据库升级历史
+## 七、数据库升级历史
 
 ### V0.5
 
-- 未修改数据库表结构。
-- 未新增 SQL 升级脚本。
 - 用户取消订单复用现有 `status = 5`（已取消）和 `update_time` 字段。
 - 骑手放弃订单复用现有字段，状态从 `1` 回退为 `0`，并清空 `rider_id`、`accept_time`。
+- 新增 `order_comment` 表。
+- 新增唯一索引 `uk_order_comment_order_id(order_id)`。
+- 新增升级脚本：`wuxin-paotui-server/src/main/resources/sql/05_create_order_comment.sql`。
 
 ### V0.4
 

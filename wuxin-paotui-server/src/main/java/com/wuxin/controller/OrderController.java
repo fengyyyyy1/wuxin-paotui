@@ -2,9 +2,11 @@ package com.wuxin.controller;
 
 import com.wuxin.common.Result;
 import com.wuxin.dto.order.CreateOrderDTO;
+import com.wuxin.dto.order.CommentOrderDTO;
 import com.wuxin.service.OrderService;
 import com.wuxin.vo.CancelOrderVO;
 import com.wuxin.vo.ConfirmOrderVO;
+import com.wuxin.vo.CommentOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
 import com.wuxin.vo.PageResultVO;
@@ -53,5 +55,10 @@ public class OrderController {
     @PostMapping("/cancel/{id}")
     public Result<CancelOrderVO> cancel(@PathVariable Long id) {
         return Result.success("取消订单成功", orderService.cancelOrder(id));
+    }
+
+    @PostMapping("/comment")
+    public Result<CommentOrderVO> comment(@Valid @RequestBody CommentOrderDTO commentOrderDTO) {
+        return Result.success("评价成功", orderService.commentOrder(commentOrderDTO));
     }
 }

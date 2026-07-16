@@ -11,6 +11,8 @@ public enum ResultCode {
     ORDER_STATUS_ERROR(409, "当前订单状态不可接单"),
     ORDER_STATUS_CANNOT_CANCEL(409, "当前订单状态不可取消"),
     ORDER_STATUS_CANNOT_GIVE_UP(409, "当前订单状态不可放弃"),
+    ORDER_STATUS_CANNOT_COMMENT(409, "当前订单状态不可评价"),
+    ORDER_ALREADY_COMMENTED(409, "订单已评价"),
     USERNAME_EXIST(1001, "用户名已存在"),
     USER_NOT_EXIST(1002, "用户不存在"),
     PASSWORD_ERROR(1003, "密码错误"),

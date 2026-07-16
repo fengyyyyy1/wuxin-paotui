@@ -11,6 +11,7 @@
 | `orderId` | `2` | 当前测试订单 ID |
 | `cancelOrderId` | `1` | 待取消的当前用户待接单订单 ID |
 | `giveUpOrderId` | `4` | 当前骑手已接单且待放弃的订单 ID |
+| `commentOrderId` | `4` | 当前用户已完成且未评价的订单 ID |
 
 登录后接口统一使用：
 
@@ -337,6 +338,47 @@ Bearer {{token}}
 - `order_log` 只新增一条骑手放弃日志
 - 重复请求返回 `409 当前订单状态不可放弃`
 
+### 13. 用户评价订单
+
+准备数据：
+
+- 在 Navicat 手动执行 `wuxin-paotui-server/src/main/resources/sql/05_create_order_comment.sql`。
+- 准备一个属于当前用户、`status = 4` 且尚未评价的订单。
+- 将订单 ID 保存到 `{{commentOrderId}}`。
+
+请求：
+
+```http
+POST {{host}}/api/order/comment
+```
+
+Authorization：
+
+```http
+Bearer {{token}}
+```
+
+Body：
+
+```json
+{
+  "orderId": {{commentOrderId}},
+  "score": 5,
+  "content": "配送速度很快，服务很好。",
+  "anonymous": 0
+}
+```
+
+预期结果：
+
+- 返回 `message = 评价成功`
+- 返回评价 ID、订单 ID、评分和评价时间
+- `order_comment` 新增一条评价
+- `order_log` 新增一条 `4 → 4`、`operator_type = USER` 的评价日志
+- 重复评价返回 `409 订单已评价`
+- 非已完成订单返回 `409 当前订单状态不可评价`
+- 评分不在 1～5、内容超过 500 字或匿名标识不合法时返回 `1004`
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -350,4 +392,6 @@ Bearer {{token}}
 | 状态不可确认收货 | `409 当前订单状态不可确认收货` |
 | 状态不可取消或重复取消 | `409 当前订单状态不可取消` |
 | 状态不可放弃或重复放弃 | `409 当前订单状态不可放弃` |
+| 非已完成订单评价 | `409 当前订单状态不可评价` |
+| 重复评价 | `409 订单已评价` |
 | 未知异常 | `500 服务器内部错误` |
