@@ -16,6 +16,7 @@ import com.wuxin.service.RiderOrderService;
 import com.wuxin.utils.UserContext;
 import com.wuxin.vo.AcceptOrderVO;
 import com.wuxin.vo.FinishOrderVO;
+import com.wuxin.vo.GiveUpOrderVO;
 import com.wuxin.vo.HallOrderVO;
 import com.wuxin.vo.PageResultVO;
 import com.wuxin.vo.RiderOrderVO;
@@ -212,6 +213,57 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         return finishOrderVO;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public GiveUpOrderVO giveUpOrder(Long id) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(ResultCode.PARAM_ERROR);
+        }
+
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        RiderInfoEntity riderInfo = getCurrentRider(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderEntity::getId, id)
+                .eq(OrderEntity::getRiderId, riderInfo.getId())
+                .eq(OrderEntity::getStatus, OrderStatusEnum.ACCEPTED.getCode())
+                .eq(OrderEntity::getDeleted, 0)
+                .set(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .set(OrderEntity::getRiderId, null)
+                .set(OrderEntity::getAcceptTime, null)
+                .set(OrderEntity::getUpdateTime, now);
+
+        int affectedRows = orderMapper.update(null, updateWrapper);
+        if (affectedRows != 1) {
+            handleGiveUpFailed(id, riderInfo.getId(), userId);
+        }
+
+        OrderLogEntity orderLog = new OrderLogEntity();
+        orderLog.setOrderId(id);
+        orderLog.setOldStatus(OrderStatusEnum.ACCEPTED.getCode());
+        orderLog.setNewStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setOperatorId(userId);
+        orderLog.setOperatorType(OPERATOR_TYPE_RIDER);
+        orderLog.setRemark("骑手放弃订单");
+        orderLog.setCreateTime(now);
+        int insertedRows = orderLogMapper.insert(orderLog);
+        if (insertedRows != 1) {
+            throw new IllegalStateException("order log save failed");
+        }
+
+        GiveUpOrderVO giveUpOrderVO = new GiveUpOrderVO();
+        giveUpOrderVO.setOrderId(id);
+        giveUpOrderVO.setStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        giveUpOrderVO.setStatusText(OrderStatusEnum.WAITING_ACCEPT.getText());
+        giveUpOrderVO.setGiveUpTime(now);
+        return giveUpOrderVO;
+    }
+
     private HallOrderVO toHallOrderVO(OrderEntity orderEntity) {
         HallOrderVO hallOrderVO = new HallOrderVO();
         hallOrderVO.setId(orderEntity.getId());
@@ -274,6 +326,31 @@ public class RiderOrderServiceImpl implements RiderOrderService {
             throw new BusinessException(ResultCode.NOT_RIDER);
         }
         return riderInfo;
+    }
+
+    private void handleGiveUpFailed(Long id, Long riderId, Long userId) {
+        LambdaQueryWrapper<OrderEntity> orderQueryWrapper = new LambdaQueryWrapper<>();
+        orderQueryWrapper.eq(OrderEntity::getId, id)
+                .eq(OrderEntity::getRiderId, riderId)
+                .eq(OrderEntity::getDeleted, 0)
+                .last("LIMIT 1");
+
+        OrderEntity orderEntity = orderMapper.selectOne(orderQueryWrapper);
+        if (orderEntity != null) {
+            throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_GIVE_UP);
+        }
+
+        LambdaQueryWrapper<OrderLogEntity> logQueryWrapper = new LambdaQueryWrapper<>();
+        logQueryWrapper.eq(OrderLogEntity::getOrderId, id)
+                .eq(OrderLogEntity::getOldStatus, OrderStatusEnum.ACCEPTED.getCode())
+                .eq(OrderLogEntity::getNewStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .eq(OrderLogEntity::getOperatorId, userId)
+                .eq(OrderLogEntity::getOperatorType, OPERATOR_TYPE_RIDER);
+
+        if (orderLogMapper.selectCount(logQueryWrapper) > 0) {
+            throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_GIVE_UP);
+        }
+        throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
     }
 
     private void handleAcceptFailed(Long id) {

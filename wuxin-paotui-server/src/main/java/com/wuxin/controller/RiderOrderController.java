@@ -4,6 +4,7 @@ import com.wuxin.common.Result;
 import com.wuxin.service.RiderOrderService;
 import com.wuxin.vo.AcceptOrderVO;
 import com.wuxin.vo.FinishOrderVO;
+import com.wuxin.vo.GiveUpOrderVO;
 import com.wuxin.vo.HallOrderVO;
 import com.wuxin.vo.PageResultVO;
 import com.wuxin.vo.RiderOrderVO;
@@ -47,5 +48,10 @@ public class RiderOrderController {
     @PostMapping("/finish/{id}")
     public Result<FinishOrderVO> finish(@PathVariable Long id) {
         return Result.success(riderOrderService.finishOrder(id));
+    }
+
+    @PostMapping("/give-up/{id}")
+    public Result<GiveUpOrderVO> giveUp(@PathVariable Long id) {
+        return Result.success("放弃订单成功", riderOrderService.giveUpOrder(id));
     }
 }

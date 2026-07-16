@@ -152,6 +152,7 @@
 - 骑手接单成功后写入日志。
 - `operator_type = RIDER` 表示骑手操作。
 - 用户取消订单成功后写入 `0 → 5` 状态日志，`operator_type = USER`。
+- 骑手放弃订单成功后写入 `1 → 0` 状态日志，`operator_type = RIDER`。
 
 ## 五、rider_info
 
@@ -192,6 +193,7 @@
 - 未修改数据库表结构。
 - 未新增 SQL 升级脚本。
 - 用户取消订单复用现有 `status = 5`（已取消）和 `update_time` 字段。
+- 骑手放弃订单复用现有字段，状态从 `1` 回退为 `0`，并清空 `rider_id`、`accept_time`。
 
 ### V0.4
 
