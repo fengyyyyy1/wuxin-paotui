@@ -4,9 +4,9 @@
 
 ---
 
-最后更新时间：2026-07-13
+最后更新时间：2026-07-16
 
-当前版本：V0.4
+当前版本：V0.5（开发中）
 
 项目状态：开发中
 
@@ -47,6 +47,8 @@
 - [x] OrderStatusEnum
 - [x] BusinessException
 - [x] GlobalExceptionHandler
+- [x] 用户确认收货
+- [x] 用户取消订单
 
 ### 骑手模块
 
@@ -139,25 +141,25 @@ wuxin_paotui
 当前状态：
 
 ```text
-用户确认收货接口已开发，等待 Postman 与 Navicat 验证。
+用户取消订单接口已开发，等待 Postman 与 Navicat 验证。
 ```
 
 本次接口：
 
 ```http
-POST /api/order/confirm/{id}
+POST /api/order/cancel/{id}
 ```
 
 下一步：
 
 ```text
-用户取消订单
+骑手放弃订单
 ```
 
 开发顺序：
 
 ```text
-取消订单
+骑手放弃订单
 ↓
 订单评价
 ↓
@@ -166,7 +168,7 @@ POST /api/order/confirm/{id}
 
 ## 七、待开发模块
 
-- [ ] 用户取消订单
+- [ ] 骑手放弃订单
 - [ ] 用户评价
 - [ ] 微信支付
 - [ ] Redis
@@ -191,7 +193,15 @@ POST /api/order/confirm/{id}
 - [x] 订单日志
 - [x] 数据库升级
 
-## 九、项目规范
+## 九、V0.5 开发内容
+
+- [x] 用户取消订单接口
+- [x] 订单取消原子条件更新
+- [x] 用户取消订单日志
+- [ ] Postman 验证
+- [ ] Navicat 验证
+
+## 十、项目规范
 
 项目分层：
 
@@ -216,7 +226,7 @@ VO
 - [x] VO 返回前端数据
 - [x] Entity 不直接返回前端
 
-## 十、开发流程
+## 十一、开发流程
 
 固定流程：
 

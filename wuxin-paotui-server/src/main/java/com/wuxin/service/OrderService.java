@@ -3,6 +3,7 @@ package com.wuxin.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wuxin.dto.order.CreateOrderDTO;
 import com.wuxin.entity.OrderEntity;
+import com.wuxin.vo.CancelOrderVO;
 import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
@@ -17,4 +18,6 @@ public interface OrderService extends IService<OrderEntity> {
     OrderDetailVO getOrderDetail(Long id);
 
     ConfirmOrderVO confirmOrder(Long id);
+
+    CancelOrderVO cancelOrder(Long id);
 }

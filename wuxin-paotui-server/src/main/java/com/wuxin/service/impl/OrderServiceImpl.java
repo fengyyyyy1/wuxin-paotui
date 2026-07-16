@@ -18,6 +18,7 @@ import com.wuxin.mapper.UserAddressMapper;
 import com.wuxin.mapper.UserMapper;
 import com.wuxin.service.OrderService;
 import com.wuxin.utils.UserContext;
+import com.wuxin.vo.CancelOrderVO;
 import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
@@ -188,6 +189,53 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         return confirmOrderVO;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public CancelOrderVO cancelOrder(Long id) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(ResultCode.PARAM_ERROR);
+        }
+
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(OrderEntity::getId, id)
+                .eq(OrderEntity::getUserId, userId)
+                .eq(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .eq(OrderEntity::getDeleted, 0)
+                .set(OrderEntity::getStatus, OrderStatusEnum.CANCELLED.getCode())
+                .set(OrderEntity::getUpdateTime, now);
+
+        int affectedRows = getBaseMapper().update(null, updateWrapper);
+        if (affectedRows != 1) {
+            handleCancelFailed(id, userId);
+        }
+
+        OrderLogEntity orderLog = new OrderLogEntity();
+        orderLog.setOrderId(id);
+        orderLog.setOldStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setNewStatus(OrderStatusEnum.CANCELLED.getCode());
+        orderLog.setOperatorId(userId);
+        orderLog.setOperatorType(OPERATOR_TYPE_USER);
+        orderLog.setRemark("用户取消订单");
+        orderLog.setCreateTime(now);
+        int insertedRows = orderLogMapper.insert(orderLog);
+        if (insertedRows != 1) {
+            throw new IllegalStateException("order log save failed");
+        }
+
+        CancelOrderVO cancelOrderVO = new CancelOrderVO();
+        cancelOrderVO.setOrderId(id);
+        cancelOrderVO.setStatus(OrderStatusEnum.CANCELLED.getCode());
+        cancelOrderVO.setStatusText(OrderStatusEnum.CANCELLED.getText());
+        cancelOrderVO.setCancelTime(now);
+        return cancelOrderVO;
+    }
+
     private void handleConfirmFailed(Long id, Long userId) {
         LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(OrderEntity::getId, id)
@@ -200,6 +248,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
             throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
         }
         throw new BusinessException(ResultCode.ORDER_STATUS_ERROR, CONFIRM_STATUS_ERROR_MESSAGE);
+    }
+
+    private void handleCancelFailed(Long id, Long userId) {
+        LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderEntity::getId, id)
+                .eq(OrderEntity::getUserId, userId)
+                .eq(OrderEntity::getDeleted, 0)
+                .last("LIMIT 1");
+
+        OrderEntity orderEntity = getOne(queryWrapper, false);
+        if (orderEntity == null) {
+            throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
+        }
+        throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_CANCEL);
     }
 
     private void validateAddress(Long addressId, Long userId, String notExistMessage) {

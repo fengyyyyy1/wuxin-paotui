@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V0.4
+> 当前版本：V0.5（开发中）
 
 ## 一、sys_user
 
@@ -151,6 +151,7 @@
 
 - 骑手接单成功后写入日志。
 - `operator_type = RIDER` 表示骑手操作。
+- 用户取消订单成功后写入 `0 → 5` 状态日志，`operator_type = USER`。
 
 ## 五、rider_info
 
@@ -185,6 +186,12 @@
 - `RiderInfoEntity` 不包含 `status`、`deleted`。
 
 ## 六、数据库升级历史
+
+### V0.5
+
+- 未修改数据库表结构。
+- 未新增 SQL 升级脚本。
+- 用户取消订单复用现有 `status = 5`（已取消）和 `update_time` 字段。
 
 ### V0.4
 

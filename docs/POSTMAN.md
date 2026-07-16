@@ -1,6 +1,6 @@
 # Postman 测试文档
 
-> 当前版本：V0.4
+> 当前版本：V0.5（开发中）
 
 ## 一、环境变量
 
@@ -9,6 +9,7 @@
 | `host` | `http://localhost:8080` | 本地后端地址 |
 | `token` | 登录后返回的 token | JWT Token |
 | `orderId` | `2` | 当前测试订单 ID |
+| `cancelOrderId` | `1` | 待取消的当前用户待接单订单 ID |
 
 登录后接口统一使用：
 
@@ -265,6 +266,40 @@ Bearer {{token}}
 - `order_info.update_time` 更新为确认时间
 - `order_log` 写入用户确认收货日志
 
+### 11. 用户取消订单
+
+准备数据：
+
+- 使用当前账号重新发布一个订单，确保订单属于当前用户且 `status = 0`。
+- 将新订单 ID 保存到 `{{cancelOrderId}}`。
+
+请求：
+
+```http
+POST {{host}}/api/order/cancel/{{cancelOrderId}}
+```
+
+Authorization：
+
+```http
+Bearer {{token}}
+```
+
+测试说明：
+
+- 不需要 Body。
+- 仅当前用户发布且状态为 `0` 的订单允许取消。
+- 使用相同订单 ID 再请求一次，验证重复取消保护。
+
+预期结果：
+
+- 首次请求返回 `message = 取消订单成功`
+- 返回 `status = 5`、`statusText = 已取消` 和 `cancelTime`
+- `order_info.status` 更新为 `5`
+- `order_info.update_time` 与返回的 `cancelTime` 对应
+- `order_log` 只新增一条用户取消日志
+- 重复请求返回 `409 当前订单状态不可取消`
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -276,4 +311,5 @@ Bearer {{token}}
 | 状态不可接单 | `409 当前订单状态不可接单` |
 | 状态不可完成配送 | `409 当前订单状态不可完成配送` |
 | 状态不可确认收货 | `409 当前订单状态不可确认收货` |
+| 状态不可取消或重复取消 | `409 当前订单状态不可取消` |
 | 未知异常 | `500 服务器内部错误` |
