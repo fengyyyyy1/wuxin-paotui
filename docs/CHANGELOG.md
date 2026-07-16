@@ -7,11 +7,14 @@
 ### 新增
 
 - 订单模拟支付接口：`POST /api/order/pay/{id}`
+- 订单轨迹接口：`GET /api/order/timeline/{id}`
 - 新增 `PaymentStatusEnum`：`0 未支付`、`1 已支付`
 - `order_info` 新增 `pay_status`、`pay_time`、`payment_no`
 - 新增支付状态查询索引和支付单号唯一索引
 - 支付成功后写入 `0 → 0` 的订单日志
 - 用户订单列表和详情返回支付状态信息
+- 订单轨迹整合 `order_info`、`order_log`、`order_comment` 的真实时间数据
+- 轨迹按时间升序排列并重新编号，不返回空时间节点
 
 ### 调整
 

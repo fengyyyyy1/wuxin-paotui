@@ -27,6 +27,8 @@ import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.CommentOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
+import com.wuxin.vo.OrderTimelineItemVO;
+import com.wuxin.vo.OrderTimelineVO;
 import com.wuxin.vo.PayOrderVO;
 import com.wuxin.vo.PageResultVO;
 import org.springframework.dao.DuplicateKeyException;
@@ -35,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -42,6 +46,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> implements OrderService {
 
     private static final String OPERATOR_TYPE_USER = "USER";
+
+    private static final String OPERATOR_TYPE_RIDER = "RIDER";
 
     private static final String CONFIRM_STATUS_ERROR_MESSAGE = "\u5f53\u524d\u8ba2\u5355\u72b6\u6001\u4e0d\u53ef\u786e\u8ba4\u6536\u8d27";
 
@@ -358,6 +364,61 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         return payOrderVO;
     }
 
+    @Override
+    public OrderTimelineVO getOrderTimeline(Long id) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(ResultCode.PARAM_ERROR);
+        }
+
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        OrderEntity orderEntity = getUserOrder(id, userId);
+        List<OrderTimelineItemVO> timeline = new ArrayList<>();
+
+        addTimelineItem(timeline, "ORDER_CREATED", "订单已创建", "订单创建成功", orderEntity.getCreateTime());
+        if (PaymentStatusEnum.PAID.getCode().equals(orderEntity.getPayStatus())) {
+            addTimelineItem(timeline, "ORDER_PAID", "支付成功", "订单支付成功", orderEntity.getPayTime());
+        }
+        addTimelineItem(timeline, "RIDER_ACCEPTED", "骑手已接单", "骑手接单成功", orderEntity.getAcceptTime());
+        addTimelineItem(timeline, "DELIVERY_FINISHED", "骑手已完成配送", "订单配送完成", orderEntity.getFinishTime());
+
+        LambdaQueryWrapper<OrderLogEntity> logQueryWrapper = new LambdaQueryWrapper<>();
+        logQueryWrapper.eq(OrderLogEntity::getOrderId, id)
+                .orderByAsc(OrderLogEntity::getCreateTime);
+        List<OrderLogEntity> orderLogs = orderLogMapper.selectList(logQueryWrapper);
+        for (OrderLogEntity orderLog : orderLogs) {
+            appendLogTimelineItem(timeline, orderLog);
+        }
+
+        LambdaQueryWrapper<OrderCommentEntity> commentQueryWrapper = new LambdaQueryWrapper<>();
+        commentQueryWrapper.eq(OrderCommentEntity::getOrderId, id)
+                .eq(OrderCommentEntity::getIsDeleted, 0)
+                .orderByAsc(OrderCommentEntity::getCreateTime);
+        List<OrderCommentEntity> orderComments = orderCommentMapper.selectList(commentQueryWrapper);
+        for (OrderCommentEntity orderComment : orderComments) {
+            addTimelineItem(timeline, "ORDER_COMMENTED", "用户已评价",
+                    "评分：" + orderComment.getScore() + "分", orderComment.getCreateTime());
+        }
+
+        timeline.sort(Comparator.comparing(OrderTimelineItemVO::getTime));
+        for (int index = 0; index < timeline.size(); index++) {
+            timeline.get(index).setSort(index + 1);
+        }
+
+        OrderTimelineVO orderTimelineVO = new OrderTimelineVO();
+        orderTimelineVO.setOrderId(orderEntity.getId());
+        orderTimelineVO.setOrderNo(orderEntity.getOrderNo());
+        orderTimelineVO.setStatus(orderEntity.getStatus());
+        orderTimelineVO.setStatusText(OrderStatusEnum.getTextByCode(orderEntity.getStatus()));
+        orderTimelineVO.setPayStatus(orderEntity.getPayStatus());
+        orderTimelineVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
+        orderTimelineVO.setTimeline(timeline);
+        return orderTimelineVO;
+    }
+
     private void handleConfirmFailed(Long id, Long userId) {
         LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(OrderEntity::getId, id)
@@ -435,6 +496,47 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
             throw new BusinessException(ResultCode.ORDER_ALREADY_PAID);
         }
         throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_PAY);
+    }
+
+    private void appendLogTimelineItem(List<OrderTimelineItemVO> timeline, OrderLogEntity orderLog) {
+        if (matchesOrderLog(orderLog, OrderStatusEnum.WAITING_CONFIRM.getCode(),
+                OrderStatusEnum.COMPLETED.getCode(), OPERATOR_TYPE_USER, "用户确认收货")) {
+            addTimelineItem(timeline, "ORDER_CONFIRMED", "用户已确认收货",
+                    "用户确认收货", orderLog.getCreateTime());
+            return;
+        }
+        if (matchesOrderLog(orderLog, OrderStatusEnum.WAITING_ACCEPT.getCode(),
+                OrderStatusEnum.CANCELLED.getCode(), OPERATOR_TYPE_USER, "用户取消订单")) {
+            addTimelineItem(timeline, "ORDER_CANCELLED", "订单已取消",
+                    "用户取消订单", orderLog.getCreateTime());
+            return;
+        }
+        if (matchesOrderLog(orderLog, OrderStatusEnum.ACCEPTED.getCode(),
+                OrderStatusEnum.WAITING_ACCEPT.getCode(), OPERATOR_TYPE_RIDER, "骑手放弃订单")) {
+            addTimelineItem(timeline, "RIDER_GAVE_UP", "骑手已放弃订单",
+                    "骑手放弃订单", orderLog.getCreateTime());
+        }
+    }
+
+    private boolean matchesOrderLog(OrderLogEntity orderLog, Integer oldStatus, Integer newStatus,
+                                    String operatorType, String remark) {
+        return oldStatus.equals(orderLog.getOldStatus())
+                && newStatus.equals(orderLog.getNewStatus())
+                && operatorType.equals(orderLog.getOperatorType())
+                && remark.equals(orderLog.getRemark());
+    }
+
+    private void addTimelineItem(List<OrderTimelineItemVO> timeline, String type, String title,
+                                 String description, LocalDateTime time) {
+        if (time == null) {
+            return;
+        }
+        OrderTimelineItemVO timelineItem = new OrderTimelineItemVO();
+        timelineItem.setType(type);
+        timelineItem.setTitle(title);
+        timelineItem.setDescription(description);
+        timelineItem.setTime(time);
+        timeline.add(timelineItem);
     }
 
     private void validateAddress(Long addressId, Long userId, String notExistMessage) {

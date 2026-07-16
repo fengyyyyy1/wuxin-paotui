@@ -464,6 +464,60 @@ Authorization: Bearer <token>
 | --- | --- |
 | 404 | 订单不存在 |
 
+### 订单轨迹
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 查询订单轨迹 |
+| 请求方式 | GET |
+| URL | `/api/order/timeline/{id}` |
+| Authorization | 需要 |
+
+请求参数：路径参数 `id`，必须大于 0。不需要请求体。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": {
+    "orderId": 5,
+    "orderNo": "WX20260716170000123456",
+    "status": 4,
+    "statusText": "已完成",
+    "payStatus": 1,
+    "payStatusText": "已支付",
+    "timeline": [
+      {
+        "type": "ORDER_CREATED",
+        "title": "订单已创建",
+        "description": "订单创建成功",
+        "time": "2026-07-16T17:00:00",
+        "sort": 1
+      },
+      {
+        "type": "ORDER_PAID",
+        "title": "支付成功",
+        "description": "订单支付成功",
+        "time": "2026-07-16T17:01:00",
+        "sort": 2
+      }
+    ]
+  }
+}
+```
+
+轨迹来源包括订单创建、支付、骑手接单、骑手完成配送、用户确认收货、用户取消、骑手放弃和用户评价。轨迹按时间升序返回，缺少对应数据时不返回该节点。
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 401 | 未登录或登录已过期 |
+| 404 | 订单不存在 |
+| 1004 | 参数错误 |
+
 ### 用户确认收货
 
 | 项 | 内容 |

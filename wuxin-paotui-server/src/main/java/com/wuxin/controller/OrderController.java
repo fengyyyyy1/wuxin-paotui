@@ -9,6 +9,7 @@ import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.CommentOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
+import com.wuxin.vo.OrderTimelineVO;
 import com.wuxin.vo.PayOrderVO;
 import com.wuxin.vo.PageResultVO;
 import jakarta.validation.Valid;
@@ -41,6 +42,11 @@ public class OrderController {
             @RequestParam(value = "pageSize", required = false) Integer pageSize,
             @RequestParam(value = "status", required = false) Integer status) {
         return Result.success(orderService.getMyOrders(pageNum, pageSize, status));
+    }
+
+    @GetMapping("/timeline/{id}")
+    public Result<OrderTimelineVO> timeline(@PathVariable Long id) {
+        return Result.success(orderService.getOrderTimeline(id));
     }
 
     @GetMapping("/{id}")

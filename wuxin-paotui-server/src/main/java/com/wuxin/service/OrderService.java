@@ -9,6 +9,7 @@ import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.CommentOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
+import com.wuxin.vo.OrderTimelineVO;
 import com.wuxin.vo.PayOrderVO;
 import com.wuxin.vo.PageResultVO;
 
@@ -27,4 +28,6 @@ public interface OrderService extends IService<OrderEntity> {
     CommentOrderVO commentOrder(CommentOrderDTO commentOrderDTO);
 
     PayOrderVO payOrder(Long id);
+
+    OrderTimelineVO getOrderTimeline(Long id);
 }

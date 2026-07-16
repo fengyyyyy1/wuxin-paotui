@@ -52,6 +52,7 @@
 - [x] 用户评价订单
 - [x] PaymentStatusEnum
 - [x] 订单模拟支付
+- [x] 订单轨迹
 
 ### 骑手模块
 
@@ -151,6 +152,7 @@ V0.6 新增：
 - [x] 用户取消订单
 - [x] 用户评价订单
 - [x] 订单模拟支付
+- [x] 订单轨迹
 
 ### 骑手
 
@@ -165,25 +167,25 @@ V0.6 新增：
 当前状态：
 
 ```text
-模拟支付接口已开发，等待执行 SQL、Postman 和 Navicat 验证。
+订单轨迹接口已开发，等待 Postman 验证。
 ```
 
 本次接口：
 
 ```http
-POST /api/order/pay/{id}
+GET /api/order/timeline/{id}
 ```
 
 下一步：
 
 ```text
-真实微信支付接入
+用户首页订单统计
 ```
 
 开发顺序：
 
 ```text
-真实微信支付接入
+用户首页订单统计
 ```
 
 ## 七、待开发模块
@@ -237,6 +239,8 @@ POST /api/order/pay/{id}
 - [x] 骑手大厅过滤未支付订单
 - [x] 骑手接单禁止未支付订单
 - [x] `06_update_order_payment.sql`
+- [x] 订单轨迹接口
+- [x] 多数据源时间轴组装
 - [ ] SQL 验证
 - [ ] Postman 验证
 - [ ] Navicat 验证
