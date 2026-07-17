@@ -1,9 +1,9 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V0.9 Shopping Cart Completed
+> 当前版本：V1.0 Completed
 >
-> V0.9 购物车正常流程与异常流程已全部通过测试，暂不包含购物车提交订单和 `order_item`。
+> V1.0 功能、正常流程、异常流程和越权测试已全部通过。
 
 ## 一、通用规范
 
@@ -31,7 +31,7 @@ Authorization: Bearer <token>
 
 | code | message | 说明 |
 | --- | --- | --- |
-| 400 | 参数错误 | V0.9 购物车请求参数不合法 |
+| 400 | 参数错误 | 购物车请求参数不合法 |
 | 401 | 未登录或登录已过期 | Token 缺失或无效 |
 | 403 | 当前用户不是骑手 | 当前用户没有骑手权限 |
 | 404 | 订单不存在 | 订单不存在、已删除或无权访问 |
@@ -61,6 +61,10 @@ Authorization: Bearer <token>
 | 409 | 商品已下架 | 商品不能加入或操作 |
 | 409 | 商品库存不足 | 加购或修改后的数量超过当前库存 |
 | 409 | 店铺已停业 | 店铺当前不可加入购物车 |
+| 409 | 店铺已禁用 | 店铺或商家当前不可用 |
+| 409 | 购物车没有已选商品 | 结算时没有已选购物车记录 |
+| 409 | 商品信息已变化，请重新结算 | 预览后商品价格或状态发生变化 |
+| 404 | 收货地址不存在 | 地址不存在、已删除或不属于当前用户 |
 | 500 | 服务器内部错误 | 未知系统异常 |
 
 ## 二、用户模块
@@ -207,7 +211,7 @@ Authorization: Bearer <token>
 | --- | --- |
 | 接口名称 | 新增地址 |
 | 请求方式 | POST |
-| URL | `/api/address` |
+| URL | `/api/user/address` |
 | Authorization | 需要 |
 
 请求参数：
@@ -241,41 +245,13 @@ Authorization: Bearer <token>
 | 401 | 未登录或登录已过期 |
 | 1004 | 参数错误 |
 
-### 修改地址
-
-| 项 | 内容 |
-| --- | --- |
-| 接口名称 | 修改地址 |
-| 请求方式 | PUT |
-| URL | `/api/address/{id}` |
-| Authorization | 需要 |
-
-请求参数：路径参数 `id`，请求体同新增地址。
-
-成功返回：
-
-```json
-{
-  "code": 200,
-  "message": "成功",
-  "data": null
-}
-```
-
-异常返回：
-
-| code | message |
-| --- | --- |
-| 401 | 未登录或登录已过期 |
-| 1004 | 参数错误 |
-
 ### 删除地址
 
 | 项 | 内容 |
 | --- | --- |
 | 接口名称 | 删除地址 |
 | 请求方式 | DELETE |
-| URL | `/api/address/{id}` |
+| URL | `/api/user/address/{id}` |
 | Authorization | 需要 |
 
 请求参数：路径参数 `id`。
@@ -303,7 +279,7 @@ Authorization: Bearer <token>
 | --- | --- |
 | 接口名称 | 地址列表 |
 | 请求方式 | GET |
-| URL | `/api/address/list` |
+| URL | `/api/user/address/list` |
 | Authorization | 需要 |
 
 请求参数：无。
@@ -366,6 +342,118 @@ Authorization: Bearer <token>
 | --- | --- |
 | 401 | 未登录或登录已过期 |
 | 1004 | 参数错误 |
+
+### 购物车结算预览
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 购物车结算预览 |
+| 请求方式 | POST |
+| URL | `/api/order/settlement/preview` |
+| Authorization | 需要 |
+
+请求参数：
+
+```json
+{
+  "deliveryAddressId": 2
+}
+```
+
+接口读取当前登录用户 `selected = 1` 且 `is_deleted = 0` 的购物车记录，实时校验收货地址、商品、分类、店铺、商家和库存。预览不会创建订单、扣减库存或修改购物车。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": {
+    "storeId": 1,
+    "storeName": "五鑫便利店",
+    "deliveryAddressId": 2,
+    "items": [
+      {
+        "productId": 2,
+        "productName": "测试商品",
+        "productImage": "https://example.com/product.jpg",
+        "price": 1.00,
+        "quantity": 2,
+        "subtotal": 2.00,
+        "stock": 10
+      }
+    ],
+    "productAmount": 2.00,
+    "deliveryFee": 0.00,
+    "totalAmount": 2.00,
+    "selectedProductCount": 2
+  }
+}
+```
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 401 | 未登录或登录已过期 |
+| 404 | 收货地址不存在 |
+| 404 | 商品不存在 |
+| 409 | 购物车没有已选商品 |
+| 409 | 购物车中已存在其他店铺商品 |
+| 409 | 商品已下架 |
+| 409 | 商品分类已禁用 |
+| 409 | 店铺已禁用 |
+| 409 | 店铺已停业 |
+| 409 | 商品库存不足 |
+| 1004 | 参数错误 |
+
+### 购物车创建商品订单
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 购物车创建商品订单 |
+| 请求方式 | POST |
+| URL | `/api/order/create-from-cart` |
+| Authorization | 需要 |
+
+请求参数：
+
+```json
+{
+  "deliveryAddressId": 2,
+  "remark": "请尽快配送"
+}
+```
+
+创建流程在同一事务内写入 `order_info`、原子扣减库存、写入 `order_item` 快照和 `order_log`，最后仅逻辑删除当前用户已选购物车项。商品订单默认 `orderType = 1`、`payStatus = 0`、`status = 0`，当前配送费为 `0.00`。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "商品订单创建成功",
+  "data": {
+    "orderId": 3,
+    "orderNo": "WX20260717150000123456",
+    "orderType": 1,
+    "storeId": 1,
+    "productAmount": 2.00,
+    "deliveryFee": 0.00,
+    "totalAmount": 2.00,
+    "payStatus": 0,
+    "status": 0,
+    "itemCount": 2
+  }
+}
+```
+
+异常返回除结算预览异常外，还可能返回：
+
+| code | message |
+| --- | --- |
+| 409 | 商品信息已变化，请重新结算 |
+| 409 | 商品订单创建失败 |
 
 ### 模拟支付
 
@@ -471,10 +559,29 @@ Authorization: Bearer <token>
     "payStatus": 1,
     "payStatusText": "已支付",
     "payTime": "2026-07-16T17:00:00",
-    "paymentNo": "PAY20260716170000123456"
+    "paymentNo": "PAY20260716170000123456",
+    "orderType": 1,
+    "orderTypeText": "商品订单",
+    "storeId": 1,
+    "storeName": "五鑫便利店",
+    "productAmount": 2.00,
+    "deliveryFee": 0.00,
+    "totalAmount": 2.00,
+    "items": [
+      {
+        "productId": 2,
+        "productName": "测试商品",
+        "productImage": "https://example.com/product.jpg",
+        "productPrice": 1.00,
+        "quantity": 2,
+        "subtotal": 2.00
+      }
+    ]
   }
 }
 ```
+
+`orderType = 0` 为跑腿订单，`orderType = 1` 为商品订单。商品订单的 `items` 始终读取 `order_item` 下单快照，不使用 `merchant_product` 当前名称、图片或价格；跑腿订单原有字段继续兼容。
 
 异常返回：
 

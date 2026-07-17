@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class OrderDetailVO {
@@ -37,6 +38,22 @@ public class OrderDetailVO {
     private LocalDateTime payTime;
 
     private String paymentNo;
+
+    private Integer orderType;
+
+    private String orderTypeText;
+
+    private Long storeId;
+
+    private String storeName;
+
+    private BigDecimal productAmount;
+
+    private BigDecimal deliveryFee;
+
+    private BigDecimal totalAmount;
+
+    private List<OrderItemVO> items;
 
     private String remark;
 

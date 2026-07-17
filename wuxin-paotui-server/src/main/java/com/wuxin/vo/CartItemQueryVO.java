@@ -9,6 +9,7 @@ public class CartItemQueryVO {
 
     private Long cartId;
     private Long storeId;
+    private Long productStoreId;
     private String storeName;
     private Long productId;
     private String productName;

@@ -1,5 +1,53 @@
 # 更新日志
 
+## V1.0 Completed
+
+日期：2026-07-17
+
+### 新增
+
+- 新增购物车结算预览接口 `POST /api/order/settlement/preview`
+- 新增购物车创建商品订单接口 `POST /api/order/create-from-cart`
+- 新增 `order_item` 商品订单明细快照表
+- 新增 `OrderTypeEnum`，区分跑腿订单和商品订单
+- 商品订单详情返回店铺、金额和 `order_item` 快照信息
+- `order_info` 兼容新增 `order_type`、`store_id`、`product_amount`、`delivery_fee`、`total_amount`
+- 新增幂等数据库脚本 `10_create_order_item_and_update_order.sql`
+
+### 业务与安全
+
+- 预览和创建订单复用同一套地址、商品、分类、店铺、商家和库存校验
+- 商品价格从 `merchant_product` 实时读取，创建后写入 `order_item` 快照
+- 订单主表、库存扣减、明细快照、订单日志和购物车清理处于同一事务
+- 库存通过带库存及业务状态条件的原子 SQL 扣减，防止超卖
+- 创建成功后仅逻辑删除当前用户已选购物车项，未选中项继续保留
+- 商品订单创建后保持未支付状态，不进入骑手大厅
+- 商品订单详情仅允许订单所属用户查看，历史商品信息不依赖当前商品数据
+
+### 当前状态
+
+- Maven Compile 已通过
+- SQL、Postman 和 Navicat 验证已通过
+- 正常流程、异常流程和越权测试已通过
+- V1.0 已完成
+
+### V1.0 收尾
+
+新增：
+
+- 地址越权测试，确认其他用户不能使用不属于自己的收货地址
+- 订单越权测试，确认其他用户不能查看不属于自己的订单
+- 测试环境统一文档 `TEST_ENVIRONMENT.md`
+- 测试账号统一管理规范
+- V1.0 开发经验和版本收尾规范
+
+修正：
+
+- API 文档路径与 Controller 实际映射保持一致
+- 地址接口路径统一为 `/api/user/address`
+- 删除 API 文档中当前 Controller 不存在的修改地址接口
+- 项目状态更新为 `V1.0 Completed`
+
 ## V0.9 Shopping Cart Completed
 
 日期：2026-07-17

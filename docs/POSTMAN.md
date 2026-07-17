@@ -1,8 +1,8 @@
 # Postman 测试文档
 
-> 当前版本：V0.9 Shopping Cart Completed
+> 当前版本：V1.0 Completed
 >
-> V0.9 购物车正常流程和异常流程已全部通过测试，不包含购物车提交订单和 `order_item`。
+> V1.0 正常流程、异常流程、数据库验证和越权测试已全部通过。
 
 ## 一、环境变量
 
@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | `host` | `http://localhost:8080` | 本地后端地址 |
 | `token` | 登录后返回的 token | JWT Token |
+| `addressId` | `4` | `test001` 当前 V1.0 收货地址 ID |
 | `orderId` | `2` | 当前测试订单 ID |
 | `cancelOrderId` | `1` | 待取消的当前用户待接单订单 ID |
 | `giveUpOrderId` | `4` | 当前骑手已接单且待放弃的订单 ID |
@@ -56,7 +57,7 @@ Authorization：不需要。
 请求：
 
 ```http
-POST {{host}}/api/address
+POST {{host}}/api/user/address
 ```
 
 Authorization：
@@ -838,6 +839,132 @@ Authorization: Bearer {{token}}
 | 库存不足或累加超库存 | `409`，通过 |
 | 失效商品重新选中 | 拒绝操作，通过 |
 
+### 43. 执行 V1.0 数据库升级
+
+在 Navicat 中选择 `wuxin_paotui` 数据库并执行：
+
+```text
+wuxin-paotui-server/src/main/resources/sql/10_create_order_item_and_update_order.sql
+```
+
+预期创建 `order_item`，扩展 `order_info` 的商品订单字段及查询索引。脚本重复执行不应报错，也不修改已有订单业务数据。
+
+### 44. 准备 V1.0 结算数据
+
+1. 使用 `POST /api/user/login` 获取并保存 `{{token}}`。
+2. 确认 `{{addressId}}` 属于当前用户且未删除。
+3. 确认商品已上架、分类启用、店铺启用且营业、商家审核通过且启用。
+4. 调用 `POST /api/cart/add` 加入至少一个商品。
+5. 如需验证未选商品保留，再加入同店铺第二个商品并通过 `PUT /api/cart/selected` 设置 `selected = 0`。
+
+### 45. 购物车结算预览
+
+```http
+POST {{host}}/api/order/settlement/preview
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "deliveryAddressId": {{addressId}}
+}
+```
+
+预期返回 `200`，`items` 只包含已选商品，`productAmount` 为商品小计之和，`deliveryFee = 0.00`，且库存、购物车和订单表均不发生变化。
+
+### 46. 从购物车创建商品订单
+
+```http
+POST {{host}}/api/order/create-from-cart
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "deliveryAddressId": {{addressId}},
+  "remark": "请尽快配送"
+}
+```
+
+预期返回 `200 商品订单创建成功`。保存响应中的 `orderId`，并确认 `orderType = 1`、`payStatus = 0`、`status = 0`、`deliveryFee = 0.00`。
+
+### 47. 商品订单详情与快照
+
+```http
+GET {{host}}/api/order/{{orderId}}
+Authorization: Bearer {{token}}
+```
+
+预期返回店铺、金额和 `items`。在测试环境临时修改 `merchant_product` 的名称、图片或价格后再次查询，`items` 中的历史数据仍应保持下单时快照；验证后恢复商品数据。
+
+### 48. 重复提交与购物车清理
+
+创建成功后立即重复调用创建接口：
+
+- 没有其他已选商品时返回 `409 购物车没有已选商品`
+- 不新增重复订单、订单明细或订单日志
+- 已选购物车项 `is_deleted = 1`
+- 未选购物车项保持 `is_deleted = 0`
+- 再次加入已结算商品时可恢复逻辑删除记录
+
+### 49. 库存与事务回滚测试
+
+1. 加入有效商品并完成结算预览。
+2. 将商品库存调低到小于购物车数量。
+3. 调用创建接口，预期返回 `409 商品库存不足`。
+4. 确认没有残留 `order_info`、`order_item` 或 `order_log`，购物车仍保留。
+5. 恢复商品库存。
+
+并发测试可使用两个 Runner 请求同时提交同一用户购物车。预期最多一个请求成功，库存不为负数，只生成一套订单、明细和日志。
+
+### 50. V1.0 Navicat 验证
+
+```sql
+SELECT id, order_no, user_id, order_type, store_id, delivery_address_id,
+       price, product_amount, delivery_fee, total_amount, status, pay_status
+FROM order_info
+WHERE id = {{orderId}};
+
+SELECT order_id, product_id, product_name, product_image,
+       product_price, quantity, subtotal, is_deleted
+FROM order_item
+WHERE order_id = {{orderId}};
+
+SELECT order_id, old_status, new_status, operator_id, operator_type, remark
+FROM order_log
+WHERE order_id = {{orderId}};
+
+SELECT id, stock
+FROM merchant_product
+WHERE id = {{productId}};
+
+SELECT id, product_id, quantity, selected, is_deleted
+FROM shopping_cart
+WHERE user_id = 2
+ORDER BY id;
+```
+
+预期日志为 `old_status = 0`、`new_status = 0`、`operator_type = USER`、`remark = 用户从购物车创建商品订单`。
+
+### 51. V1.0 完整测试结果
+
+| 测试范围 | 结果 |
+| --- | --- |
+| 用户登录与 JWT | 通过 |
+| 地址管理 | 通过 |
+| 商品管理 | 通过 |
+| 购物车 | 通过 |
+| 商品订单 | 通过 |
+| 骑手大厅与骑手接单 | 通过 |
+| 我的订单与订单详情 | 通过 |
+| 正常流程 | 通过 |
+| 异常流程 | 通过 |
+| 地址越权 | `404 收货地址不存在`，通过 |
+| 订单越权 | 返回订单不存在或无权限，通过 |
+| Navicat 数据一致性 | 通过 |
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -873,4 +1000,8 @@ Authorization: Bearer {{token}}
 | 加购商品已下架 | `409 商品已下架` |
 | 加购或修改数量超过库存 | `409 商品库存不足` |
 | 加购店铺已停业 | `409 店铺已停业` |
+| 结算时没有已选商品 | `409 购物车没有已选商品` |
+| 收货地址不存在、已删除或不属于当前用户 | `404 收货地址不存在` |
+| 结算时店铺或商家被禁用 | `409 店铺已禁用` |
+| 预览后商品价格或状态变化 | `409 商品信息已变化，请重新结算` |
 | 未知异常 | `500 服务器内部错误` |

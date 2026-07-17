@@ -7,17 +7,30 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wuxin.common.ResultCode;
 import com.wuxin.dto.order.CreateOrderDTO;
 import com.wuxin.dto.order.CommentOrderDTO;
+import com.wuxin.dto.order.CreateCartOrderDTO;
+import com.wuxin.dto.order.SettlementPreviewDTO;
 import com.wuxin.entity.OrderCommentEntity;
 import com.wuxin.entity.OrderLogEntity;
 import com.wuxin.entity.OrderEntity;
+import com.wuxin.entity.OrderItemEntity;
 import com.wuxin.entity.UserAddressEntity;
 import com.wuxin.entity.UserEntity;
 import com.wuxin.enums.OrderStatusEnum;
+import com.wuxin.enums.OrderTypeEnum;
+import com.wuxin.enums.BusinessStatusEnum;
+import com.wuxin.enums.CategoryStatusEnum;
+import com.wuxin.enums.MerchantAuditStatusEnum;
+import com.wuxin.enums.MerchantStatusEnum;
 import com.wuxin.enums.PaymentStatusEnum;
+import com.wuxin.enums.ProductStatusEnum;
 import com.wuxin.exception.BusinessException;
 import com.wuxin.mapper.OrderLogMapper;
 import com.wuxin.mapper.OrderCommentMapper;
 import com.wuxin.mapper.OrderMapper;
+import com.wuxin.mapper.OrderItemMapper;
+import com.wuxin.mapper.MerchantProductMapper;
+import com.wuxin.mapper.MerchantStoreMapper;
+import com.wuxin.mapper.ShoppingCartMapper;
 import com.wuxin.mapper.UserAddressMapper;
 import com.wuxin.mapper.UserMapper;
 import com.wuxin.service.OrderService;
@@ -25,16 +38,23 @@ import com.wuxin.utils.UserContext;
 import com.wuxin.vo.CancelOrderVO;
 import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.CommentOrderVO;
+import com.wuxin.vo.CreateCartOrderVO;
+import com.wuxin.vo.CartItemQueryVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
+import com.wuxin.vo.OrderItemVO;
 import com.wuxin.vo.OrderTimelineItemVO;
 import com.wuxin.vo.OrderTimelineVO;
 import com.wuxin.vo.PayOrderVO;
 import com.wuxin.vo.PageResultVO;
+import com.wuxin.vo.SettlementItemVO;
+import com.wuxin.vo.SettlementPreviewVO;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -57,6 +77,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
 
     private static final int MAX_PAYMENT_NO_RETRY = 5;
 
+    private static final int NOT_DELETED = 0;
+
+    private static final BigDecimal ZERO_AMOUNT = new BigDecimal("0.00");
+
     private final UserMapper userMapper;
 
     private final UserAddressMapper userAddressMapper;
@@ -65,12 +89,27 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
 
     private final OrderCommentMapper orderCommentMapper;
 
+    private final OrderItemMapper orderItemMapper;
+
+    private final ShoppingCartMapper shoppingCartMapper;
+
+    private final MerchantProductMapper merchantProductMapper;
+
+    private final MerchantStoreMapper merchantStoreMapper;
+
     public OrderServiceImpl(UserMapper userMapper, UserAddressMapper userAddressMapper,
-                            OrderLogMapper orderLogMapper, OrderCommentMapper orderCommentMapper) {
+                            OrderLogMapper orderLogMapper, OrderCommentMapper orderCommentMapper,
+                            OrderItemMapper orderItemMapper, ShoppingCartMapper shoppingCartMapper,
+                            MerchantProductMapper merchantProductMapper,
+                            MerchantStoreMapper merchantStoreMapper) {
         this.userMapper = userMapper;
         this.userAddressMapper = userAddressMapper;
         this.orderLogMapper = orderLogMapper;
         this.orderCommentMapper = orderCommentMapper;
+        this.orderItemMapper = orderItemMapper;
+        this.shoppingCartMapper = shoppingCartMapper;
+        this.merchantProductMapper = merchantProductMapper;
+        this.merchantStoreMapper = merchantStoreMapper;
     }
 
     @Override
@@ -105,6 +144,49 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         }
 
         throw new BusinessException(ResultCode.FAIL, "order save failed");
+    }
+
+    @Override
+    public SettlementPreviewVO previewSettlement(SettlementPreviewDTO settlementPreviewDTO) {
+        Long userId = getCurrentUserId();
+        SettlementContext settlement = prepareSettlement(
+                userId, settlementPreviewDTO.getDeliveryAddressId());
+        return toSettlementPreviewVO(settlement);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public CreateCartOrderVO createOrderFromCart(CreateCartOrderDTO createCartOrderDTO) {
+        Long userId = getCurrentUserId();
+        lockUser(userId);
+        SettlementContext settlement = prepareSettlement(
+                userId, createCartOrderDTO.getDeliveryAddressId());
+        LocalDateTime now = LocalDateTime.now();
+
+        OrderEntity order = insertProductOrder(userId, createCartOrderDTO, settlement, now);
+        List<OrderItemEntity> orderItems = new ArrayList<>(settlement.cartItems().size());
+        for (CartItemQueryVO cartItem : settlement.cartItems()) {
+            int affectedRows = merchantProductMapper.deductStock(
+                    cartItem.getProductId(), settlement.storeId(), cartItem.getQuantity(),
+                    cartItem.getPrice(), now);
+            if (affectedRows != 1) {
+                handleStockDeductionFailed(cartItem);
+            }
+            orderItems.add(buildOrderItem(order.getId(), cartItem, now));
+        }
+
+        if (orderItemMapper.insertBatch(orderItems) != orderItems.size()) {
+            throw new BusinessException(ResultCode.ORDER_CREATE_FAILED);
+        }
+
+        insertProductOrderLog(order.getId(), userId, now);
+
+        int deletedRows = shoppingCartMapper.logicalDeleteSelected(userId, now);
+        if (deletedRows != settlement.cartItems().size()) {
+            throw new BusinessException(ResultCode.SETTLEMENT_CHANGED);
+        }
+
+        return toCreateCartOrderVO(order, settlement);
     }
 
     @Override
@@ -419,6 +501,227 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         return orderTimelineVO;
     }
 
+    private SettlementContext prepareSettlement(Long userId, Long deliveryAddressId) {
+        validateSettlementAddress(deliveryAddressId, userId);
+        List<CartItemQueryVO> cartItems = shoppingCartMapper.selectSelectedCartItems(userId);
+        if (cartItems.isEmpty()) {
+            throw new BusinessException(ResultCode.CART_NO_SELECTED_PRODUCT);
+        }
+
+        Long storeId = cartItems.get(0).getStoreId();
+        String storeName = cartItems.get(0).getStoreName();
+        List<SettlementItemVO> settlementItems = new ArrayList<>(cartItems.size());
+        BigDecimal productAmount = ZERO_AMOUNT;
+        long selectedProductCount = 0L;
+
+        for (CartItemQueryVO cartItem : cartItems) {
+            if (storeId == null || !storeId.equals(cartItem.getStoreId())) {
+                throw new BusinessException(ResultCode.CART_STORE_CONFLICT);
+            }
+            validateSettlementItem(cartItem);
+            BigDecimal subtotal = money(
+                    cartItem.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            productAmount = productAmount.add(subtotal);
+            selectedProductCount = Math.addExact(
+                    selectedProductCount, cartItem.getQuantity().longValue());
+
+            SettlementItemVO settlementItem = new SettlementItemVO();
+            settlementItem.setProductId(cartItem.getProductId());
+            settlementItem.setProductName(cartItem.getProductName());
+            settlementItem.setProductImage(cartItem.getProductImage());
+            settlementItem.setPrice(money(cartItem.getPrice()));
+            settlementItem.setQuantity(cartItem.getQuantity());
+            settlementItem.setSubtotal(subtotal);
+            settlementItem.setStock(cartItem.getStock());
+            settlementItems.add(settlementItem);
+        }
+
+        BigDecimal normalizedProductAmount = money(productAmount);
+        BigDecimal totalAmount = money(normalizedProductAmount.add(ZERO_AMOUNT));
+        return new SettlementContext(
+                storeId, storeName, deliveryAddressId, cartItems, settlementItems,
+                normalizedProductAmount, ZERO_AMOUNT, totalAmount, selectedProductCount);
+    }
+
+    private void validateSettlementAddress(Long deliveryAddressId, Long userId) {
+        UserAddressEntity address = userAddressMapper.selectByIdIncludeDeleted(deliveryAddressId);
+        if (address == null
+                || !userId.equals(address.getUserId())
+                || Integer.valueOf(1).equals(address.getIsDeleted())) {
+            throw new BusinessException(ResultCode.ADDRESS_NOT_EXIST);
+        }
+    }
+
+    private void validateSettlementItem(CartItemQueryVO item) {
+        if (item == null
+                || !isOne(item.getProductExists())
+                || isOne(item.getProductDeleted())) {
+            throw new BusinessException(ResultCode.PRODUCT_NOT_EXIST);
+        }
+        if (!ProductStatusEnum.ON_SHELF.getCode().equals(item.getProductStatus())) {
+            throw new BusinessException(ResultCode.PRODUCT_OFF_SHELF);
+        }
+        if (!isOne(item.getCategoryExists())
+                || isOne(item.getCategoryDeleted())
+                || !CategoryStatusEnum.ENABLED.getCode().equals(item.getCategoryStatus())) {
+            throw new BusinessException(ResultCode.CATEGORY_DISABLED);
+        }
+        if (!isOne(item.getStoreExists()) || isOne(item.getStoreDeleted())) {
+            throw new BusinessException(ResultCode.STORE_NOT_EXIST);
+        }
+        if (!MerchantStatusEnum.ENABLED.getCode().equals(item.getStoreStatus())) {
+            throw new BusinessException(ResultCode.STORE_DISABLED);
+        }
+        if (!BusinessStatusEnum.OPEN.getCode().equals(item.getBusinessStatus())) {
+            throw new BusinessException(ResultCode.STORE_CLOSED);
+        }
+        if (!isOne(item.getMerchantExists())
+                || isOne(item.getMerchantDeleted())
+                || !MerchantAuditStatusEnum.APPROVED.getCode().equals(item.getMerchantAuditStatus())
+                || !MerchantStatusEnum.ENABLED.getCode().equals(item.getMerchantStatus())) {
+            throw new BusinessException(ResultCode.STORE_DISABLED);
+        }
+        if (item.getStoreId() == null
+                || item.getProductStoreId() == null
+                || !item.getStoreId().equals(item.getProductStoreId())) {
+            throw new BusinessException(ResultCode.SETTLEMENT_CHANGED);
+        }
+        if (item.getPrice() == null) {
+            throw new BusinessException(ResultCode.SETTLEMENT_CHANGED);
+        }
+        if (item.getQuantity() == null
+                || item.getQuantity() <= 0
+                || item.getStock() == null
+                || item.getStock() < item.getQuantity()) {
+            throw new BusinessException(ResultCode.PRODUCT_STOCK_INSUFFICIENT);
+        }
+    }
+
+    private OrderEntity insertProductOrder(Long userId, CreateCartOrderDTO createCartOrderDTO,
+                                           SettlementContext settlement, LocalDateTime now) {
+        for (int retry = 0; retry < MAX_ORDER_NO_RETRY; retry++) {
+            OrderEntity order = buildProductOrder(
+                    userId, createCartOrderDTO, settlement, generateOrderNo(), now);
+            try {
+                if (getBaseMapper().insert(order) == 1 && order.getId() != null) {
+                    return order;
+                }
+            } catch (DuplicateKeyException exception) {
+                if (retry < MAX_ORDER_NO_RETRY - 1) {
+                    continue;
+                }
+                throw new BusinessException(ResultCode.ORDER_CREATE_FAILED);
+            }
+        }
+        throw new BusinessException(ResultCode.ORDER_CREATE_FAILED);
+    }
+
+    private OrderEntity buildProductOrder(Long userId, CreateCartOrderDTO createCartOrderDTO,
+                                          SettlementContext settlement, String orderNo,
+                                          LocalDateTime now) {
+        OrderEntity order = new OrderEntity();
+        order.setOrderNo(orderNo);
+        order.setUserId(userId);
+        order.setRiderId(null);
+        order.setPickupAddressId(null);
+        order.setDeliveryAddressId(createCartOrderDTO.getDeliveryAddressId());
+        order.setGoodsName(null);
+        order.setGoodsDescription(null);
+        order.setWeight(null);
+        order.setDistance(null);
+        order.setPrice(settlement.totalAmount());
+        order.setStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        order.setRemark(createCartOrderDTO.getRemark());
+        order.setCreateTime(now);
+        order.setUpdateTime(now);
+        order.setAcceptTime(null);
+        order.setFinishTime(null);
+        order.setPayStatus(PaymentStatusEnum.UNPAID.getCode());
+        order.setPayTime(null);
+        order.setPaymentNo(null);
+        order.setOrderType(OrderTypeEnum.PRODUCT.getCode());
+        order.setStoreId(settlement.storeId());
+        order.setProductAmount(settlement.productAmount());
+        order.setDeliveryFee(settlement.deliveryFee());
+        order.setTotalAmount(settlement.totalAmount());
+        order.setDeleted(NOT_DELETED);
+        return order;
+    }
+
+    private OrderItemEntity buildOrderItem(Long orderId, CartItemQueryVO cartItem,
+                                           LocalDateTime now) {
+        OrderItemEntity orderItem = new OrderItemEntity();
+        orderItem.setOrderId(orderId);
+        orderItem.setProductId(cartItem.getProductId());
+        orderItem.setProductName(cartItem.getProductName());
+        orderItem.setProductImage(cartItem.getProductImage());
+        orderItem.setProductPrice(money(cartItem.getPrice()));
+        orderItem.setQuantity(cartItem.getQuantity());
+        orderItem.setSubtotal(money(
+                cartItem.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity()))));
+        orderItem.setCreateTime(now);
+        orderItem.setUpdateTime(now);
+        orderItem.setIsDeleted(NOT_DELETED);
+        return orderItem;
+    }
+
+    private void handleStockDeductionFailed(CartItemQueryVO settlementItem) {
+        CartItemQueryVO currentState = shoppingCartMapper.selectProductState(
+                settlementItem.getProductId());
+        if (currentState != null) {
+            currentState.setQuantity(settlementItem.getQuantity());
+        }
+        validateSettlementItem(currentState);
+        if (!settlementItem.getStoreId().equals(currentState.getStoreId())
+                || settlementItem.getPrice().compareTo(currentState.getPrice()) != 0) {
+            throw new BusinessException(ResultCode.SETTLEMENT_CHANGED);
+        }
+        throw new BusinessException(ResultCode.SETTLEMENT_CHANGED);
+    }
+
+    private void insertProductOrderLog(Long orderId, Long userId, LocalDateTime now) {
+        OrderLogEntity orderLog = new OrderLogEntity();
+        orderLog.setOrderId(orderId);
+        orderLog.setOldStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setNewStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setOperatorId(userId);
+        orderLog.setOperatorType(OPERATOR_TYPE_USER);
+        orderLog.setRemark("用户从购物车创建商品订单");
+        orderLog.setCreateTime(now);
+        if (orderLogMapper.insert(orderLog) != 1) {
+            throw new BusinessException(ResultCode.ORDER_CREATE_FAILED);
+        }
+    }
+
+    private SettlementPreviewVO toSettlementPreviewVO(SettlementContext settlement) {
+        SettlementPreviewVO preview = new SettlementPreviewVO();
+        preview.setStoreId(settlement.storeId());
+        preview.setStoreName(settlement.storeName());
+        preview.setDeliveryAddressId(settlement.deliveryAddressId());
+        preview.setItems(settlement.items());
+        preview.setProductAmount(settlement.productAmount());
+        preview.setDeliveryFee(settlement.deliveryFee());
+        preview.setTotalAmount(settlement.totalAmount());
+        preview.setSelectedProductCount(settlement.selectedProductCount());
+        return preview;
+    }
+
+    private CreateCartOrderVO toCreateCartOrderVO(OrderEntity order,
+                                                   SettlementContext settlement) {
+        CreateCartOrderVO result = new CreateCartOrderVO();
+        result.setOrderId(order.getId());
+        result.setOrderNo(order.getOrderNo());
+        result.setOrderType(order.getOrderType());
+        result.setStoreId(order.getStoreId());
+        result.setProductAmount(order.getProductAmount());
+        result.setDeliveryFee(order.getDeliveryFee());
+        result.setTotalAmount(order.getTotalAmount());
+        result.setPayStatus(order.getPayStatus());
+        result.setStatus(order.getStatus());
+        result.setItemCount(settlement.selectedProductCount());
+        return result;
+    }
+
     private void handleConfirmFailed(Long id, Long userId) {
         LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(OrderEntity::getId, id)
@@ -570,6 +873,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderEntity.setPayStatus(PaymentStatusEnum.UNPAID.getCode());
         orderEntity.setPayTime(null);
         orderEntity.setPaymentNo(null);
+        orderEntity.setOrderType(OrderTypeEnum.ERRAND.getCode());
+        orderEntity.setStoreId(null);
+        orderEntity.setProductAmount(null);
+        orderEntity.setDeliveryFee(null);
+        orderEntity.setTotalAmount(null);
         orderEntity.setRemark(createOrderDTO.getRemark());
         orderEntity.setCreateTime(now);
         orderEntity.setUpdateTime(now);
@@ -617,10 +925,39 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderDetailVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
         orderDetailVO.setPayTime(orderEntity.getPayTime());
         orderDetailVO.setPaymentNo(orderEntity.getPaymentNo());
+        Integer orderType = orderEntity.getOrderType() == null
+                ? OrderTypeEnum.ERRAND.getCode()
+                : orderEntity.getOrderType();
+        orderDetailVO.setOrderType(orderType);
+        orderDetailVO.setOrderTypeText(OrderTypeEnum.getTextByCode(orderType));
+        orderDetailVO.setStoreId(orderEntity.getStoreId());
+        orderDetailVO.setProductAmount(orderEntity.getProductAmount());
+        orderDetailVO.setDeliveryFee(orderEntity.getDeliveryFee());
+        orderDetailVO.setTotalAmount(orderEntity.getTotalAmount());
+        if (OrderTypeEnum.PRODUCT.getCode().equals(orderType)) {
+            orderDetailVO.setStoreName(
+                    merchantStoreMapper.selectStoreNameIncludeDeleted(orderEntity.getStoreId()));
+            orderDetailVO.setItems(orderItemMapper.selectByOrderId(orderEntity.getId()).stream()
+                    .map(this::toOrderItemVO)
+                    .toList());
+        } else {
+            orderDetailVO.setItems(List.of());
+        }
         orderDetailVO.setRemark(orderEntity.getRemark());
         orderDetailVO.setCreateTime(orderEntity.getCreateTime());
         orderDetailVO.setUpdateTime(orderEntity.getUpdateTime());
         return orderDetailVO;
+    }
+
+    private OrderItemVO toOrderItemVO(OrderItemEntity orderItem) {
+        OrderItemVO orderItemVO = new OrderItemVO();
+        orderItemVO.setProductId(orderItem.getProductId());
+        orderItemVO.setProductName(orderItem.getProductName());
+        orderItemVO.setProductImage(orderItem.getProductImage());
+        orderItemVO.setProductPrice(orderItem.getProductPrice());
+        orderItemVO.setQuantity(orderItem.getQuantity());
+        orderItemVO.setSubtotal(orderItem.getSubtotal());
+        return orderItemVO;
     }
 
     private String getStatusText(Integer status) {
@@ -649,5 +986,39 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
     private String generatePaymentNo(LocalDateTime payTime) {
         int randomNumber = ThreadLocalRandom.current().nextInt(0, 1_000_000);
         return "PAY" + payTime.format(ORDER_NO_TIME_FORMATTER) + String.format("%06d", randomNumber);
+    }
+
+    private Long getCurrentUserId() {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+        return userId;
+    }
+
+    private void lockUser(Long userId) {
+        if (shoppingCartMapper.lockUser(userId) == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+    }
+
+    private boolean isOne(Integer value) {
+        return Integer.valueOf(1).equals(value);
+    }
+
+    private BigDecimal money(BigDecimal amount) {
+        return amount.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private record SettlementContext(
+            Long storeId,
+            String storeName,
+            Long deliveryAddressId,
+            List<CartItemQueryVO> cartItems,
+            List<SettlementItemVO> items,
+            BigDecimal productAmount,
+            BigDecimal deliveryFee,
+            BigDecimal totalAmount,
+            Long selectedProductCount) {
     }
 }

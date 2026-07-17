@@ -8,6 +8,9 @@ import com.wuxin.vo.PublicProductVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+
+import java.math.BigDecimal;
 
 @Mapper
 public interface MerchantProductMapper extends BaseMapper<MerchantProductEntity> {
@@ -86,4 +89,30 @@ public interface MerchantProductMapper extends BaseMapper<MerchantProductEntity>
             "LIMIT 1"
     })
     PublicProductVO selectPublicDetail(@Param("id") Long id);
+
+    @Update({
+            "UPDATE merchant_product",
+            "SET stock = stock - #{quantity}, update_time = #{now}",
+            "WHERE id = #{productId} AND store_id = #{storeId}",
+            "AND price = #{expectedPrice} AND stock >= #{quantity}",
+            "AND product_status = 1 AND is_deleted = 0",
+            "AND EXISTS (",
+            "SELECT 1 FROM merchant_category c",
+            "WHERE c.id = merchant_product.category_id",
+            "AND c.store_id = merchant_product.store_id",
+            "AND c.status = 1 AND c.is_deleted = 0",
+            ")",
+            "AND EXISTS (",
+            "SELECT 1 FROM merchant_store s",
+            "INNER JOIN merchant_info m ON m.id = s.merchant_id",
+            "WHERE s.id = merchant_product.store_id AND s.store_status = 1",
+            "AND s.business_status = 1 AND s.is_deleted = 0",
+            "AND m.audit_status = 1 AND m.merchant_status = 1 AND m.is_deleted = 0",
+            ")"
+    })
+    int deductStock(@Param("productId") Long productId,
+                    @Param("storeId") Long storeId,
+                    @Param("quantity") Integer quantity,
+                    @Param("expectedPrice") BigDecimal expectedPrice,
+                    @Param("now") java.time.LocalDateTime now);
 }

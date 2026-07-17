@@ -3,15 +3,19 @@ package com.wuxin.controller;
 import com.wuxin.common.Result;
 import com.wuxin.dto.order.CreateOrderDTO;
 import com.wuxin.dto.order.CommentOrderDTO;
+import com.wuxin.dto.order.CreateCartOrderDTO;
+import com.wuxin.dto.order.SettlementPreviewDTO;
 import com.wuxin.service.OrderService;
 import com.wuxin.vo.CancelOrderVO;
 import com.wuxin.vo.ConfirmOrderVO;
 import com.wuxin.vo.CommentOrderVO;
+import com.wuxin.vo.CreateCartOrderVO;
 import com.wuxin.vo.OrderDetailVO;
 import com.wuxin.vo.OrderListVO;
 import com.wuxin.vo.OrderTimelineVO;
 import com.wuxin.vo.PayOrderVO;
 import com.wuxin.vo.PageResultVO;
+import com.wuxin.vo.SettlementPreviewVO;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +38,18 @@ public class OrderController {
     @PostMapping("/create")
     public Result<Long> create(@Valid @RequestBody CreateOrderDTO createOrderDTO) {
         return Result.success(orderService.createOrder(createOrderDTO));
+    }
+
+    @PostMapping("/settlement/preview")
+    public Result<SettlementPreviewVO> previewSettlement(
+            @Valid @RequestBody SettlementPreviewDTO settlementPreviewDTO) {
+        return Result.success(orderService.previewSettlement(settlementPreviewDTO));
+    }
+
+    @PostMapping("/create-from-cart")
+    public Result<CreateCartOrderVO> createFromCart(
+            @Valid @RequestBody CreateCartOrderDTO createCartOrderDTO) {
+        return Result.success("商品订单创建成功", orderService.createOrderFromCart(createCartOrderDTO));
     }
 
     @GetMapping("/my")

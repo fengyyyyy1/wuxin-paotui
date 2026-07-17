@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V0.9 Shopping Cart Completed
+> 当前版本：V1.0 Completed
 
 ## 一、sys_user
 
@@ -98,6 +98,11 @@
 | pay_status | 支付状态，0 未支付、1 已支付 |
 | pay_time | 支付时间 |
 | payment_no | 支付单号 |
+| order_type | 订单类型：0 跑腿订单、1 商品订单 |
+| store_id | 商品订单所属店铺 ID |
+| product_amount | 商品金额 |
+| delivery_fee | 配送费 |
+| total_amount | 应付总金额 |
 | deleted | 逻辑删除 |
 
 索引：
@@ -110,6 +115,8 @@
 | idx_order_status_deleted_create_time | 骑手大厅查询 |
 | idx_order_pay_status_deleted_create_time | 按支付状态查询订单 |
 | uk_order_payment_no(payment_no) | 支付单号唯一 |
+| idx_order_type_user_deleted_create_time(order_type, user_id, deleted, create_time) | 用户按订单类型查询 |
+| idx_order_store_status_deleted_create_time(store_id, status, deleted, create_time) | 店铺订单状态查询 |
 
 说明：
 
@@ -119,6 +126,16 @@
 - 新订单默认 `pay_status = 0`，支付成功后写入支付时间和支付单号。
 - `status` 表示配送业务状态，`pay_status` 表示支付状态，两者独立。
 - 骑手大厅和骑手接单均要求 `pay_status = 1`。
+- 跑腿订单 `order_type = 0`，继续使用原有取件、收件和物品字段。
+- 商品订单 `order_type = 1`，金额拆分写入 `product_amount`、`delivery_fee`、`total_amount`。
+- 为兼容现有支付逻辑，商品订单同时将 `total_amount` 写入 `price`。
+
+### 订单类型
+
+| order_type | 说明 |
+| --- | --- |
+| 0 | 跑腿订单 |
+| 1 | 商品订单 |
 
 ### 支付状态
 
@@ -400,11 +417,55 @@
 - 查询购物车时实时关联 `merchant_product`、`merchant_category`、`merchant_store`。
 - 同一用户同一时间只允许保留一个店铺的有效购物车商品。
 - 商品失效时保留购物车记录，通过接口返回失效原因。
-- 商品价格快照将在后续 `order_item` 中保存。
+- 商品价格快照在创建商品订单时写入 `order_item`。
 - 分类有效状态字段统一为 `merchant_category.status`。
 - 店铺营业状态字段统一为 `merchant_store.business_status`。
 
-## 十二、数据库升级历史
+## 十二、order_item
+
+作用：保存商品订单下单时的商品名称、图片、价格、数量和小计快照，历史订单查询不依赖商品当前数据。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 订单明细 ID |
+| order_id | 关联 `order_info.id` |
+| product_id | 下单时商品 ID |
+| product_name | 商品名称快照 |
+| product_image | 商品图片快照 |
+| product_price | 商品单价快照 |
+| quantity | 购买数量 |
+| subtotal | 商品小计快照 |
+| create_time | 创建时间 |
+| update_time | 更新时间 |
+| is_deleted | 逻辑删除 |
+
+索引：
+
+| 索引 | 说明 |
+| --- | --- |
+| PRIMARY KEY(id) | 主键 |
+| idx_order_item_order_deleted(order_id, is_deleted) | 查询订单商品快照 |
+| idx_order_item_product_deleted(product_id, is_deleted) | 按商品查询订单明细 |
+
+说明：
+
+- `product_name`、`product_image`、`product_price` 均为下单时快照。
+- 商品后续改名、换图或调价不会改变历史订单详情。
+- 当前版本不增加外键约束，由业务事务保证订单主表与明细一致。
+
+## 十三、数据库升级历史
+
+### V1.0
+
+- 新增 `order_item` 商品订单明细快照表。
+- `order_info` 兼容新增 `order_type`、`store_id`、`product_amount`、`delivery_fee`、`total_amount`。
+- 新增索引 `idx_order_type_user_deleted_create_time`。
+- 新增索引 `idx_order_store_status_deleted_create_time`。
+- 新增脚本：`wuxin-paotui-server/src/main/resources/sql/10_create_order_item_and_update_order.sql`。
+- 脚本包含 `CREATE TABLE IF NOT EXISTS` 和字段、索引存在性检查，已在 Navicat 执行并通过结构及数据验证。
+- 不修改已有订单数据；旧订单通过 `order_type` 默认值 `0` 保持跑腿订单语义。
 
 ### V0.9
 

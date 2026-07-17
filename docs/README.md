@@ -115,12 +115,21 @@
 - 修改数量和选中状态
 - 逻辑删除和清空购物车
 
+### 订单结算模块
+
+- 购物车结算预览
+- 商品订单事务创建
+- 商品库存原子扣减
+- `order_item` 商品信息快照
+- 商品订单详情兼容
+- 仅清理已选购物车商品
+
 ## 当前开发进度
 
 | 项 | 状态 |
 | --- | --- |
-| 当前版本 | V0.9 Shopping Cart Completed |
-| 开发状态 | V0.9 已完成，项目进入 V1.0 规划 |
+| 当前版本 | V1.0 Completed |
+| 开发状态 | V1.0 已完成，持续开发中 |
 | 用户模块 | 已完成 |
 | 地址模块 | 已完成 |
 | 订单模块 | 部分完成 |
@@ -131,6 +140,7 @@
 | 购物车模块 | Completed |
 | V0.9 正常流程测试 | 全部通过 |
 | V0.9 异常流程测试 | 全部通过 |
+| 购物车结算与订单快照 | 已完成并通过人工测试 |
 
 ## 项目目录
 
@@ -182,6 +192,7 @@ WuxinPaotuiServerApplication
 | CHANGELOG.md | 更新日志 |
 | POSTMAN.md | Postman 测试说明 |
 | TEST_ACCOUNT.md | 测试账号 |
+| TEST_ENVIRONMENT.md | 统一测试环境、测试数据和验收记录 |
 | DEVELOPMENT_RULE.md | 开发规范 |
 | CODEX_RULE.md | 项目协作规范 |
 
@@ -195,12 +206,34 @@ WuxinPaotuiServerApplication
 - 统一使用 VO 返回前端数据。
 - 统一使用 BusinessException 处理业务异常。
 - 统一使用 Result 返回接口数据。
+- 所有接口路径必须以 Controller 实际映射为准。
+- 所有数据库字段必须以真实数据库结构为准。
+- 代码、接口、数据库、测试环境发生变化时必须同步更新文档。
+- 测试账号统一维护在 `TEST_ACCOUNT.md`。
+- 测试数据和环境统一维护在 `TEST_ENVIRONMENT.md`。
+
+每完成一个版本必须更新：
+
+1. `README.md`
+2. `API.md`
+3. `DATABASE.md`
+4. `PROJECT_STATUS.md`
+5. `CHANGELOG.md`
+6. `TEST_ACCOUNT.md`
+7. `TEST_ENVIRONMENT.md`
+
+## V1.0 开发经验
+
+1. 历史聊天记录不能作为项目真实依据，必须重新核对当前代码、数据库和文档。
+2. 所有接口必须以 Controller 实际映射为准。
+3. 所有字段必须以真实数据库结构为准。
+4. 测试账号和密码不能依赖记忆，必须维护统一文档。
+5. 每完成一个稳定版本应立即提交 Git。
+6. Git Tag 必须对应已经完成验收的稳定版本。
 
 ## 后续开发计划
 
-- 购物车提交订单
-- order_item 订单商品明细
-- 用户购买商品
+- 商品订单支付与配送流程验证
 - 商家订单
 - 支付
 - Redis

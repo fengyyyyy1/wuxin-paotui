@@ -74,6 +74,21 @@ public class OrderEntity {
     @TableField("payment_no")
     private String paymentNo;
 
+    @TableField("order_type")
+    private Integer orderType;
+
+    @TableField("store_id")
+    private Long storeId;
+
+    @TableField("product_amount")
+    private BigDecimal productAmount;
+
+    @TableField("delivery_fee")
+    private BigDecimal deliveryFee;
+
+    @TableField("total_amount")
+    private BigDecimal totalAmount;
+
     @TableLogic
     @TableField("deleted")
     private Integer deleted;

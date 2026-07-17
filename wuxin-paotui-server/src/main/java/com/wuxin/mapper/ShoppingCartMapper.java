@@ -75,7 +75,8 @@ public interface ShoppingCartMapper extends BaseMapper<ShoppingCartEntity> {
                           @Param("now") LocalDateTime now);
 
     @Select({
-            "SELECT NULL AS cartId, p.store_id AS storeId, s.store_name AS storeName,",
+            "SELECT NULL AS cartId, p.store_id AS storeId, p.store_id AS productStoreId,",
+            "s.store_name AS storeName,",
             "p.id AS productId, p.product_name AS productName, p.product_image AS productImage,",
             "p.price, p.stock, p.product_status AS productStatus,",
             "CASE WHEN p.id IS NULL THEN 0 ELSE 1 END AS productExists,",
@@ -123,6 +124,31 @@ public interface ShoppingCartMapper extends BaseMapper<ShoppingCartEntity> {
     List<CartItemQueryVO> selectCartItems(@Param("userId") Long userId);
 
     @Select({
+            "SELECT sc.id AS cartId, sc.store_id AS storeId, p.store_id AS productStoreId,",
+            "s.store_name AS storeName, sc.product_id AS productId,",
+            "p.product_name AS productName, p.product_image AS productImage,",
+            "p.price, p.stock, sc.quantity, sc.selected, p.product_status AS productStatus,",
+            "CASE WHEN p.id IS NULL THEN 0 ELSE 1 END AS productExists,",
+            "p.is_deleted AS productDeleted,",
+            "CASE WHEN c.id IS NULL THEN 0 ELSE 1 END AS categoryExists,",
+            "c.status AS categoryStatus, c.is_deleted AS categoryDeleted,",
+            "CASE WHEN s.id IS NULL THEN 0 ELSE 1 END AS storeExists,",
+            "s.store_status AS storeStatus, s.business_status AS businessStatus,",
+            "s.is_deleted AS storeDeleted,",
+            "CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS merchantExists,",
+            "m.audit_status AS merchantAuditStatus, m.merchant_status AS merchantStatus,",
+            "m.is_deleted AS merchantDeleted",
+            "FROM shopping_cart sc",
+            "LEFT JOIN merchant_product p ON p.id = sc.product_id",
+            "LEFT JOIN merchant_category c ON c.id = p.category_id AND c.store_id = p.store_id",
+            "LEFT JOIN merchant_store s ON s.id = sc.store_id",
+            "LEFT JOIN merchant_info m ON m.id = s.merchant_id",
+            "WHERE sc.user_id = #{userId} AND sc.selected = 1 AND sc.is_deleted = 0",
+            "ORDER BY sc.create_time ASC"
+    })
+    List<CartItemQueryVO> selectSelectedCartItems(@Param("userId") Long userId);
+
+    @Select({
             "SELECT sc.id AS cartId, sc.store_id AS storeId, s.store_name AS storeName,",
             "sc.product_id AS productId, p.product_name AS productName,",
             "p.product_image AS productImage, p.price, p.stock, sc.quantity, sc.selected,",
@@ -146,4 +172,11 @@ public interface ShoppingCartMapper extends BaseMapper<ShoppingCartEntity> {
             "LIMIT 1"
     })
     CartItemQueryVO selectCartItem(@Param("cartId") Long cartId, @Param("userId") Long userId);
+
+    @Update({
+            "UPDATE shopping_cart",
+            "SET is_deleted = 1, update_time = #{now}",
+            "WHERE user_id = #{userId} AND selected = 1 AND is_deleted = 0"
+    })
+    int logicalDeleteSelected(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 }

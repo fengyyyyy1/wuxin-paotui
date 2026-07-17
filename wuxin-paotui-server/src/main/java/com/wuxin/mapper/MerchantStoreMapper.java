@@ -51,4 +51,11 @@ public interface MerchantStoreMapper extends BaseMapper<MerchantStoreEntity> {
             "LIMIT 1"
     })
     StoreDetailVO selectStoreDetail(@Param("id") Long id);
+
+    @Select({
+            "SELECT store_name FROM merchant_store",
+            "WHERE id = #{id}",
+            "LIMIT 1"
+    })
+    String selectStoreNameIncludeDeleted(@Param("id") Long id);
 }

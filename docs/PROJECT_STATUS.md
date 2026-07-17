@@ -6,9 +6,9 @@
 
 最后更新时间：2026-07-17
 
-当前版本：V0.9 Shopping Cart Completed
+当前版本：V1.0 Completed
 
-项目状态：开发中
+项目状态：V1.0 已完成，持续开发中
 
 ---
 
@@ -33,7 +33,7 @@
 ### 地址模块
 
 - [x] 新增地址
-- [x] 修改地址
+- [ ] 修改地址（当前 Controller 暂无修改接口）
 - [x] 删除地址
 - [x] 地址列表
 - [x] 默认地址
@@ -86,6 +86,16 @@
 - [x] 清空购物车
 - [x] 单店铺约束与失效商品处理
 
+### 订单结算模块
+
+- [x] 购物车结算预览
+- [x] 商品订单事务创建
+- [x] 商品库存原子扣减
+- [x] `order_item` 商品快照
+- [x] 商品订单详情兼容
+- [x] V1.0 Postman 验证
+- [x] V1.0 Navicat 验证
+
 ## 三、数据库状态
 
 数据库：
@@ -107,6 +117,7 @@ wuxin_paotui
 - `merchant_category`
 - `merchant_product`
 - `shopping_cart`
+- `order_item`
 
 数据库升级：
 
@@ -154,6 +165,18 @@ V0.9 新增：
 - `shopping_cart` 购物车表
 - 用户商品唯一索引和用户店铺查询索引
 - 升级脚本 `09_create_shopping_cart.sql`
+
+V1.0 已升级：
+
+- `order_info.order_type`
+- `order_info.store_id`
+- `order_info.product_amount`
+- `order_info.delivery_fee`
+- `order_info.total_amount`
+- `order_item` 商品订单明细快照表
+- `idx_order_type_user_deleted_create_time`
+- `idx_order_store_status_deleted_create_time`
+- 升级脚本 `10_create_order_item_and_update_order.sql`
 
 ## 四、当前测试数据
 
@@ -236,37 +259,36 @@ V0.9 新增：
 - [x] 加入、列表、数量、选中、删除和清空
 - [x] 实时商品数据、失效原因和选中金额统计
 
+### 订单结算
+
+- [x] 结算预览
+- [x] 购物车创建商品订单
+- [x] 商品订单详情快照
+
 ## 六、当前开发断点（最重要）
 
 当前状态：
 
 ```text
-V0.9 Shopping Cart 已完成，SQL、Postman、Navicat、正常流程和异常流程测试全部通过。
+V1.0 已完成，功能、数据库、正常流程、异常流程、权限校验和越权测试全部通过。
 ```
 
-V0.9 接口：
+V1.0 接口：
 
 ```http
-POST /api/cart/add
-GET /api/cart/list
-PUT /api/cart/update
-PUT /api/cart/selected
-DELETE /api/cart/{id}
-DELETE /api/cart/clear
+POST /api/order/settlement/preview
+POST /api/order/create-from-cart
+GET /api/order/{id}
 ```
 
 下一步：
 
 ```text
-V1.0 Order Settlement（购物车结算与订单快照）
-```
-
-开发顺序：
-
-```text
-订单快照 order_item
+支付模块开发前设计评审
 ↓
-购物车结算并创建订单
+继续保持订单配送状态与支付状态相互独立
+↓
+确认退款与已支付取消订单规则
 ```
 
 ## 七、待开发模块
@@ -274,9 +296,9 @@ V1.0 Order Settlement（购物车结算与订单快照）
 - [x] 商品分类
 - [x] 商品管理
 - [x] 购物车
-- [ ] order_item
-- [ ] 购物车提交订单
-- [ ] 用户购买商品
+- [x] order_item
+- [x] 购物车提交订单
+- [x] V1.0 人工验收
 - [ ] 商家订单
 - [ ] 总控端商家审核
 - [ ] 微信支付
@@ -375,7 +397,77 @@ V1.0 Order Settlement（购物车结算与订单快照）
 - [x] 正常流程测试
 - [x] 异常流程测试
 
-## 十四、项目规范
+## 十四、V1.0 开发内容
+
+- [x] `order_item` 商品订单明细快照表脚本
+- [x] `order_info` 商品订单兼容字段脚本
+- [x] 购物车结算预览接口
+- [x] 购物车创建商品订单接口
+- [x] 结算公共校验
+- [x] 商品库存原子扣减
+- [x] 订单、明细、库存、日志和购物车同一事务
+- [x] 已选购物车逻辑删除与未选项保留
+- [x] 商品订单详情快照兼容
+- [x] Maven Compile
+- [x] SQL 验证
+- [x] Postman 验证
+- [x] Navicat 验证
+- [x] 正常流程测试
+- [x] 异常流程测试
+
+## 十五、V1.0 验收结果
+
+本轮已完成：
+
+- [x] 用户登录（JWT）
+- [x] 地址管理
+- [x] 商品管理
+- [x] 购物车
+- [x] 商品订单
+- [x] 骑手大厅
+- [x] 骑手接单
+- [x] 我的订单
+- [x] 订单详情
+- [x] 权限校验
+- [x] 越权测试
+
+验收结论：
+
+```text
+V1.0 测试全部通过。
+```
+
+## 十六、本轮安全测试
+
+### 地址越权测试
+
+测试结果：通过。
+
+测试过程：`admin` 使用 `test001` 的地址 `id = 4` 创建订单。
+
+返回结果：
+
+```json
+{
+  "code": 404,
+  "message": "收货地址不存在",
+  "data": null
+}
+```
+
+说明：地址归属校验正常，其他用户不能使用不属于自己的地址创建订单。
+
+### 订单越权测试
+
+测试结果：通过。
+
+测试过程：`admin` 查询 `test001` 的订单详情。
+
+返回结果：订单不存在或无权限访问。
+
+说明：订单归属校验正常，接口不会向其他用户暴露订单是否真实存在。
+
+## 十七、项目规范
 
 项目分层：
 
@@ -400,7 +492,7 @@ VO
 - [x] VO 返回前端数据
 - [x] Entity 不直接返回前端
 
-## 十五、开发流程
+## 十八、开发流程
 
 固定流程：
 
@@ -417,5 +509,5 @@ Navicat
 ↓
 更新 docs
 ↓
-Git Commit（后续）
+Git Commit
 ```
