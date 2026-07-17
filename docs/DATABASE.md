@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V0.8 Completed
+> 当前版本：V0.9 Shopping Cart Completed
 
 ## 一、sys_user
 
@@ -368,7 +368,51 @@
 - 商品上架要求分类启用且库存大于 0。
 - 商品删除为逻辑删除，并同步设置为下架。
 
-## 十一、数据库升级历史
+## 十一、shopping_cart
+
+作用：记录用户购物车商品及数量，通过 `user_id`、`store_id`、`product_id` 关联用户、店铺和商品。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 购物车 ID |
+| user_id | 用户 ID |
+| store_id | 店铺 ID |
+| product_id | 商品 ID |
+| quantity | 商品数量，默认 1 |
+| selected | 是否选中：0 否、1 是 |
+| create_time | 创建时间 |
+| update_time | 更新时间 |
+| is_deleted | 逻辑删除 |
+
+索引：
+
+| 索引 | 说明 |
+| --- | --- |
+| PRIMARY KEY(id) | 主键 |
+| uk_user_product_deleted(user_id, product_id, is_deleted) | 防止同一用户出现重复有效商品记录 |
+| idx_user_store_deleted(user_id, store_id, is_deleted) | 用户单店铺购物车查询 |
+
+说明：
+
+- 购物车不保存商品名称、图片或价格快照。
+- 查询购物车时实时关联 `merchant_product`、`merchant_category`、`merchant_store`。
+- 同一用户同一时间只允许保留一个店铺的有效购物车商品。
+- 商品失效时保留购物车记录，通过接口返回失效原因。
+- 商品价格快照将在后续 `order_item` 中保存。
+- 分类有效状态字段统一为 `merchant_category.status`。
+- 店铺营业状态字段统一为 `merchant_store.business_status`。
+
+## 十二、数据库升级历史
+
+### V0.9
+
+- 新增 `shopping_cart` 购物车表。
+- 新增唯一索引 `uk_user_product_deleted(user_id, product_id, is_deleted)`。
+- 新增索引 `idx_user_store_deleted(user_id, store_id, is_deleted)`。
+- 新增脚本：`wuxin-paotui-server/src/main/resources/sql/09_create_shopping_cart.sql`。
+- 脚本使用 `CREATE TABLE IF NOT EXISTS`，已在 Navicat 执行并完成表结构、索引和逻辑删除验证。
 
 ### V0.8
 

@@ -6,7 +6,7 @@
 
 最后更新时间：2026-07-17
 
-当前版本：V0.8 Completed
+当前版本：V0.9 Shopping Cart Completed
 
 项目状态：开发中
 
@@ -76,6 +76,16 @@
 - [x] 公开商品列表
 - [x] 公开商品详情
 
+### 购物车模块
+
+- [x] 加入购物车
+- [x] 查询购物车
+- [x] 修改数量
+- [x] 修改选中状态
+- [x] 删除购物车商品
+- [x] 清空购物车
+- [x] 单店铺约束与失效商品处理
+
 ## 三、数据库状态
 
 数据库：
@@ -96,6 +106,7 @@ wuxin_paotui
 - `merchant_store`
 - `merchant_category`
 - `merchant_product`
+- `shopping_cart`
 
 数据库升级：
 
@@ -137,6 +148,12 @@ V0.8 新增：
 - `merchant_product` 商品表
 - 店铺分类名称唯一索引及商品查询索引
 - 升级脚本 `08_create_product_tables.sql`
+
+V0.9 新增：
+
+- `shopping_cart` 购物车表
+- 用户商品唯一索引和用户店铺查询索引
+- 升级脚本 `09_create_shopping_cart.sql`
 
 ## 四、当前测试数据
 
@@ -214,51 +231,51 @@ V0.8 新增：
 - [x] 分类新增、修改、状态、删除和列表
 - [x] 商品新增、修改、上下架、删除和分页列表
 
+### 购物车
+
+- [x] 加入、列表、数量、选中、删除和清空
+- [x] 实时商品数据、失效原因和选中金额统计
+
 ## 六、当前开发断点（最重要）
 
 当前状态：
 
 ```text
-V0.8 商品分类与商品管理已完成，SQL、Postman 和 Navicat 人工验证全部通过。
+V0.9 Shopping Cart 已完成，SQL、Postman、Navicat、正常流程和异常流程测试全部通过。
 ```
 
-本次接口：
+V0.9 接口：
 
 ```http
-POST /api/merchant/category
-PUT /api/merchant/category/{id}
-PUT /api/merchant/category/{id}/status
-DELETE /api/merchant/category/{id}
-GET /api/merchant/category/list
-POST /api/merchant/product
-PUT /api/merchant/product/{id}
-PUT /api/merchant/product/{id}/status
-DELETE /api/merchant/product/{id}
-GET /api/merchant/product/list
-GET /api/store/{storeId}/categories
-GET /api/store/{storeId}/products
-GET /api/store/product/{id}
+POST /api/cart/add
+GET /api/cart/list
+PUT /api/cart/update
+PUT /api/cart/selected
+DELETE /api/cart/{id}
+DELETE /api/cart/clear
 ```
 
 下一步：
 
 ```text
-购物车和商家商品订单
+V1.0 Order Settlement（购物车结算与订单快照）
 ```
 
 开发顺序：
 
 ```text
-购物车
+订单快照 order_item
 ↓
-商家商品订单
+购物车结算并创建订单
 ```
 
 ## 七、待开发模块
 
 - [x] 商品分类
 - [x] 商品管理
-- [ ] 购物车
+- [x] 购物车
+- [ ] order_item
+- [ ] 购物车提交订单
 - [ ] 用户购买商品
 - [ ] 商家订单
 - [ ] 总控端商家审核
@@ -342,7 +359,23 @@ GET /api/store/product/{id}
 - [x] Postman 验证
 - [x] Navicat 验证
 
-## 十三、项目规范
+## 十三、V0.9 开发内容
+
+- [x] `shopping_cart` 增量建表脚本
+- [x] 加入购物车与重复商品累加
+- [x] 单店铺购物车约束
+- [x] 实时商品查询与失效原因
+- [x] 数量和选中状态修改
+- [x] 单个逻辑删除与清空购物车
+- [x] 事务和当前用户权限控制
+- [x] Maven Compile
+- [x] SQL 验证
+- [x] Postman 验证
+- [x] Navicat 验证
+- [x] 正常流程测试
+- [x] 异常流程测试
+
+## 十四、项目规范
 
 项目分层：
 
@@ -367,7 +400,7 @@ VO
 - [x] VO 返回前端数据
 - [x] Entity 不直接返回前端
 
-## 十四、开发流程
+## 十五、开发流程
 
 固定流程：
 
