@@ -4,9 +4,9 @@
 
 ---
 
-最后更新时间：2026-07-16
+最后更新时间：2026-07-17
 
-当前版本：V0.7（开发中）
+当前版本：V0.8 Completed
 
 项目状态：开发中
 
@@ -70,6 +70,11 @@
 - [x] 修改营业状态
 - [x] 公开店铺列表
 - [x] 公开店铺详情
+- [x] 商品分类管理
+- [x] 商品管理
+- [x] 公开商品分类
+- [x] 公开商品列表
+- [x] 公开商品详情
 
 ## 三、数据库状态
 
@@ -89,6 +94,8 @@ wuxin_paotui
 - `order_comment`
 - `merchant_info`
 - `merchant_store`
+- `merchant_category`
+- `merchant_product`
 
 数据库升级：
 
@@ -123,6 +130,13 @@ V0.7 新增：
 - `merchant_store` 店铺表
 - 商家与用户、店铺与商家一对一唯一索引
 - 升级脚本 `07_create_merchant_store.sql`
+
+V0.8 新增：
+
+- `merchant_category` 商品分类表
+- `merchant_product` 商品表
+- 店铺分类名称唯一索引及商品查询索引
+- 升级脚本 `08_create_product_tables.sql`
 
 ## 四、当前测试数据
 
@@ -191,44 +205,60 @@ V0.7 新增：
 
 - [x] 公开店铺列表
 - [x] 公开店铺详情
+- [x] 公开商品分类
+- [x] 公开商品列表
+- [x] 公开商品详情
+
+### 商品管理
+
+- [x] 分类新增、修改、状态、删除和列表
+- [x] 商品新增、修改、上下架、删除和分页列表
 
 ## 六、当前开发断点（最重要）
 
 当前状态：
 
 ```text
-商家入驻与店铺基础模块已开发，等待 SQL、Postman 和 Navicat 验证。
+V0.8 商品分类与商品管理已完成，SQL、Postman 和 Navicat 人工验证全部通过。
 ```
 
 本次接口：
 
 ```http
-POST /api/merchant/apply
-GET /api/merchant/me
-PUT /api/merchant/store
-PUT /api/merchant/store/business-status
-GET /api/store/list
-GET /api/store/{id}
+POST /api/merchant/category
+PUT /api/merchant/category/{id}
+PUT /api/merchant/category/{id}/status
+DELETE /api/merchant/category/{id}
+GET /api/merchant/category/list
+POST /api/merchant/product
+PUT /api/merchant/product/{id}
+PUT /api/merchant/product/{id}/status
+DELETE /api/merchant/product/{id}
+GET /api/merchant/product/list
+GET /api/store/{storeId}/categories
+GET /api/store/{storeId}/products
+GET /api/store/product/{id}
 ```
 
 下一步：
 
 ```text
-商品分类和商品管理
+购物车和商家商品订单
 ```
 
 开发顺序：
 
 ```text
-商品分类
+购物车
 ↓
-商品管理
+商家商品订单
 ```
 
 ## 七、待开发模块
 
-- [ ] 商品分类
-- [ ] 商品管理
+- [x] 商品分类
+- [x] 商品管理
+- [ ] 购物车
 - [ ] 用户购买商品
 - [ ] 商家订单
 - [ ] 总控端商家审核
@@ -299,7 +329,20 @@ GET /api/store/{id}
 - [ ] Postman 验证
 - [ ] Navicat 验证
 
-## 十二、项目规范
+## 十二、V0.8 开发内容
+
+- [x] `merchant_category`、`merchant_product` 增量建表脚本
+- [x] 商家分类管理接口
+- [x] 商家商品管理接口
+- [x] 商品上下架规则
+- [x] 公开分类、商品列表和商品详情
+- [x] 分类名称并发重复保护
+- [x] GET 商品查询精确公开放行
+- [x] SQL 验证
+- [x] Postman 验证
+- [x] Navicat 验证
+
+## 十三、项目规范
 
 项目分层：
 
@@ -324,7 +367,7 @@ VO
 - [x] VO 返回前端数据
 - [x] Entity 不直接返回前端
 
-## 十三、开发流程
+## 十四、开发流程
 
 固定流程：
 

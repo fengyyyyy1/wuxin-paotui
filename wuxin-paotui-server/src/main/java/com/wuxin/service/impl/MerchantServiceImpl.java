@@ -125,6 +125,12 @@ public class MerchantServiceImpl implements MerchantService {
         }
     }
 
+    @Override
+    public Long getCurrentApprovedStoreId() {
+        MerchantInfoEntity merchantInfo = getCurrentMerchantInfo(true);
+        return getMerchantStore(merchantInfo.getId(), true).getId();
+    }
+
     private Long getCurrentUserId() {
         Long userId = UserContext.getUserId();
         if (userId == null) {

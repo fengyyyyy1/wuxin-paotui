@@ -15,4 +15,6 @@ public interface MerchantService {
     void updateStore(UpdateMerchantStoreDTO updateMerchantStoreDTO);
 
     void updateBusinessStatus(UpdateBusinessStatusDTO updateBusinessStatusDTO);
+
+    Long getCurrentApprovedStoreId();
 }

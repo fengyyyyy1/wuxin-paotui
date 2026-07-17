@@ -1,7 +1,9 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V0.7（开发中）
+> 当前版本：V0.8 Completed
+>
+> V0.8 商品分类、商品管理及公开商品查询接口已通过人工测试。
 
 ## 一、通用规范
 
@@ -47,6 +49,12 @@ Authorization: Bearer <token>
 | 404 | 商家信息不存在 | 当前用户没有商家资料 |
 | 403 | 商家尚未通过审核或已被禁用 | 商家不能管理店铺 |
 | 404 | 店铺不存在 | 店铺不存在或不可公开访问 |
+| 404 | 商品分类不存在 | 分类不存在或不属于当前店铺 |
+| 409 | 商品分类名称已存在 | 同一店铺分类重名 |
+| 409 | 分类下存在商品，不能删除 | 分类仍有关联商品 |
+| 409 | 商品分类已禁用 | 禁用分类下商品不能上架 |
+| 404 | 商品不存在 | 商品不存在或不可公开访问 |
+| 409 | 库存不足，商品不能上架 | 商品库存为 0 |
 | 500 | 服务器内部错误 | 未知系统异常 |
 
 ## 二、用户模块
@@ -932,6 +940,150 @@ Authorization: Bearer <token>
 
 异常返回：`401`、`403 商家尚未通过审核或已被禁用`、`404 商家信息不存在`、`404 店铺不存在`、`1004 参数错误`。
 
+### 新增商品分类
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/merchant/category` |
+| Authorization | 需要 |
+
+请求体：
+
+```json
+{
+  "categoryName": "饮料",
+  "sort": 1
+}
+```
+
+成功返回 `CategoryVO`，消息为 `新增商品分类成功`。同店铺分类重名返回 `409 商品分类名称已存在`。
+
+### 修改商品分类
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | PUT |
+| URL | `/api/merchant/category/{id}` |
+| Authorization | 需要 |
+
+请求体包含必填的 `categoryName` 和可选的 `sort`。只能修改当前商家店铺内未删除分类。
+
+成功消息：`修改商品分类成功`。不存在或不属于当前店铺返回 `404 商品分类不存在`。
+
+### 修改商品分类状态
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | PUT |
+| URL | `/api/merchant/category/{id}/status` |
+| Authorization | 需要 |
+
+```json
+{
+  "status": 0
+}
+```
+
+`status` 只能为 `0`（禁用）或 `1`（启用）。禁用分类不会删除分类下商品，公开接口不再返回该分类。
+
+### 删除商品分类
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | DELETE |
+| URL | `/api/merchant/category/{id}` |
+| Authorization | 需要 |
+
+使用逻辑删除。分类下存在未删除商品时返回 `409 分类下存在商品，不能删除`。
+
+### 商家商品分类列表
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/merchant/category/list` |
+| Authorization | 需要 |
+
+返回当前店铺全部未删除分类，包括禁用分类，按 `sort ASC, create_time ASC` 排序。
+
+### 新增商品
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/merchant/product` |
+| Authorization | 需要 |
+
+```json
+{
+  "categoryId": 1,
+  "productName": "可乐",
+  "productImage": "product-url",
+  "productDescription": "冰镇可乐",
+  "price": 3.50,
+  "originalPrice": 4.00,
+  "stock": 100,
+  "sort": 1
+}
+```
+
+商品创建时默认下架、销量为 0。成功返回 `ProductVO`，消息为 `新增商品成功`。
+
+### 修改商品
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | PUT |
+| URL | `/api/merchant/product/{id}` |
+| Authorization | 需要 |
+
+允许修改分类、名称、图片、介绍、价格、原价、库存和排序；不能修改店铺、销量、状态及删除标识。
+
+### 商品上下架
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | PUT |
+| URL | `/api/merchant/product/{id}/status` |
+| Authorization | 需要 |
+
+```json
+{
+  "productStatus": 1
+}
+```
+
+上架要求分类启用且库存大于 0。库存不足返回 `409 库存不足，商品不能上架`，分类禁用返回 `409 商品分类已禁用`。
+
+### 删除商品
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | DELETE |
+| URL | `/api/merchant/product/{id}` |
+| Authorization | 需要 |
+
+删除时设置 `is_deleted = 1`、`product_status = 0`，成功消息为 `删除商品成功`。
+
+### 商家商品列表
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/merchant/product/list` |
+| Authorization | 需要 |
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| pageNum | Integer | 否 | 1 | 当前页 |
+| pageSize | Integer | 否 | 10 | 每页数量，最大 50 |
+| categoryId | Long | 否 | 无 | 分类筛选 |
+| productStatus | Integer | 否 | 无 | 0 下架、1 上架 |
+| keyword | String | 否 | 无 | 商品名称模糊查询 |
+
+返回 `PageResultVO<ProductVO>`，按 `sort ASC, create_time DESC` 排序。
+
 ## 七、公开店铺模块
 
 以下接口当前阶段无需 Authorization。
@@ -969,3 +1121,40 @@ Authorization: Bearer <token>
 只返回审核通过、商家启用、店铺启用且未删除的店铺资料。
 
 异常返回：`404 店铺不存在`、`1004 参数错误`。
+
+### 公开商品分类列表
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/store/{storeId}/categories` |
+| Authorization | 不需要 |
+
+只返回营业中且可公开访问店铺内启用、未删除的分类，返回 `PublicCategoryVO` 列表。
+
+### 公开商品列表
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/store/{storeId}/products` |
+| Authorization | 不需要 |
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| pageNum | Integer | 否 | 1 | 当前页 |
+| pageSize | Integer | 否 | 10 | 每页数量，最大 50 |
+| categoryId | Long | 否 | 无 | 分类筛选 |
+| keyword | String | 否 | 无 | 商品名称模糊查询 |
+
+只返回营业中店铺的启用分类下已上架、未删除且库存大于 0 的商品，返回 `PageResultVO<PublicProductVO>`。
+
+### 公开商品详情
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/store/product/{id}` |
+| Authorization | 不需要 |
+
+只允许查询审核通过且启用的商家、启用店铺、启用分类下已上架且有库存的商品。查询不到返回 `404 商品不存在`。

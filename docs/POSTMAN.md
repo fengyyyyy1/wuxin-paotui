@@ -1,6 +1,8 @@
 # Postman 测试文档
 
-> 当前版本：V0.7（开发中）
+> 当前版本：V0.8 Completed
+>
+> V0.8 商品分类、商品管理和公开商品查询流程已全部通过人工测试。
 
 ## 一、环境变量
 
@@ -16,6 +18,8 @@
 | `paymentNo` | 支付成功后返回 | 模拟支付单号 |
 | `merchantId` | 商家申请后返回 | 当前用户商家主体 ID |
 | `storeId` | 商家申请后返回 | 当前用户店铺 ID |
+| `categoryId` | 分类创建后返回 | 当前测试商品分类 ID |
+| `productId` | 商品创建后返回 | 当前测试商品 ID |
 
 登录后接口统一使用：
 
@@ -582,6 +586,114 @@ GET {{host}}/api/store/{{storeId}}
 
 不携带 Authorization。预期返回店铺详情；待审核、禁用、删除或不存在的店铺统一返回 `404 店铺不存在`。
 
+### 25. 执行商品数据库升级
+
+在 Navicat 手动执行：
+
+```text
+wuxin-paotui-server/src/main/resources/sql/08_create_product_tables.sql
+```
+
+预期结果：创建 `merchant_category` 和 `merchant_product`，重复执行脚本不报错。
+
+### 26. 新增商品分类
+
+```http
+POST {{host}}/api/merchant/category
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "categoryName": "饮料",
+  "sort": 1
+}
+```
+
+预期结果：返回 `新增商品分类成功`，保存返回的 `categoryId`；同店铺重复名称返回 `409 商品分类名称已存在`。
+
+### 27. 查询并修改商品分类
+
+依次请求：
+
+```http
+GET {{host}}/api/merchant/category/list
+PUT {{host}}/api/merchant/category/{{categoryId}}
+PUT {{host}}/api/merchant/category/{{categoryId}}/status
+Authorization: Bearer {{token}}
+```
+
+修改分类请求体使用 `{"categoryName":"饮品","sort":2}`，状态请求体使用 `{"status":0}` 或 `{"status":1}`。预期列表包含启用和禁用分类。
+
+### 28. 新增商品
+
+```http
+POST {{host}}/api/merchant/product
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "categoryId": {{categoryId}},
+  "productName": "可乐",
+  "productImage": "product-url",
+  "productDescription": "冰镇可乐",
+  "price": 3.50,
+  "originalPrice": 4.00,
+  "stock": 100,
+  "sort": 1
+}
+```
+
+预期结果：商品默认 `productStatus = 0`、`sales = 0`，保存返回的 `productId`。
+
+### 29. 查询并修改商品
+
+```http
+GET {{host}}/api/merchant/product/list?pageNum=1&pageSize=10&categoryId={{categoryId}}&productStatus=0&keyword=可乐
+PUT {{host}}/api/merchant/product/{{productId}}
+Authorization: Bearer {{token}}
+```
+
+修改请求体使用完整可修改字段。预期分页只返回当前店铺未删除商品，不能通过请求修改 `storeId`、`sales` 或商品状态。
+
+### 30. 商品上下架
+
+```http
+PUT {{host}}/api/merchant/product/{{productId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "productStatus": 1
+}
+```
+
+预期结果：分类启用且库存大于 0 时返回 `商品上架成功`。分类禁用返回 `409 商品分类已禁用`，库存为 0 返回 `409 库存不足，商品不能上架`。
+
+### 31. 公开浏览分类和商品
+
+以下请求不携带 Authorization：
+
+```http
+GET {{host}}/api/store/{{storeId}}/categories
+GET {{host}}/api/store/{{storeId}}/products?pageNum=1&pageSize=10&categoryId={{categoryId}}&keyword=可乐
+GET {{host}}/api/store/product/{{productId}}
+```
+
+预期结果：只返回营业中店铺的启用分类下已上架、未删除且库存大于 0 的商品，不返回 `storeId`、逻辑删除和内部状态字段。
+
+### 32. 删除保护和逻辑删除
+
+1. 商品未删除时调用 `DELETE /api/merchant/category/{{categoryId}}`，预期返回 `409 分类下存在商品，不能删除`。
+2. 调用 `DELETE /api/merchant/product/{{productId}}`，预期商品逻辑删除并下架。
+3. 再删除分类，预期返回 `删除商品分类成功`。
+4. 删除后管理列表和公开列表均不再返回对应记录。
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -605,4 +717,10 @@ GET {{host}}/api/store/{{storeId}}
 | 未申请商家 | `404 商家信息不存在` |
 | 商家未审核或已禁用 | `403 商家尚未通过审核或已被禁用` |
 | 店铺不可访问 | `404 店铺不存在` |
+| 商品分类不存在或不属于当前店铺 | `404 商品分类不存在` |
+| 同店铺分类重名 | `409 商品分类名称已存在` |
+| 分类下存在商品时删除 | `409 分类下存在商品，不能删除` |
+| 禁用分类商品上架 | `409 商品分类已禁用` |
+| 商品不存在或不属于当前店铺 | `404 商品不存在` |
+| 库存为 0 时商品上架 | `409 库存不足，商品不能上架` |
 | 未知异常 | `500 服务器内部错误` |

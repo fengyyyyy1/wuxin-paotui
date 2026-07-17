@@ -62,6 +62,10 @@ public class JwtInterceptor implements HandlerInterceptor {
             return false;
         }
         String requestPath = request.getRequestURI().substring(request.getContextPath().length());
-        return "/api/store/list".equals(requestPath) || requestPath.matches("^/api/store/\\d+$");
+        return "/api/store/list".equals(requestPath)
+                || requestPath.matches("^/api/store/\\d+$")
+                || requestPath.matches("^/api/store/\\d+/categories$")
+                || requestPath.matches("^/api/store/\\d+/products$")
+                || requestPath.matches("^/api/store/product/\\d+$");
     }
 }

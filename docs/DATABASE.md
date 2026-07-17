@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V0.7（开发中）
+> 当前版本：V0.8 Completed
 
 ## 一、sys_user
 
@@ -298,7 +298,84 @@
 | uk_store_merchant_id(merchant_id) | 一个商家主体只能拥有一个店铺 |
 | idx_store_business_status(business_status, store_status, is_deleted) | 营业及启用状态查询 |
 
-## 九、数据库升级历史
+## 九、merchant_category
+
+作用：记录店铺商品分类，通过 `store_id` 关联 `merchant_store.id`。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 商品分类 ID |
+| store_id | 所属店铺 ID |
+| category_name | 分类名称，最长 50 字 |
+| sort | 排序，数值越小越靠前 |
+| status | 状态：0 禁用、1 启用 |
+| create_time | 创建时间 |
+| update_time | 更新时间 |
+| is_deleted | 逻辑删除 |
+
+索引：
+
+| 索引 | 说明 |
+| --- | --- |
+| PRIMARY KEY(id) | 主键 |
+| uk_category_store_name(store_id, category_name) | 同一店铺分类名称唯一 |
+| idx_category_store_status_sort(store_id, status, is_deleted, sort) | 店铺分类状态及排序查询 |
+
+说明：
+
+- 分类默认启用，删除使用逻辑删除。
+- 禁用分类不会删除分类下商品，但公开接口不返回该分类。
+- 分类下存在未删除商品时不允许删除分类。
+
+## 十、merchant_product
+
+作用：记录店铺商品，通过 `store_id` 关联店铺，通过 `category_id` 关联商品分类。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 商品 ID |
+| store_id | 所属店铺 ID |
+| category_id | 所属分类 ID |
+| product_name | 商品名称，最长 100 字 |
+| product_image | 商品图片地址 |
+| product_description | 商品介绍，最长 500 字 |
+| price | 销售价格，必须大于 0 |
+| original_price | 原价，可为空，有值时必须大于 0 |
+| stock | 库存，不能小于 0 |
+| sales | 销量，默认 0 |
+| product_status | 商品状态：0 下架、1 上架 |
+| sort | 排序 |
+| create_time | 创建时间 |
+| update_time | 更新时间 |
+| is_deleted | 逻辑删除 |
+
+索引：
+
+| 索引 | 说明 |
+| --- | --- |
+| PRIMARY KEY(id) | 主键 |
+| idx_product_store_status_sort(store_id, product_status, is_deleted, sort) | 店铺商品状态和排序查询 |
+| idx_product_category_status(category_id, product_status, is_deleted) | 分类商品查询 |
+| idx_product_store_name(store_id, product_name) | 店铺商品名称查询 |
+
+说明：
+
+- 商品创建时默认下架，销量默认为 0。
+- 商品上架要求分类启用且库存大于 0。
+- 商品删除为逻辑删除，并同步设置为下架。
+
+## 十一、数据库升级历史
+
+### V0.8
+
+- 新增 `merchant_category` 和 `merchant_product`。
+- 新增店铺分类名称唯一索引，以及分类、商品状态和排序查询索引。
+- 新增脚本：`wuxin-paotui-server/src/main/resources/sql/08_create_product_tables.sql`。
+- 脚本使用 `CREATE TABLE IF NOT EXISTS`，已在 Navicat 手动执行并通过结构及数据验证。
 
 ### V0.7
 
