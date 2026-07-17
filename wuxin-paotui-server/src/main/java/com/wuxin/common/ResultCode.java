@@ -6,6 +6,7 @@ public enum ResultCode {
     FAIL(500, "失败"),
     UNAUTHORIZED(401, "未登录或登录已过期"),
     ORDER_NOT_EXIST(404, "订单不存在"),
+    RIDER_NOT_EXIST(404, "骑手不存在"),
     NOT_RIDER(403, "当前用户不是骑手"),
     ORDER_ALREADY_ACCEPTED(409, "订单已被其他骑手接单"),
     ORDER_STATUS_ERROR(409, "当前订单状态不可接单"),

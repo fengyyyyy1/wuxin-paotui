@@ -1,5 +1,36 @@
 # 更新日志
 
+## V1.1
+
+日期：2026-07-17
+
+### 新增
+
+- 骑手今日、本周、本月和累计排行榜
+- 骑手个人统计接口 `GET /api/rider/{riderId}/statistics`
+- 排行榜 SQL 分组聚合和个人统计条件聚合优化
+- 排行榜索引 `idx_order_status_deleted_finish_rider`
+- `RiderRankingVO`、`RiderStatisticsVO`
+- `RiderRankingService` 及其实现
+- 幂等索引升级脚本 `11_add_rider_ranking_index.sql`
+
+### 统计与安全
+
+- 仅统计 `status = 4`、骑手 ID 非空且未逻辑删除的真实订单
+- 今日、本周、本月统一使用 `finish_time` 左闭右开时间范围
+- 排名按完成单量、最早完成时间、骑手 ID 稳定排序
+- 排行榜名称优先使用骑手真实姓名，其次用户昵称，最后使用骑手 ID 兜底
+- 两个接口继续受现有 JWT 拦截器保护
+- 聚合查询不加载全部订单、不拼接用户 SQL、不产生 N+1 查询
+
+### 当前状态
+
+- V1.1 骑手跑单排行榜模块已完成
+- Java 21 Maven Compile 已通过
+- 索引 SQL 已人工执行并验证
+- 今日、本周、本月、累计榜和骑手个人统计已通过人工测试
+- 参数校验、limit 范围和 SQL 统计结果已通过人工验证
+
 ## V1.0 Completed
 
 日期：2026-07-17

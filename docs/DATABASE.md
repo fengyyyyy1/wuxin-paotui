@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V1.0 Completed
+> 当前版本：V1.1 骑手跑单排行榜模块
 
 ## 一、sys_user
 
@@ -117,6 +117,7 @@
 | uk_order_payment_no(payment_no) | 支付单号唯一 |
 | idx_order_type_user_deleted_create_time(order_type, user_id, deleted, create_time) | 用户按订单类型查询 |
 | idx_order_store_status_deleted_create_time(store_id, status, deleted, create_time) | 店铺订单状态查询 |
+| idx_order_status_deleted_finish_rider(status, deleted, finish_time, rider_id) | V1.1 骑手跑单排行榜统计 |
 
 说明：
 
@@ -129,6 +130,9 @@
 - 跑腿订单 `order_type = 0`，继续使用原有取件、收件和物品字段。
 - 商品订单 `order_type = 1`，金额拆分写入 `product_amount`、`delivery_fee`、`total_amount`。
 - 为兼容现有支付逻辑，商品订单同时将 `total_amount` 写入 `price`。
+- 骑手排行榜只统计 `status = 4`、`rider_id IS NOT NULL`、`deleted = 0` 的订单。
+- 今日、本周和本月榜以 `finish_time` 为统计时间，使用 `>= startTime`、`< endTime`，不对字段使用日期函数。
+- 累计榜统计全部已完成订单，不限制 `finish_time` 时间范围。
 
 ### 订单类型
 
@@ -456,6 +460,14 @@
 - 当前版本不增加外键约束，由业务事务保证订单主表与明细一致。
 
 ## 十三、数据库升级历史
+
+### V1.1
+
+- 不新增业务表和业务字段。
+- 新增排行榜聚合查询索引 `idx_order_status_deleted_finish_rider(status, deleted, finish_time, rider_id)`。
+- 升级脚本：`11_add_rider_ranking_index.sql`。
+- 脚本通过 `information_schema.STATISTICS` 同时检查索引名称和完整列顺序，避免同列不同名的重复索引，可重复执行。
+- 升级脚本已人工执行，索引及排行榜 SQL 统计结果已验证通过。
 
 ### V1.0
 

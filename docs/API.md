@@ -1,9 +1,9 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V1.0 Completed
+> 当前版本：V1.1 骑手跑单排行榜模块
 >
-> V1.0 功能、正常流程、异常流程和越权测试已全部通过。
+> V1.1 接口已完成并通过人工测试。
 
 ## 一、通用规范
 
@@ -953,6 +953,107 @@ Authorization: Bearer <token>
 | 404 | 订单不存在 |
 | 409 | 当前订单状态不可放弃 |
 | 1004 | 参数错误 |
+
+### 骑手跑单排行榜
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 骑手跑单排行榜 |
+| 请求方式 | GET |
+| URL | `/api/rider/ranking` |
+| Authorization | 需要 |
+
+请求参数：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| type | String | 否 | `today` | `today`、`week`、`month`、`total` |
+| limit | Integer | 否 | `10` | 返回数量，范围 1～100 |
+
+示例请求：
+
+```http
+GET /api/rider/ranking?type=today&limit=10
+Authorization: Bearer <token>
+```
+
+统计规则：
+
+- 仅统计 `status = 4`、`rider_id IS NOT NULL`、`deleted = 0` 的已完成订单。
+- 今日、本周、本月使用 `finish_time` 左闭右开时间范围；累计榜不限制时间。
+- 按完成单量降序、周期内最早完成时间升序、骑手 ID 升序稳定排序。
+- `rank` 使用从 1 开始的连续顺序名次。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": [
+    {
+      "rank": 1,
+      "riderId": 1,
+      "riderUserId": 2,
+      "riderName": "测试骑手",
+      "avatar": null,
+      "completedOrderCount": 8
+    }
+  ]
+}
+```
+
+无符合条件订单时，`data` 返回空数组。
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 400 | 排行榜类型参数错误 |
+| 400 | limit 必须在 1 到 100 之间 |
+| 401 | 未登录或登录已过期 |
+
+### 骑手个人跑单统计
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 骑手个人跑单统计 |
+| 请求方式 | GET |
+| URL | `/api/rider/{riderId}/statistics` |
+| Authorization | 需要 |
+
+请求参数：路径参数 `riderId`，对应 `rider_info.id`，必须大于 0。
+
+示例请求：
+
+```http
+GET /api/rider/1/statistics
+Authorization: Bearer <token>
+```
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": {
+    "riderId": 1,
+    "todayCompletedCount": 2,
+    "weekCompletedCount": 5,
+    "monthCompletedCount": 12,
+    "totalCompletedCount": 36
+  }
+}
+```
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 400 | 参数错误 |
+| 401 | 未登录或登录已过期 |
+| 404 | 骑手不存在 |
 
 ## 六、商家模块
 

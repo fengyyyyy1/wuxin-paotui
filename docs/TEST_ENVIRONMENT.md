@@ -1,6 +1,6 @@
 # 测试环境
 
-> 当前版本：V1.0 Completed
+> 当前版本：V1.1 骑手跑单排行榜模块
 > 最近一次完整测试时间：2026-07-17
 
 本文件是项目测试环境、测试数据和验收断点的统一记录。以后所有测试环境变化必须维护本文件。
@@ -13,6 +13,8 @@
 | 数据库类型 | MySQL 8 |
 | V1.0 升级脚本 | `10_create_order_item_and_update_order.sql` |
 | V1.0 数据库状态 | 已完成升级并通过人工验证 |
+| V1.1 升级脚本 | `11_add_rider_ranking_index.sql` |
+| V1.1 数据库状态 | 已执行并通过人工验证 |
 
 ## 二、当前测试账号
 
@@ -51,6 +53,28 @@
 | 分类 ID | 未在历史文档保存 | 从 `merchant_category` 或 Postman `categoryId` 回填 |
 
 未记录的 ID 不得根据数据库自增顺序猜测。
+
+### 骑手排行榜
+
+| 数据 | 当前值 | 维护说明 |
+| --- | --- | --- |
+| 骑手 ID | 待从 `rider_info.id` 查询后回填 | 不得使用 `user_id` 代替 |
+| 已完成订单 | 待从 `order_info` 查询后回填 | 必须满足 `status = 4`、`deleted = 0` |
+| 完成时间 | 待从 `order_info.finish_time` 确认 | 今日、周、月榜的唯一时间依据 |
+| V1.1 测试状态 | 已通过人工测试 | 排行榜接口、参数和 SQL 统计均通过 |
+
+确认测试数据：
+
+```sql
+SELECT id, user_id, real_name, audit_status, rider_status
+FROM rider_info
+ORDER BY id;
+
+SELECT id, rider_id, status, finish_time, deleted
+FROM order_info
+WHERE rider_id IS NOT NULL
+ORDER BY id DESC;
+```
 
 ## 四、购物车状态
 
@@ -111,6 +135,21 @@ Token 会过期，不在文档中保存固定 Token。
 ```text
 V1.0 全部测试通过。
 ```
+
+V1.1 骑手跑单排行榜模块已完成并通过人工验收。
+
+V1.1 人工测试结果：
+
+| 测试项 | 结果 |
+| --- | --- |
+| 累计总榜 | 通过 |
+| 今日榜 | 通过 |
+| 本周榜 | 通过 |
+| 本月榜 | 通过 |
+| 骑手个人统计 | 通过 |
+| type 参数校验 | 通过 |
+| limit 范围校验 | 通过 |
+| SQL 统计正确性 | 通过 |
 
 ## 七、维护规则
 

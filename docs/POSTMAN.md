@@ -1,8 +1,8 @@
 # Postman 测试文档
 
-> 当前版本：V1.0 Completed
+> 当前版本：V1.1 骑手跑单排行榜模块
 >
-> V1.0 正常流程、异常流程、数据库验证和越权测试已全部通过。
+> V1.1 排行榜正常流程、异常流程、SQL 统计和参数校验已通过人工测试。
 
 ## 一、环境变量
 
@@ -23,6 +23,7 @@
 | `productId` | 商品创建后返回 | 当前测试商品 ID |
 | `otherStoreProductId` | 其他店铺商品 ID | 跨店铺购物车冲突测试 |
 | `cartId` | 加入购物车后返回 | 当前测试购物车记录 ID |
+| `riderId` | 从 `rider_info.id` 查询 | V1.1 骑手个人统计 ID |
 
 登录后接口统一使用：
 
@@ -965,6 +966,168 @@ ORDER BY id;
 | 订单越权 | 返回订单不存在或无权限，通过 |
 | Navicat 数据一致性 | 通过 |
 
+### 52. 执行 V1.1 排行榜索引升级
+
+在 Navicat 中人工执行：
+
+```text
+wuxin-paotui-server/src/main/resources/sql/11_add_rider_ranking_index.sql
+```
+
+脚本只新增 `idx_order_status_deleted_finish_rider` 索引，不新增表、字段或测试数据，可重复执行。
+
+### 53. 准备 V1.1 测试数据
+
+先确认真实骑手和已完成订单，不得根据自增 ID 猜测：
+
+```sql
+SELECT id, user_id, real_name, audit_status, rider_status
+FROM rider_info
+ORDER BY id;
+
+SELECT id, rider_id, status, finish_time, deleted
+FROM order_info
+WHERE rider_id IS NOT NULL
+ORDER BY id DESC;
+```
+
+将存在的 `rider_info.id` 保存为 `{{riderId}}`。测试库完成订单不足时，仅在独立测试库准备最小数据：
+
+- 至少 2 个真实 `rider_info` 骑手。
+- 每个骑手至少 1 条 `status = 4`、`deleted = 0`、`finish_time` 非空的订单。
+- 为验证时间边界，可分别准备今日、本周、本月之前的完成时间。
+- 为验证过滤规则，可准备 `status != 4` 和 `deleted = 1` 的对照订单。
+- 为验证稳定排序，使两个骑手完成单量相同，但最早 `finish_time` 不同。
+
+不要在正式数据中直接插入或改造测试订单。
+
+### 54. 今日排行榜查询成功
+
+```http
+GET {{host}}/api/rider/ranking?type=today&limit=10
+Authorization: Bearer {{token}}
+```
+
+预期：`code = 200`；只统计当前自然日 `finish_time` 范围内的已完成未删除订单；`rank` 从 1 连续递增。
+
+### 55. 本周、本月和累计排行榜
+
+依次请求：
+
+```http
+GET {{host}}/api/rider/ranking?type=week&limit=10
+GET {{host}}/api/rider/ranking?type=month&limit=10
+GET {{host}}/api/rider/ranking?type=total&limit=10
+Authorization: Bearer {{token}}
+```
+
+预期：
+
+- 周榜统计周一 00:00:00 至下周一 00:00:00。
+- 月榜统计本月 1 日 00:00:00 至下月 1 日 00:00:00。
+- 累计榜统计全部 `status = 4`、`rider_id` 非空、`deleted = 0` 的订单。
+
+### 56. limit 边界与默认值
+
+依次请求：
+
+```http
+GET {{host}}/api/rider/ranking?type=today
+GET {{host}}/api/rider/ranking?type=today&limit=1
+GET {{host}}/api/rider/ranking?type=today&limit=100
+GET {{host}}/api/rider/ranking?type=today&limit=0
+GET {{host}}/api/rider/ranking?type=today&limit=101
+```
+
+预期：省略 `limit` 时按 10；`1` 和 `100` 成功；`0` 和 `101` 返回 `400`。
+
+### 57. 非法排行榜类型
+
+```http
+GET {{host}}/api/rider/ranking?type=year&limit=10
+Authorization: Bearer {{token}}
+```
+
+预期：`400 排行榜类型参数错误`。
+
+### 58. 空榜与统计过滤
+
+在没有符合当前时间范围订单的测试环境查询对应榜单，预期 `data = []`。
+
+分别核对：
+
+- `status != 4` 的订单不计入。
+- `deleted = 1` 的订单不计入。
+- 今日榜依据 `finish_time`，不依据 `create_time` 或 `accept_time`。
+
+### 59. 稳定排序
+
+准备两个完成单量相同的骑手后查询同一榜单。预期先比较周期内最早 `finish_time`，更早者在前；仍相同时 `riderId` 小者在前；名次仍为连续的 1、2、3。
+
+### 60. 骑手个人统计
+
+```http
+GET {{host}}/api/rider/{{riderId}}/statistics
+Authorization: Bearer {{token}}
+```
+
+预期返回 `todayCompletedCount`、`weekCompletedCount`、`monthCompletedCount`、`totalCompletedCount`，统计口径与排行榜一致。
+
+不存在骑手测试：
+
+```http
+GET {{host}}/api/rider/999999999/statistics
+Authorization: Bearer {{token}}
+```
+
+预期：`404 骑手不存在`。
+
+### 61. Navicat 结果一致性
+
+将以下时间替换为当前测试周期的真实左闭右开边界：
+
+```sql
+SELECT o.rider_id,
+       COUNT(*) AS completed_order_count,
+       MIN(o.finish_time) AS earliest_finish_time
+FROM order_info o
+WHERE o.status = 4
+  AND o.rider_id IS NOT NULL
+  AND o.deleted = 0
+  AND o.finish_time >= '2026-07-17 00:00:00'
+  AND o.finish_time < '2026-07-18 00:00:00'
+GROUP BY o.rider_id
+ORDER BY completed_order_count DESC,
+         earliest_finish_time ASC,
+         o.rider_id ASC
+LIMIT 10;
+```
+
+将结果与今日排行榜逐项比较；周榜和月榜只替换时间边界，累计榜删除两个 `finish_time` 条件。
+
+V1.1 人工验收结果：
+
+| 编号 | 场景 | 当前状态 |
+| --- | --- | --- |
+| 1 | 今日排行榜成功 | 通过 |
+| 2 | 本周排行榜成功 | 通过 |
+| 3 | 本月排行榜成功 | 通过 |
+| 4 | 累计排行榜成功 | 通过 |
+| 5 | limit 默认值 | 通过 |
+| 6 | limit=1 | 通过 |
+| 7 | limit=100 | 通过 |
+| 8 | limit=0 参数异常 | 通过 |
+| 9 | limit=101 参数异常 | 通过 |
+| 10 | 非法 type | 通过 |
+| 11 | 无完成订单返回空数组 | 通过 |
+| 12 | 只统计 status=4 | 通过 |
+| 13 | 不统计逻辑删除订单 | 通过 |
+| 14 | 今日榜按 finish_time | 通过 |
+| 15 | 同单量稳定排序 | 通过 |
+| 16 | 存在骑手个人统计 | 通过 |
+| 17 | 不存在骑手 | 通过 |
+| 18 | API 与数据库 SQL 一致 | 通过 |
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -1004,4 +1167,7 @@ ORDER BY id;
 | 收货地址不存在、已删除或不属于当前用户 | `404 收货地址不存在` |
 | 结算时店铺或商家被禁用 | `409 店铺已禁用` |
 | 预览后商品价格或状态变化 | `409 商品信息已变化，请重新结算` |
+| 排行榜 type 非法 | `400 排行榜类型参数错误` |
+| 排行榜 limit 不在 1～100 | `400 limit 必须在 1 到 100 之间` |
+| 骑手个人统计 ID 不存在 | `404 骑手不存在` |
 | 未知异常 | `500 服务器内部错误` |
