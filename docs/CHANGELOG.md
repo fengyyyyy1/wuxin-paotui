@@ -1,5 +1,46 @@
 # 更新日志
 
+## V1.2 微信支付模块（第一阶段）
+
+日期：2026-07-18
+
+### 新增
+
+- `payment_order`支付流水表和`12_create_payment_order.sql`
+- 支付流水状态枚举、Entity、Mapper及金额元转分工具
+- `WeChatPayProperties`和`MockPaymentProperties`
+- 支付网关抽象、路由器和无外部网络的`MockPaymentGateway`
+- `POST /api/payment/wechat/jsapi`
+- `POST /api/payment/mock/{paymentNo}/success`
+- `GET /api/payment/order/{orderId}/status`
+- 统一支付成功事务及重复确认幂等处理
+- 官方`wechatpay-java:0.2.17`依赖
+
+### 安全与兼容
+
+- 新架构仅允许服务端可靠计价的商品订单
+- 创建支付单不直接修改订单支付状态
+- Mock接口和旧模拟支付接口均受环境开关保护
+- 真实微信支付默认关闭，未创建SDK客户端、未读取私钥
+- 微信回调第一阶段不注册，避免无验签请求误改订单
+- 配置迁移为环境变量占位符，本地配置和密钥文件加入Git忽略
+- 未修改订单履约状态语义，未实现退款
+
+### 当前状态
+
+- 第一阶段代码与文档完成，并通过人工 Mock 支付链路验收
+- Maven Compile已通过
+- SQL、Postman和Navicat验证已通过
+- 未连接真实微信支付
+
+### 人工验收
+
+- Mock 支付创建成功
+- 支付流水状态更新成功
+- 订单支付状态同步成功
+- 重复支付确认幂等验证通过
+- 订单支付日志仅写入一次
+
 ## V1.1
 
 日期：2026-07-17

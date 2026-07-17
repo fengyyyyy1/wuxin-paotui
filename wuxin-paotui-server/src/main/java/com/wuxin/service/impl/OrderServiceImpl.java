@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wuxin.common.ResultCode;
+import com.wuxin.config.MockPaymentProperties;
 import com.wuxin.dto.order.CreateOrderDTO;
 import com.wuxin.dto.order.CommentOrderDTO;
 import com.wuxin.dto.order.CreateCartOrderDTO;
@@ -97,11 +98,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
 
     private final MerchantStoreMapper merchantStoreMapper;
 
+    private final MockPaymentProperties mockPaymentProperties;
+
     public OrderServiceImpl(UserMapper userMapper, UserAddressMapper userAddressMapper,
                             OrderLogMapper orderLogMapper, OrderCommentMapper orderCommentMapper,
                             OrderItemMapper orderItemMapper, ShoppingCartMapper shoppingCartMapper,
                             MerchantProductMapper merchantProductMapper,
-                            MerchantStoreMapper merchantStoreMapper) {
+                            MerchantStoreMapper merchantStoreMapper,
+                            MockPaymentProperties mockPaymentProperties) {
         this.userMapper = userMapper;
         this.userAddressMapper = userAddressMapper;
         this.orderLogMapper = orderLogMapper;
@@ -110,6 +114,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         this.shoppingCartMapper = shoppingCartMapper;
         this.merchantProductMapper = merchantProductMapper;
         this.merchantStoreMapper = merchantStoreMapper;
+        this.mockPaymentProperties = mockPaymentProperties;
     }
 
     @Override
@@ -403,6 +408,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PayOrderVO payOrder(Long id) {
+        if (!mockPaymentProperties.isEnabled()) {
+            throw new BusinessException(ResultCode.MOCK_PAYMENT_DISABLED);
+        }
         if (id == null || id <= 0) {
             throw new BusinessException(ResultCode.PARAM_ERROR);
         }

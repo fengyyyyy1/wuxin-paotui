@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V1.1 骑手跑单排行榜模块
+> 当前版本：V1.2 微信支付模块（第一阶段）
 
 ## 一、sys_user
 
@@ -459,7 +459,62 @@
 - 商品后续改名、换图或调价不会改变历史订单详情。
 - 当前版本不增加外键约束，由业务事务保证订单主表与明细一致。
 
-## 十三、数据库升级历史
+## 十三、payment_order
+
+作用：保存平台支付流水。第一阶段用于本地 Mock 联调，后续兼容微信支付 API v3 JSAPI。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| payment_no | 平台支付单号，未来作为微信 `out_trade_no` |
+| order_id / order_no / user_id | 订单与付款用户 |
+| payment_channel | `MOCK` 或 `WECHAT` |
+| trade_type | 当前为 `JSAPI` |
+| appid / mchid / openid | 微信支付身份信息，Mock 可为空 |
+| amount_total | 应付金额，单位分 |
+| status | 支付流水状态 |
+| prepay_id | 预支付ID |
+| transaction_id | 渠道交易号 |
+| payer_total | 实付金额，单位分 |
+| success_time / expire_time | 支付成功和失效时间 |
+| notify_id / notify_body_hash | 回调幂等标识与原文摘要 |
+| error_code / error_message | 脱敏后的支付错误 |
+| version | 乐观版本 |
+| deleted / active_order_id | 逻辑删除与有效支付单约束 |
+
+支付流水状态：
+
+| status | 说明 |
+| --- | --- |
+| 0 | CREATED |
+| 1 | WAITING_PAY |
+| 2 | SUCCESS |
+| 3 | CLOSED |
+| 4 | FAILED |
+
+索引：
+
+- `uk_payment_no(payment_no)`
+- `uk_transaction_id(transaction_id)`
+- `uk_notify_id(notify_id)`
+- `uk_active_order_id(active_order_id)`
+- `idx_payment_order_id(order_id, deleted, create_time)`
+- `idx_payment_user_id(user_id, deleted, create_time)`
+- `idx_payment_status_expire(status, expire_time)`
+
+`active_order_id`为MySQL生成列：仅当`deleted=0`且状态为`CREATED/WAITING_PAY`时返回`order_id`，否则返回`NULL`，保证一个订单最多一个有效支付单，同时允许失败或关闭后重新创建。
+
+金额规则：商品订单从`order_info.total_amount`读取人民币元，Java使用`BigDecimal.movePointRight(2).setScale(0, UNNECESSARY).intValueExact()`转换为整数分。
+
+## 十四、数据库升级历史
+
+### V1.2 第一阶段
+
+- 新增`payment_order`支付流水表。
+- 新增有效支付单生成列和支付号、交易号、通知号唯一索引。
+- 新增脚本：`wuxin-paotui-server/src/main/resources/sql/12_create_payment_order.sql`。
+- 脚本只创建表，不写入或修改业务数据，等待人工执行。
 
 ### V1.1
 

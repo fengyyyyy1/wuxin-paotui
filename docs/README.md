@@ -126,12 +126,25 @@
 - 商品订单详情兼容
 - 仅清理已选购物车商品
 
+### 支付模块（V1.2 第一阶段）
+
+- `payment_order`支付流水
+- JSAPI支付单创建接口
+- 支付状态查询
+- 本地Mock支付网关
+- 模拟支付成功确认
+- 支付成功事务与幂等处理
+- 旧模拟支付生产环境保护
+- 微信支付API v3官方SDK依赖
+
+当前阶段仅用于本地Mock联调，尚未连接真实微信支付。
+
 ## 当前开发进度
 
 | 项 | 状态 |
 | --- | --- |
-| 当前版本 | V1.1 骑手跑单排行榜模块 |
-| 开发状态 | V1.1 已完成并通过人工测试 |
+| 当前版本 | V1.2 微信支付模块（第一阶段） |
+| 开发状态 | 基础架构与Mock联调代码完成，等待人工SQL、Postman和Navicat验收 |
 | 用户模块 | 已完成 |
 | 地址模块 | 已完成 |
 | 订单模块 | 部分完成 |
@@ -144,6 +157,7 @@
 | V0.9 异常流程测试 | 全部通过 |
 | 购物车结算与订单快照 | 已完成并通过人工测试 |
 | 骑手跑单排行榜 | 已完成并通过人工测试 |
+| 支付基础架构与Mock联调 | 代码完成，待人工验收 |
 
 ## 项目目录
 
@@ -162,6 +176,7 @@ src/main/java
 
 src/main/resources
 ├── application.yml / application.properties
+├── application-local.example.yml
 └── sql           # 数据库升级脚本
 ```
 
@@ -176,7 +191,7 @@ src/main/resources
 ### 启动步骤
 
 1. 创建数据库 `wuxin_paotui`。
-2. 修改 `application.yml` 或 `application.properties` 中的数据库连接配置。
+2. 保留现有本地数据库配置；支付配置通过环境变量注入，可参考`application-local.example.yml`创建不跟踪的`application-local.yml`。
 3. 导入数据库初始化脚本和增量 SQL。
 4. 运行启动类：
 
@@ -236,8 +251,8 @@ WuxinPaotuiServerApplication
 
 ## 后续开发计划
 
-- V1.2 微信支付模块
-- 微信支付下单、回调验签和支付幂等
+- V1.2第二阶段：真实微信JSAPI下单
+- 官方SDK回调验签、解密和主动查单
 - 支付与退款规则
 - 商家订单
 - Redis

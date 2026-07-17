@@ -1,8 +1,8 @@
 # Postman 测试文档
 
-> 当前版本：V1.1 骑手跑单排行榜模块
+> 当前版本：V1.2 微信支付模块（第一阶段）
 >
-> V1.1 排行榜正常流程、异常流程、SQL 统计和参数校验已通过人工测试。
+> 当前仅进行本地Mock支付联调，未连接真实微信支付。
 
 ## 一、环境变量
 
@@ -24,6 +24,8 @@
 | `otherStoreProductId` | 其他店铺商品 ID | 跨店铺购物车冲突测试 |
 | `cartId` | 加入购物车后返回 | 当前测试购物车记录 ID |
 | `riderId` | 从 `rider_info.id` 查询 | V1.1 骑手个人统计 ID |
+| `productOrderId` | 创建商品订单后返回 | V1.2待支付商品订单ID |
+| `v12PaymentNo` | 创建JSAPI支付单后返回 | V1.2平台支付单号 |
 
 登录后接口统一使用：
 
@@ -122,7 +124,7 @@ Bearer {{token}}
 - 骑手大厅中不存在 `{{paymentOrderId}}`
 - 直接请求 `POST {{host}}/api/rider/order/accept/{{paymentOrderId}}` 返回 `409 订单未支付`
 
-### 5. 模拟支付
+### 5. 旧版模拟支付
 
 请求：
 
@@ -149,6 +151,8 @@ Bearer {{token}}
 - 将支付单号保存到 `{{paymentNo}}`
 - 重复请求返回 `409 订单已支付`
 - `order_log` 新增一条 `0 → 0` 的模拟支付日志
+
+该接口仅用于历史开发测试，要求`wuxin.mock-payment.enabled=true`；生产环境默认关闭。
 
 ### 6. 我的订单
 
@@ -1128,6 +1132,139 @@ V1.1 人工验收结果：
 | 17 | 不存在骑手 | 通过 |
 | 18 | API 与数据库 SQL 一致 | 通过 |
 
+### 62. 准备V1.2本地配置
+
+参考`application-local.example.yml`创建未跟踪的`application-local.yml`，或设置：
+
+```text
+SPRING_PROFILES_ACTIVE=local
+MOCK_PAYMENT_ENABLED=true
+WECHAT_PAY_ENABLED=false
+DB_URL=本地数据库连接
+DB_USERNAME=本地数据库账号
+DB_PASSWORD=本地数据库密码
+```
+
+不得在项目文件中写入真实商户密钥、证书或APIv3密钥。
+
+### 63. 执行V1.2数据库脚本
+
+在Navicat中人工执行：
+
+```text
+wuxin-paotui-server/src/main/resources/sql/12_create_payment_order.sql
+```
+
+确认`payment_order`、生成列`active_order_id`及全部索引创建成功。
+
+### 64. 创建商品订单支付单
+
+准备`order_type=1`、`status=0`、`pay_status=0`且`total_amount>0`的当前用户商品订单。
+
+```http
+POST {{host}}/api/payment/wechat/jsapi
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "orderId": {{productOrderId}}
+}
+```
+
+预期返回非空`paymentNo、timeStamp、nonceStr、packageValue、signType、paySign`，将支付单号保存到`{{v12PaymentNo}}`。
+
+```sql
+SELECT payment_no, order_id, user_id, payment_channel, trade_type,
+       amount_total, status, prepay_id, active_order_id
+FROM payment_order
+WHERE order_id = {{productOrderId}}
+ORDER BY id DESC;
+
+SELECT id, pay_status, pay_time, payment_no
+FROM order_info
+WHERE id = {{productOrderId}};
+```
+
+预期流水`status=1`，订单仍为`pay_status=0`。
+
+### 65. 重复创建支付单
+
+重复创建请求，预期复用同一`paymentNo`，数据库只有一条`CREATED/WAITING_PAY`有效流水。
+
+### 66. Mock确认支付成功
+
+```http
+POST {{host}}/api/payment/mock/{{v12PaymentNo}}/success
+Authorization: Bearer {{token}}
+```
+
+预期流水变为`SUCCESS(2)`，订单`pay_status=1`，正确写入`pay_time、payment_no`和一条“订单支付成功”日志。
+
+### 67. 重复确认幂等
+
+重复执行Mock确认，预期仍返回成功；流水、订单不重复更新，订单日志不增加第二条。
+
+### 68. 查询支付状态
+
+```http
+GET {{host}}/api/payment/order/{{productOrderId}}/status
+Authorization: Bearer {{token}}
+```
+
+预期返回订单支付状态、流水状态、支付单号、交易号、整数分金额和成功时间。查询没有支付流水的本人订单时正常返回订单`payStatus`，流水字段为`null`。
+
+### 69. 权限、状态和金额测试
+
+- 其他用户不能创建该订单支付单。
+- 其他用户不能查询该订单支付状态。
+- 其他用户不能确认该支付单。
+- 已支付订单不能重复创建支付。
+- `order_type=0`跑腿订单暂不支持新支付架构。
+- `total_amount`为空、零或负数时拒绝创建。
+- 不存在`paymentNo`返回`404 支付单不存在`。
+- 流水金额与订单金额不一致时，确认失败且订单不更新。
+
+### 70. 环境开关测试
+
+设置`MOCK_PAYMENT_ENABLED=false`并重新启动人工测试环境：
+
+- `POST /api/order/pay/{id}`返回`403 模拟支付未启用`。
+- `POST /api/payment/mock/{paymentNo}/success`不注册。
+- 真实微信支付未启用时，创建支付返回支付网关未启用。
+
+第一阶段未注册`POST /api/payment/wechat/notify`，不得通过任意回调请求修改订单。
+
+### 71. V1.2人工验收清单
+
+| 编号 | 测试项 | 状态 |
+| --- | --- | --- |
+| 1 | 创建商品订单支付单成功 | 待测试 |
+| 2 | 返回paymentNo和JSAPI模拟参数 | 待测试 |
+| 3 | payment_order写入WAITING_PAY | 待测试 |
+| 4 | 创建支付不修改order_info.pay_status | 待测试 |
+| 5 | 重复创建复用有效支付单 | 待测试 |
+| 6 | 模拟确认支付成功 | 待测试 |
+| 7 | payment_order更新为SUCCESS | 待测试 |
+| 8 | order_info.pay_status更新为1 | 待测试 |
+| 9 | pay_time和payment_no正确 | 待测试 |
+| 10 | 订单日志只写一次 | 待测试 |
+| 11 | 重复确认幂等 | 待测试 |
+| 12 | 查询支付状态成功 | 待测试 |
+| 13 | 查询无支付流水订单 | 待测试 |
+| 14 | 非订单用户不能创建支付 | 待测试 |
+| 15 | 非订单用户不能查询支付 | 待测试 |
+| 16 | 非订单用户不能模拟确认 | 待测试 |
+| 17 | 已支付订单不能重复创建 | 待测试 |
+| 18 | 非商品订单暂不支持支付 | 待测试 |
+| 19 | 非法订单金额被拒绝 | 待测试 |
+| 20 | Mock关闭时旧接口不可用 | 待测试 |
+| 21 | Mock关闭时新确认接口不可用 | 待测试 |
+| 22 | 不存在paymentNo | 待测试 |
+| 23 | 流水与订单金额不一致 | 待测试 |
+| 24 | 并发请求不生成多条有效流水 | 待测试 |
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -1170,4 +1307,10 @@ V1.1 人工验收结果：
 | 排行榜 type 非法 | `400 排行榜类型参数错误` |
 | 排行榜 limit 不在 1～100 | `400 limit 必须在 1 到 100 之间` |
 | 骑手个人统计 ID 不存在 | `404 骑手不存在` |
+| Mock支付未启用 | `403 模拟支付未启用` |
+| 支付单不存在 | `404 支付单不存在` |
+| 支付状态不可操作 | `409 当前支付状态不可操作` |
+| 支付金额非法或不一致 | `409 支付金额无效或不一致` |
+| 非商品订单创建新支付 | `409 当前订单类型暂不支持支付` |
+| 支付网关未启用或创建失败 | `409 支付单创建失败` |
 | 未知异常 | `500 服务器内部错误` |

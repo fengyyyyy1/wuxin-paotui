@@ -1,9 +1,9 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V1.1 骑手跑单排行榜模块
+> 当前版本：V1.2 微信支付模块（第一阶段）
 >
-> V1.1 接口已完成并通过人工测试。
+> 当前仅支持本地 Mock 支付联调，未连接真实微信支付。
 
 ## 一、通用规范
 
@@ -1493,3 +1493,100 @@ Authorization: Bearer <token>
 正常流程已通过：加入购物车、重复商品累加、列表金额计算、修改数量、修改选中状态、逻辑删除、删除后重新加入和清空购物车。
 
 异常流程已通过：未登录、非法参数、购物车不存在、跨用户操作、跨店铺加购、商品下架、分类禁用、店铺停业、库存不足及失效商品重新选中。
+
+## 九、支付模块
+
+支付模块第一阶段只支持商品订单和本地 Mock 联调。所有接口使用服务端订单金额，前端不得提交金额、openid、appid、商户号、回调地址或支付单号。
+
+### 创建 JSAPI 支付单
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/payment/wechat/jsapi` |
+| Authorization | 需要 |
+
+请求：
+
+```json
+{
+  "orderId": 10
+}
+```
+
+成功响应：
+
+```json
+{
+  "code": 200,
+  "message": "支付单创建成功",
+  "data": {
+    "paymentNo": "PAY20260717230000...",
+    "timeStamp": "1784300400",
+    "nonceStr": "mockNonce",
+    "packageValue": "prepay_id=mock_prepay_xxx",
+    "signType": "RSA",
+    "paySign": "MOCK_SIGN_xxx"
+  }
+}
+```
+
+说明：
+
+- 仅支持 `order_type = 1`、`status = 0`、`pay_status = 0` 的当前用户商品订单。
+- 金额读取 `order_info.total_amount`，由服务端转换为整数分。
+- 创建支付单后，`payment_order.status = 1`，不会直接修改订单 `pay_status`。
+- 同一订单已有有效待支付流水时复用，不重复创建。
+
+异常：`400 参数错误`、`401`、`404 订单不存在`、`409 已支付`、`409 当前订单类型暂不支持支付`、`409 支付金额无效或不一致`、`409 支付单创建失败`。
+
+### Mock 确认支付成功
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/payment/mock/{paymentNo}/success` |
+| Authorization | 需要 |
+| 环境限制 | 仅 `wuxin.mock-payment.enabled=true` 时注册 |
+
+成功后在同一事务中将支付流水更新为 `SUCCESS`，将订单 `pay_status` 更新为 `1`，并写入一次订单日志。重复调用幂等。
+
+成功响应：
+
+```json
+{
+  "code": 200,
+  "message": "模拟支付成功",
+  "data": {
+    "orderId": 10,
+    "orderNo": "WX20260717225900123456",
+    "payStatus": 1,
+    "paymentNo": "PAY20260717230000...",
+    "paymentStatus": 2,
+    "paymentStatusText": "支付成功",
+    "transactionId": "MOCK_TXN_PAY...",
+    "amountTotal": 350,
+    "successTime": "2026-07-17T23:01:00"
+  }
+}
+```
+
+异常：`401`、`404 支付单不存在`、`409 当前支付状态不可操作`、`409 支付金额无效或不一致`。
+
+### 查询订单支付状态
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/payment/order/{orderId}/status` |
+| Authorization | 需要 |
+
+仅允许查询当前用户自己的未删除订单。没有支付流水时仍返回订单真实 `payStatus`，支付流水字段为 `null`。
+
+### 旧版模拟支付
+
+`POST /api/order/pay/{id}`继续保留，仅用于开发测试。只有`wuxin.mock-payment.enabled=true`时允许调用，生产环境默认关闭；新测试应迁移到`payment_order + /api/payment/mock/{paymentNo}/success`流程。
+
+### 微信支付回调规划
+
+第二阶段计划路径为`POST /api/payment/wechat/notify`。第一阶段未注册该接口、未放行JWT，也没有任何假验签逻辑。真实实现必须使用官方SDK `NotificationParser`对原始请求验签、解密并校验金额后，才能调用统一支付确认事务。

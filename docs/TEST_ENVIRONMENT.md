@@ -1,6 +1,6 @@
 # 测试环境
 
-> 当前版本：V1.1 骑手跑单排行榜模块
+> 当前版本：V1.2 微信支付模块（第一阶段）
 > 最近一次完整测试时间：2026-07-17
 
 本文件是项目测试环境、测试数据和验收断点的统一记录。以后所有测试环境变化必须维护本文件。
@@ -15,6 +15,8 @@
 | V1.0 数据库状态 | 已完成升级并通过人工验证 |
 | V1.1 升级脚本 | `11_add_rider_ranking_index.sql` |
 | V1.1 数据库状态 | 已执行并通过人工验证 |
+| V1.2升级脚本 | `12_create_payment_order.sql` |
+| V1.2数据库状态 | 待人工执行和验证 |
 
 ## 二、当前测试账号
 
@@ -75,6 +77,20 @@ FROM order_info
 WHERE rider_id IS NOT NULL
 ORDER BY id DESC;
 ```
+
+### V1.2支付联调
+
+| 数据 | 当前值 |
+| --- | --- |
+| 模式 | 本地Mock，不连接真实微信 |
+| `MOCK_PAYMENT_ENABLED` | 人工测试时设置为`true` |
+| `WECHAT_PAY_ENABLED` | `false` |
+| 商品订单ID | 创建测试商品订单后回填 |
+| paymentNo | 创建支付单后回填 |
+| payment_order SQL | 待人工执行 |
+| Postman状态 | 24项测试待人工验收 |
+
+第一阶段Mock允许测试账号`openid`为空，不得向`sys_user`写入伪造openid。
 
 ## 四、购物车状态
 
@@ -150,6 +166,12 @@ V1.1 人工测试结果：
 | type 参数校验 | 通过 |
 | limit 范围校验 | 通过 |
 | SQL 统计正确性 | 通过 |
+
+V1.2第一阶段当前结果：
+
+- Java 21 Maven Compile已通过。
+- 未连接真实微信支付。
+- SQL、Postman和Navicat等待人工验收。
 
 ## 七、维护规则
 

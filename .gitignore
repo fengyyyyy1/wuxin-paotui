@@ -1,1 +1,6 @@
 docs/CODEX_RULE.md
+wuxin-paotui-server/src/main/resources/application-local.yml
+wuxin-paotui-server/config/
+*.pem
+*.p12
+*.key
