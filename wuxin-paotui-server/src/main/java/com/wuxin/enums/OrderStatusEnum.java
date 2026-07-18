@@ -7,7 +7,10 @@ public enum OrderStatusEnum {
     DELIVERING(2, "\u914d\u9001\u4e2d"),
     WAITING_CONFIRM(3, "\u5f85\u786e\u8ba4\u6536\u8d27"),
     COMPLETED(4, "\u5df2\u5b8c\u6210"),
-    CANCELLED(5, "\u5df2\u53d6\u6d88");
+    CANCELLED(5, "\u5df2\u53d6\u6d88"),
+    MERCHANT_PREPARING(6, "商家已接单，制作中"),
+    WAITING_RIDER_ACCEPT(7, "已出餐，待骑手接单"),
+    WAITING_REFUND(8, "已关闭，待退款");
 
     private final Integer code;
 
@@ -44,6 +47,22 @@ public enum OrderStatusEnum {
     }
 
     public static String getTextByCode(Integer code) {
+        return getDescriptionByCode(code);
+    }
+
+    public static String getDescriptionByCode(
+            Integer code,
+            Integer orderType,
+            Integer payStatus) {
+        if (WAITING_ACCEPT.getCode().equals(code)
+                && OrderTypeEnum.PRODUCT.getCode().equals(orderType)) {
+            if (PaymentStatusEnum.UNPAID.getCode().equals(payStatus)) {
+                return "待支付";
+            }
+            if (PaymentStatusEnum.PAID.getCode().equals(payStatus)) {
+                return "待商家接单";
+            }
+        }
         return getDescriptionByCode(code);
     }
 }

@@ -65,6 +65,18 @@ public class OrderEntity {
     @TableField("finish_time")
     private LocalDateTime finishTime;
 
+    @TableField("merchant_accept_time")
+    private LocalDateTime merchantAcceptTime;
+
+    @TableField("merchant_ready_time")
+    private LocalDateTime merchantReadyTime;
+
+    @TableField("merchant_reject_time")
+    private LocalDateTime merchantRejectTime;
+
+    @TableField("merchant_reject_reason")
+    private String merchantRejectReason;
+
     @TableField("pay_status")
     private Integer payStatus;
 

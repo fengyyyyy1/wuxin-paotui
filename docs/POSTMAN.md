@@ -1,6 +1,6 @@
 # Postman 测试文档
 
-> 当前版本：V1.3 微信用户体系
+> 当前版本：V1.4 商家订单管理模块
 >
 > 当前可进行本地固定映射Mock微信登录；真实微信联调需要小程序AppID和AppSecret。
 
@@ -28,6 +28,13 @@
 | `v12PaymentNo` | 创建JSAPI支付单后返回 | V1.2平台支付单号 |
 | `wechatToken` | 微信登录后返回 | V1.3微信用户JWT |
 | `wechatUserId` | 微信首次登录后返回 | V1.3微信测试用户ID |
+| `merchantToken` | 商家账号登录后返回 | V1.4当前店铺商家JWT |
+| `otherMerchantToken` | 其他商家账号登录后返回 | V1.4越权测试JWT |
+| `merchantUsername` | 从真实数据库确认 | 当前商家登录名 |
+| `merchantPassword` | 从TEST_ACCOUNT确认 | 当前商家测试密码 |
+| `merchantOrderId` | 新建并支付的商品订单ID | 商家接单与出餐 |
+| `merchantOrderNo` | 新建商品订单返回 | 商家订单号搜索 |
+| `rejectMerchantOrderId` | 第二笔已支付商品订单ID | 商家拒单 |
 
 登录后接口统一使用：
 
@@ -220,13 +227,14 @@ Bearer {{token}}
 
 测试说明：
 
-- 查询所有待接单订单。
+- 查询当前可由骑手接取且已支付的订单。
 
 预期结果：
 
-- 返回 `status = 0` 的订单
+- 普通跑腿订单返回 `orderType = 0`（兼容历史 `NULL`）、`status = 0` 的订单
+- 商品订单只返回 `orderType = 1`、`status = 7` 的已出餐订单
 - 只返回 `payStatus = 1` 的订单
-- 支付后的 `{{paymentOrderId}}` 可以被查询到
+- 待商家接单的商品订单即使已支付也不会进入骑手大厅
 - 按创建时间倒序
 
 ### 9. 骑手接单
@@ -1666,6 +1674,414 @@ HAVING COUNT(*) > 1;
 | 10 | 其他用户字段未被修改 | 通过 |
 | 11 | 日志只记录脱敏手机号 | 通过 |
 | 12 | 不出现服务器内部错误 | 通过 |
+
+### 95. V1.4测试准备
+
+完整配送链路按以下顺序执行：
+
+```text
+用户登录
+→ 加入购物车
+→ 创建店铺商品订单
+→ 创建支付单
+→ Mock支付成功
+→ 商家订单分页
+→ 商家订单详情
+→ 商家接单
+→ 商家出餐
+→ 骑手大厅
+→ 骑手接单
+```
+
+商家拒单必须另外创建一笔“已支付、待商家接单”的订单，不能把同一订单同时用于
+完整配送链路和拒单链路。
+
+先在Navicat执行：
+
+```text
+wuxin-paotui-server/src/main/resources/sql/13_update_order_for_merchant_management.sql
+```
+
+IDEA本地环境变量：
+
+```text
+MOCK_PAYMENT_ENABLED=true
+WECHAT_PAY_ENABLED=false
+```
+
+确认以下测试数据真实存在：
+
+- 普通下单用户及有效收货地址。
+- 已审核通过且启用的商家、有效店铺。
+- 店铺内启用分类、已上架且库存充足的商品。
+- 审核通过且启用的骑手。
+- 如需越权测试，准备第二个已审核商家账号。
+
+不得根据自增顺序猜测`storeId、productId、merchantId`。
+
+### 96. 获取普通用户Token
+
+```http
+POST {{host}}/api/user/login
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "test001",
+  "password": "123456"
+}
+```
+
+保存为`token`。
+
+### 97. 获取商家Token
+
+使用`TEST_ACCOUNT.md`中经真实数据库确认的商家账号：
+
+```http
+POST {{host}}/api/user/login
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "{{merchantUsername}}",
+  "password": "{{merchantPassword}}"
+}
+```
+
+保存为`merchantToken`。执行`GET /api/merchant/me`确认返回的`storeId`与商品所属店铺一致。
+
+### 98. 创建并支付商品订单
+
+先加入当前商家店铺商品：
+
+```http
+POST {{host}}/api/cart/add
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "productId": {{productId}},
+  "quantity": 1
+}
+```
+
+创建订单：
+
+```http
+POST {{host}}/api/order/create-from-cart
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "deliveryAddressId": {{addressId}},
+  "remark": "V1.4商家订单验收"
+}
+```
+
+保存返回`orderId`为`merchantOrderId`，保存`orderNo`为`merchantOrderNo`。
+
+创建支付单：
+
+```http
+POST {{host}}/api/payment/wechat/jsapi
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "orderId": {{merchantOrderId}}
+}
+```
+
+保存`paymentNo`，再执行：
+
+```http
+POST {{host}}/api/payment/mock/{{paymentNo}}/success
+Authorization: Bearer {{token}}
+```
+
+预期`order_info.pay_status=1`，订单`status=0`，状态文字为“待商家接单”。
+
+### 99. 商家订单分页
+
+```http
+GET {{host}}/api/merchant/order/page?pageNum=1&pageSize=10&status=0
+Authorization: Bearer {{merchantToken}}
+```
+
+预期：
+
+- 只返回当前商家店铺商品订单。
+- 包含`merchantOrderId`。
+- `statusName=待商家接单`。
+- 收件手机号格式为`138****0003`。
+- 按创建时间倒序。
+
+继续测试：
+
+```http
+GET {{host}}/api/merchant/order/page?keyword={{merchantOrderNo}}
+GET {{host}}/api/merchant/order/page?keyword=商品快照名称
+GET {{host}}/api/merchant/order/page?startTime=2026-07-18T00:00:00&endTime=2026-07-19T00:00:00
+```
+
+`pageNum=0`、`pageSize=101`、非法`status`、开始时间不早于结束时间均应返回参数错误。
+
+### 100. 商家订单详情
+
+```http
+GET {{host}}/api/merchant/order/{{merchantOrderId}}
+Authorization: Bearer {{merchantToken}}
+```
+
+预期返回订单金额、脱敏手机号、收货地址、`order_item`商品快照和`order_log`轨迹，不返回密码、openid、unionid或JWT。
+
+### 101. 出餐前骑手大厅隔离
+
+```http
+GET {{host}}/api/rider/order/hall?pageNum=1&pageSize=50
+Authorization: Bearer {{token}}
+```
+
+预期商品订单`merchantOrderId`尚未出现。普通已支付待接单跑腿订单仍正常显示。
+
+### 102. 商家接单
+
+```http
+POST {{host}}/api/merchant/order/{{merchantOrderId}}/accept
+Authorization: Bearer {{merchantToken}}
+```
+
+预期：
+
+- `status=6`
+- `statusName=商家已接单，制作中`
+- `merchantAcceptTime`非空
+- `order_log`新增一条`MERCHANT`、`0 → 6`、`商家接单`
+
+立即重复请求，预期`409 当前订单状态不允许商家操作`，日志不增加第二条。
+
+### 103. 商家出餐
+
+```http
+POST {{host}}/api/merchant/order/{{merchantOrderId}}/ready
+Authorization: Bearer {{merchantToken}}
+```
+
+预期：
+
+- `status=7`
+- `statusName=已出餐，待骑手接单`
+- `merchantAcceptTime`为商家接单时的真实时间
+- `readyTime`非空
+- `rejectTime`和`rejectReason`读取订单真实数据，未拒单时为`null`
+- `order_log`新增一条`6 → 7`、`商家出餐`
+
+立即重复请求，预期`409`且日志不重复。
+
+### 104. 出餐后骑手接单
+
+重新查询骑手大厅，预期出现`merchantOrderId`。
+
+```http
+POST {{host}}/api/rider/order/accept/{{merchantOrderId}}
+Authorization: Bearer {{token}}
+```
+
+预期商品订单`7 → 1`。骑手放弃该商品订单时应回到`status=7`，不能回到商家待接单状态。
+
+### 105. 商家拒单
+
+按步骤98再创建并支付第二笔商品订单，保存为`rejectMerchantOrderId`。
+本轮人工验收使用`rejectMerchantOrderId = 8`，完整配送订单`7`不得复用。
+
+```http
+POST {{host}}/api/merchant/order/{{rejectMerchantOrderId}}/reject
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+```
+
+```json
+{
+  "reason": "商品暂时缺货"
+}
+```
+
+预期：
+
+- `status=8`
+- `statusName=已关闭，待退款`
+- `merchant_reject_time`和原因正确
+- `pay_status`仍为`1`
+- `payment_order`不得变成退款成功
+- 订单日志新增`0 → 8`、`商家拒单：商品暂时缺货`
+
+重复拒单返回`409`，日志不重复。空原因、1字符原因或超过200字符返回参数错误。
+
+订单`8`人工验收返回：
+
+```json
+{
+  "code": 200,
+  "message": "商家拒单已受理，等待退款处理",
+  "data": {
+    "orderId": 8,
+    "status": 8,
+    "statusName": "已关闭，待退款",
+    "merchantAcceptTime": null,
+    "readyTime": null,
+    "rejectTime": "2026-07-18T18:16:59.722493",
+    "rejectReason": "商品暂时缺货"
+  }
+}
+```
+
+该结果仅表示订单已关闭并等待退款处理，真实退款功能尚未实现。
+
+### 106. 权限与异常测试
+
+- 普通用户Token访问`GET /api/merchant/order/page`，预期`404 商家信息不存在`。
+- 其他商家Token查询或操作当前订单，预期`404 订单不存在或无权限`。
+- 未支付商品订单接单或拒单，预期`409 订单未支付，商家不可操作`。
+- 普通跑腿订单使用商家接口，预期`404 订单不存在或无权限`。
+- 未接单商品订单直接出餐，预期`409 当前订单状态不允许商家操作`。
+- 不携带JWT访问任意商家订单接口，预期`401`。
+
+### 107. V1.4 Navicat验证
+
+检查订单状态和商家时间：
+
+```sql
+SELECT
+    id,
+    order_no,
+    order_type,
+    store_id,
+    status,
+    pay_status,
+    merchant_accept_time,
+    merchant_ready_time,
+    merchant_reject_time,
+    merchant_reject_reason,
+    rider_id,
+    accept_time,
+    update_time,
+    deleted
+FROM order_info
+WHERE id IN ({{merchantOrderId}}, {{rejectMerchantOrderId}});
+```
+
+检查商家日志：
+
+```sql
+SELECT
+    id,
+    order_id,
+    old_status,
+    new_status,
+    operator_id,
+    operator_type,
+    remark,
+    create_time
+FROM order_log
+WHERE order_id IN ({{merchantOrderId}}, {{rejectMerchantOrderId}})
+ORDER BY id;
+```
+
+检查商品快照：
+
+```sql
+SELECT
+    order_id,
+    product_id,
+    product_name,
+    product_price,
+    quantity,
+    subtotal,
+    is_deleted
+FROM order_item
+WHERE order_id IN ({{merchantOrderId}}, {{rejectMerchantOrderId}})
+ORDER BY order_id, id;
+```
+
+检查字段和索引：
+
+```sql
+SHOW COLUMNS FROM order_info LIKE 'merchant_%';
+SHOW INDEX FROM order_info
+WHERE Key_name = 'idx_order_store_type_deleted_create_time';
+```
+
+### 108. V1.4人工验收清单
+
+人工验收时间：2026-07-18
+
+完整配送链路验收订单：
+
+| 项 | 值 |
+| --- | --- |
+| orderId | `7` |
+| orderNo | `WX20260718173934516783` |
+| paymentNo | `PAY20260718174303093cf8566e8141b1ae648649340679c0` |
+
+拒单链路验收订单：
+
+| 项 | 值 |
+| --- | --- |
+| orderId | `8` |
+| orderNo | `WX20260718180441574851` |
+| storeId | `1` |
+| userId | `2` |
+| paymentNo | `PAY2026071818153359038b94fc2a4cfc918b822dd4611cd1` |
+| payTime | `2026-07-18 18:15:54` |
+| rejectTime | `2026-07-18T18:16:59.722493` |
+| 最终状态 | `8 已关闭，待退款` |
+
+验收状态流：
+
+```text
+0 待商家接单
+→ 6 商家已接单，制作中
+→ 7 已出餐，待骑手接单
+→ 1 骑手已接单
+→ 3 待用户确认
+→ 4 已完成
+
+商家拒单：0 → 8
+```
+
+| 编号 | 测试项 | 状态 |
+| --- | --- | --- |
+| 1 | 执行13号增量SQL | 通过 |
+| 2 | 商家订单分页与筛选 | 通过 |
+| 3 | 店铺订单权限隔离 | 通过 |
+| 4 | 商家订单详情和商品快照 | 通过 |
+| 5 | 手机号脱敏 | 通过 |
+| 6 | 商家接单与重复接单 | 通过 |
+| 7 | 商家拒单与待退款状态 | 通过 |
+| 8 | 商家出餐与重复出餐 | 通过 |
+| 9 | 出餐前不进入骑手大厅 | 通过 |
+| 10 | 出餐后进入骑手大厅 | 通过 |
+| 11 | 普通跑腿订单兼容 | 通过 |
+| 12 | 非商家与跨店铺越权 | 通过 |
+| 13 | order_log不重复 | 通过 |
+| 14 | Navicat字段与索引核对 | 通过 |
+
+最终商家订单详情已确认：
+
+- `merchantAcceptTime`正常存在
+- `readyTime`正常存在
+- 时间线包含用户创建订单、订单支付成功、商家接单、商家出餐和骑手接单
+- 订单`8`的`merchant_reject_time`和`merchant_reject_reason`正确落库
+- 真实退款尚未实现，拒单后`pay_status`仍为`1`
 
 ## 三、异常测试
 

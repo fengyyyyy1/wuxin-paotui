@@ -26,4 +26,4 @@ wuxin:
     api-v3-key: ${WECHAT_PAY_API_V3_KEY:}
     notify-url: ${WECHAT_PAY_NOTIFY_URL:}
   mock-payment:
-    enabled: ${MOCK_PAYMENT_ENABLED:false}
+    enabled: ${MOCK_PAYMENT_ENABLED:true}

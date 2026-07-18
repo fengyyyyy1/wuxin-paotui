@@ -905,7 +905,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderListVO.setDistance(orderEntity.getDistance());
         orderListVO.setPrice(orderEntity.getPrice());
         orderListVO.setStatus(orderEntity.getStatus());
-        orderListVO.setStatusText(getStatusText(orderEntity.getStatus()));
+        orderListVO.setStatusText(OrderStatusEnum.getDescriptionByCode(
+                orderEntity.getStatus(),
+                orderEntity.getOrderType(),
+                orderEntity.getPayStatus()));
         orderListVO.setPayStatus(orderEntity.getPayStatus());
         orderListVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
         orderListVO.setPayTime(orderEntity.getPayTime());
@@ -928,7 +931,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderDetailVO.setDistance(orderEntity.getDistance());
         orderDetailVO.setPrice(orderEntity.getPrice());
         orderDetailVO.setStatus(orderEntity.getStatus());
-        orderDetailVO.setStatusText(getStatusText(orderEntity.getStatus()));
+        orderDetailVO.setStatusText(OrderStatusEnum.getDescriptionByCode(
+                orderEntity.getStatus(),
+                orderEntity.getOrderType(),
+                orderEntity.getPayStatus()));
         orderDetailVO.setPayStatus(orderEntity.getPayStatus());
         orderDetailVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
         orderDetailVO.setPayTime(orderEntity.getPayTime());
@@ -966,10 +972,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         orderItemVO.setQuantity(orderItem.getQuantity());
         orderItemVO.setSubtotal(orderItem.getSubtotal());
         return orderItemVO;
-    }
-
-    private String getStatusText(Integer status) {
-        return OrderStatusEnum.getTextByCode(status);
     }
 
     private long normalizePageNum(Integer pageNum) {

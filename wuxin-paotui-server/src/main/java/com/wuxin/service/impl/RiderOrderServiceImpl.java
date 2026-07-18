@@ -8,6 +8,7 @@ import com.wuxin.entity.OrderLogEntity;
 import com.wuxin.entity.OrderEntity;
 import com.wuxin.entity.RiderInfoEntity;
 import com.wuxin.enums.OrderStatusEnum;
+import com.wuxin.enums.OrderTypeEnum;
 import com.wuxin.enums.PaymentStatusEnum;
 import com.wuxin.exception.BusinessException;
 import com.wuxin.mapper.OrderLogMapper;
@@ -61,9 +62,22 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         long safePageSize = normalizePageSize(pageSize);
 
         LambdaQueryWrapper<OrderEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
-                .eq(OrderEntity::getPayStatus, PaymentStatusEnum.PAID.getCode())
+        queryWrapper.eq(OrderEntity::getPayStatus, PaymentStatusEnum.PAID.getCode())
                 .eq(OrderEntity::getDeleted, 0)
+                .and(scope -> scope
+                        .nested(errand -> errand
+                                .and(type -> type
+                                        .isNull(OrderEntity::getOrderType)
+                                        .or()
+                                        .eq(OrderEntity::getOrderType,
+                                                OrderTypeEnum.ERRAND.getCode()))
+                                .eq(OrderEntity::getStatus,
+                                        OrderStatusEnum.WAITING_ACCEPT.getCode()))
+                        .or(product -> product
+                                .eq(OrderEntity::getOrderType,
+                                        OrderTypeEnum.PRODUCT.getCode())
+                                .eq(OrderEntity::getStatus,
+                                        OrderStatusEnum.WAITING_RIDER_ACCEPT.getCode())))
                 .orderByDesc(OrderEntity::getCreateTime);
 
         Page<OrderEntity> page = orderMapper.selectPage(new Page<>(safePageNum, safePageSize), queryWrapper);
@@ -93,11 +107,13 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         }
 
         RiderInfoEntity riderInfo = getCurrentRider(userId);
+        OrderEntity order = orderMapper.selectById(id);
+        Integer oldStatus = getRiderAcceptOldStatus(order);
         LocalDateTime now = LocalDateTime.now();
 
         LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(OrderEntity::getId, id)
-                .eq(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .eq(OrderEntity::getStatus, oldStatus)
                 .eq(OrderEntity::getPayStatus, PaymentStatusEnum.PAID.getCode())
                 .eq(OrderEntity::getDeleted, 0)
                 .set(OrderEntity::getRiderId, riderInfo.getId())
@@ -112,7 +128,7 @@ public class RiderOrderServiceImpl implements RiderOrderService {
 
         OrderLogEntity orderLog = new OrderLogEntity();
         orderLog.setOrderId(id);
-        orderLog.setOldStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setOldStatus(oldStatus);
         orderLog.setNewStatus(OrderStatusEnum.ACCEPTED.getCode());
         orderLog.setOperatorId(userId);
         orderLog.setOperatorType(OPERATOR_TYPE_RIDER);
@@ -229,6 +245,14 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         }
 
         RiderInfoEntity riderInfo = getCurrentRider(userId);
+        OrderEntity order = getRiderOrder(id, riderInfo.getId());
+        if (!OrderStatusEnum.ACCEPTED.getCode().equals(order.getStatus())) {
+            throw new BusinessException(ResultCode.ORDER_STATUS_CANNOT_GIVE_UP);
+        }
+        OrderStatusEnum targetStatus = OrderTypeEnum.PRODUCT.getCode()
+                .equals(order.getOrderType())
+                ? OrderStatusEnum.WAITING_RIDER_ACCEPT
+                : OrderStatusEnum.WAITING_ACCEPT;
         LocalDateTime now = LocalDateTime.now();
 
         LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
@@ -236,20 +260,20 @@ public class RiderOrderServiceImpl implements RiderOrderService {
                 .eq(OrderEntity::getRiderId, riderInfo.getId())
                 .eq(OrderEntity::getStatus, OrderStatusEnum.ACCEPTED.getCode())
                 .eq(OrderEntity::getDeleted, 0)
-                .set(OrderEntity::getStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .set(OrderEntity::getStatus, targetStatus.getCode())
                 .set(OrderEntity::getRiderId, null)
                 .set(OrderEntity::getAcceptTime, null)
                 .set(OrderEntity::getUpdateTime, now);
 
         int affectedRows = orderMapper.update(null, updateWrapper);
         if (affectedRows != 1) {
-            handleGiveUpFailed(id, riderInfo.getId(), userId);
+            handleGiveUpFailed(id, riderInfo.getId(), userId, targetStatus);
         }
 
         OrderLogEntity orderLog = new OrderLogEntity();
         orderLog.setOrderId(id);
         orderLog.setOldStatus(OrderStatusEnum.ACCEPTED.getCode());
-        orderLog.setNewStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
+        orderLog.setNewStatus(targetStatus.getCode());
         orderLog.setOperatorId(userId);
         orderLog.setOperatorType(OPERATOR_TYPE_RIDER);
         orderLog.setRemark("骑手放弃订单");
@@ -261,8 +285,8 @@ public class RiderOrderServiceImpl implements RiderOrderService {
 
         GiveUpOrderVO giveUpOrderVO = new GiveUpOrderVO();
         giveUpOrderVO.setOrderId(id);
-        giveUpOrderVO.setStatus(OrderStatusEnum.WAITING_ACCEPT.getCode());
-        giveUpOrderVO.setStatusText(OrderStatusEnum.WAITING_ACCEPT.getText());
+        giveUpOrderVO.setStatus(targetStatus.getCode());
+        giveUpOrderVO.setStatusText(targetStatus.getText());
         giveUpOrderVO.setGiveUpTime(now);
         return giveUpOrderVO;
     }
@@ -279,7 +303,10 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         hallOrderVO.setPickupAddressId(orderEntity.getPickupAddressId());
         hallOrderVO.setDeliveryAddressId(orderEntity.getDeliveryAddressId());
         hallOrderVO.setStatus(orderEntity.getStatus());
-        hallOrderVO.setStatusText(OrderStatusEnum.getTextByCode(orderEntity.getStatus()));
+        hallOrderVO.setStatusText(OrderStatusEnum.getDescriptionByCode(
+                orderEntity.getStatus(),
+                orderEntity.getOrderType(),
+                orderEntity.getPayStatus()));
         hallOrderVO.setPayStatus(orderEntity.getPayStatus());
         hallOrderVO.setPayStatusText(PaymentStatusEnum.getTextByCode(orderEntity.getPayStatus()));
         hallOrderVO.setCreateTime(orderEntity.getCreateTime());
@@ -335,7 +362,11 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         return riderInfo;
     }
 
-    private void handleGiveUpFailed(Long id, Long riderId, Long userId) {
+    private void handleGiveUpFailed(
+            Long id,
+            Long riderId,
+            Long userId,
+            OrderStatusEnum targetStatus) {
         LambdaQueryWrapper<OrderEntity> orderQueryWrapper = new LambdaQueryWrapper<>();
         orderQueryWrapper.eq(OrderEntity::getId, id)
                 .eq(OrderEntity::getRiderId, riderId)
@@ -350,7 +381,7 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         LambdaQueryWrapper<OrderLogEntity> logQueryWrapper = new LambdaQueryWrapper<>();
         logQueryWrapper.eq(OrderLogEntity::getOrderId, id)
                 .eq(OrderLogEntity::getOldStatus, OrderStatusEnum.ACCEPTED.getCode())
-                .eq(OrderLogEntity::getNewStatus, OrderStatusEnum.WAITING_ACCEPT.getCode())
+                .eq(OrderLogEntity::getNewStatus, targetStatus.getCode())
                 .eq(OrderLogEntity::getOperatorId, userId)
                 .eq(OrderLogEntity::getOperatorType, OPERATOR_TYPE_RIDER);
 
@@ -362,16 +393,41 @@ public class RiderOrderServiceImpl implements RiderOrderService {
 
     private void handleAcceptFailed(Long id) {
         OrderEntity orderEntity = orderMapper.selectById(id);
-        if (orderEntity == null) {
+        if (orderEntity == null || Integer.valueOf(1).equals(orderEntity.getDeleted())) {
             throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
         }
         if (!PaymentStatusEnum.PAID.getCode().equals(orderEntity.getPayStatus())) {
             throw new BusinessException(ResultCode.ORDER_NOT_PAID);
         }
+        if (OrderTypeEnum.PRODUCT.getCode().equals(orderEntity.getOrderType())
+                && !OrderStatusEnum.WAITING_RIDER_ACCEPT.getCode()
+                .equals(orderEntity.getStatus())) {
+            throw new BusinessException(ResultCode.ORDER_STATUS_ERROR);
+        }
         if (OrderStatusEnum.CANCELLED.getCode().equals(orderEntity.getStatus())) {
             throw new BusinessException(ResultCode.ORDER_STATUS_ERROR);
         }
         throw new BusinessException(ResultCode.ORDER_ALREADY_ACCEPTED);
+    }
+
+    private Integer getRiderAcceptOldStatus(OrderEntity order) {
+        if (order == null || Integer.valueOf(1).equals(order.getDeleted())) {
+            throw new BusinessException(ResultCode.ORDER_NOT_EXIST);
+        }
+        if (!PaymentStatusEnum.PAID.getCode().equals(order.getPayStatus())) {
+            throw new BusinessException(ResultCode.ORDER_NOT_PAID);
+        }
+        if (OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())) {
+            if (!OrderStatusEnum.WAITING_RIDER_ACCEPT.getCode()
+                    .equals(order.getStatus())) {
+                throw new BusinessException(ResultCode.ORDER_STATUS_ERROR);
+            }
+            return OrderStatusEnum.WAITING_RIDER_ACCEPT.getCode();
+        }
+        if (!OrderStatusEnum.WAITING_ACCEPT.getCode().equals(order.getStatus())) {
+            throw new BusinessException(ResultCode.ORDER_ALREADY_ACCEPTED);
+        }
+        return OrderStatusEnum.WAITING_ACCEPT.getCode();
     }
 
     private long normalizePageNum(Integer pageNum) {

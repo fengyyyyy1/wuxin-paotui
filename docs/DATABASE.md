@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V1.3 微信用户体系
+> 当前版本：V1.4 商家订单管理模块
 
 ## 一、sys_user
 
@@ -105,6 +105,10 @@
 | update_time | 更新时间 |
 | accept_time | 接单时间 |
 | finish_time | 完成时间 |
+| merchant_accept_time | 商家接单时间 |
+| merchant_ready_time | 商家出餐时间 |
+| merchant_reject_time | 商家拒单时间 |
+| merchant_reject_reason | 商家拒单原因，最长 200 字符 |
 | pay_status | 支付状态，0 未支付、1 已支付 |
 | pay_time | 支付时间 |
 | payment_no | 支付单号 |
@@ -127,6 +131,7 @@
 | uk_order_payment_no(payment_no) | 支付单号唯一 |
 | idx_order_type_user_deleted_create_time(order_type, user_id, deleted, create_time) | 用户按订单类型查询 |
 | idx_order_store_status_deleted_create_time(store_id, status, deleted, create_time) | 店铺订单状态查询 |
+| idx_order_store_type_deleted_create_time(store_id, order_type, deleted, create_time) | V1.4 商家订单默认分页与时间排序 |
 | idx_order_status_deleted_finish_rider(status, deleted, finish_time, rider_id) | V1.1 骑手跑单排行榜统计 |
 
 说明：
@@ -134,9 +139,14 @@
 - `accept_time` 在骑手接单成功后写入。
 - `finish_time` 预留给骑手完成配送。
 - 订单查询统一过滤 `deleted = 0`。
+- `order_info`真实逻辑删除字段为`deleted`，不是`is_deleted`。
 - 新订单默认 `pay_status = 0`，支付成功后写入支付时间和支付单号。
 - `status` 表示配送业务状态，`pay_status` 表示支付状态，两者独立。
 - 骑手大厅和骑手接单均要求 `pay_status = 1`。
+- 商品订单只有`status = 7`时进入骑手大厅；跑腿订单继续使用`status = 0`。
+- 商家接单、拒单和出餐均使用带原状态条件的原子更新。
+- 商家拒绝已支付订单后进入`status = 8`，支付状态保持已支付，等待后续退款处理。
+- 数据库字段`merchant_ready_time`对应商家接口返回字段`readyTime`。
 - 跑腿订单 `order_type = 0`，继续使用原有取件、收件和物品字段。
 - 商品订单 `order_type = 1`，金额拆分写入 `product_amount`、`delivery_fee`、`total_amount`。
 - 为兼容现有支付逻辑，商品订单同时将 `total_amount` 写入 `price`。
@@ -168,6 +178,9 @@
 | 3 | 待确认收货 |
 | 4 | 已完成 |
 | 5 | 已取消 |
+| 6 | 商家已接单，制作中 |
+| 7 | 已出餐，待骑手接单 |
+| 8 | 已关闭，待退款 |
 
 ## 四、order_log
 
@@ -518,6 +531,18 @@
 金额规则：商品订单从`order_info.total_amount`读取人民币元，Java使用`BigDecimal.movePointRight(2).setScale(0, UNNECESSARY).intValueExact()`转换为整数分。
 
 ## 十四、数据库升级历史
+
+### V1.4
+
+- 新增`merchant_accept_time`、`merchant_ready_time`、`merchant_reject_time`。
+- 新增`merchant_reject_reason varchar(200)`。
+- 新增索引`idx_order_store_type_deleted_create_time(store_id, order_type, deleted, create_time)`。
+- 保留已有`idx_order_store_status_deleted_create_time`用于状态筛选，两者查询用途不同。
+- 新增幂等升级脚本`13_update_order_for_merchant_management.sql`。
+- 脚本已人工执行，并通过Navicat核对字段和索引。
+- 订单`7`已通过商家接单、出餐和骑手接单链路验收。
+- 订单`8`已通过支付后商家拒单验收，状态进入`8 已关闭，待退款`。
+- 真实退款处理尚未实现，不修改支付流水为退款成功。
 
 ### V1.3
 

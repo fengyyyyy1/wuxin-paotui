@@ -1,7 +1,7 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V1.3 微信用户体系
+> 当前版本：V1.4 商家订单管理模块
 >
 > 当前微信登录和手机号绑定支持本地固定映射 Mock 联调；真实 code2session 需要配置小程序 AppID 和 AppSecret，真实手机号接口尚未接入。
 
@@ -72,6 +72,9 @@ Authorization: Bearer <token>
 | 503 | 微信登录服务暂时不可用 | 微信接口连接或读取超时 |
 | 502 | 微信登录响应异常 | 微信响应无法安全解析 |
 | 403 | 当前账号已被禁用 | openid 对应用户状态不可登录 |
+| 404 | 订单不存在或无权限 | 商家订单不存在、已删除或不属于当前店铺 |
+| 409 | 订单未支付，商家不可操作 | 商品订单尚未支付 |
+| 409 | 当前订单状态不允许商家操作 | 商家重复操作或状态不满足 |
 | 503 | 微信手机号绑定未启用 | Mock 手机号网关默认关闭 |
 | 403 | 生产环境禁止使用模拟微信手机号服务 | `prod` 环境误开 Mock |
 | 400 | 微信手机号授权凭证无效 | Mock code 不在固定映射中 |
@@ -1011,7 +1014,10 @@ Authorization: Bearer <token>
 | pageNum | Integer | 否 | 1 | 当前页 |
 | pageSize | Integer | 否 | 10 | 每页数量，最大 50 |
 
-查询条件固定包含 `status = 0`、`pay_status = 1`、`deleted = 0`，未支付订单不会返回。
+查询条件固定包含 `pay_status = 1`、`deleted = 0`。普通跑腿订单查询
+`order_type = 0`（兼容历史 `NULL`）且 `status = 0` 的待接单订单；商品订单仅查询
+`order_type = 1` 且 `status = 7` 的已出餐待骑手接单订单。未支付商品订单或
+`status = 0` 的待商家接单商品订单不会返回。
 
 成功返回：
 
@@ -1525,6 +1531,225 @@ Authorization: Bearer <token>
 | keyword | String | 否 | 无 | 商品名称模糊查询 |
 
 返回 `PageResultVO<ProductVO>`，按 `sort ASC, create_time DESC` 排序。
+
+### 商家订单分页列表
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/merchant/order/page` |
+| Authorization | 需要 |
+
+查询参数：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| pageNum | Integer | 否 | 1 | 最小 1 |
+| pageSize | Integer | 否 | 10 | 1～100 |
+| status | Integer | 否 | 无 | 订单状态筛选 |
+| keyword | String | 否 | 无 | 订单号或商品快照名称，最长 100 |
+| startTime | LocalDateTime | 否 | 无 | 创建时间起点，包含 |
+| endTime | LocalDateTime | 否 | 无 | 创建时间终点，不包含 |
+
+只查询当前登录用户所属有效商家、有效店铺的`order_type = 1`商品订单，按`create_time DESC, id DESC`排序。
+
+示例：
+
+```http
+GET /api/merchant/order/page?pageNum=1&pageSize=10&status=0
+Authorization: Bearer <merchant-token>
+```
+
+成功响应：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": {
+    "records": [
+      {
+        "orderId": 6,
+        "orderNo": "WX202607180001",
+        "status": 0,
+        "statusName": "待商家接单",
+        "payStatus": 1,
+        "payStatusName": "已支付",
+        "productAmount": 1.00,
+        "deliveryFee": 1.00,
+        "totalAmount": 2.00,
+        "goodsSummary": "可乐 x2",
+        "receiverName": "测试用户",
+        "receiverPhone": "138****0003",
+        "deliveryAddress": "测试省测试市测试区测试地址",
+        "createTime": "2026-07-18T12:00:00",
+        "payTime": "2026-07-18T12:01:00",
+        "merchantAcceptTime": null,
+        "readyTime": null
+      }
+    ],
+    "total": 1,
+    "pageNum": 1,
+    "pageSize": 10,
+    "pages": 1
+  }
+}
+```
+
+### 商家订单详情
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/merchant/order/{id}` |
+| Authorization | 需要 |
+
+只能查询当前商家店铺的商品订单。商品明细读取`order_item`快照，轨迹读取`order_log`，不会读取当前商品信息覆盖历史快照。
+
+```http
+GET /api/merchant/order/6
+Authorization: Bearer <merchant-token>
+```
+
+成功响应在列表字段基础上增加：
+
+```json
+{
+  "remark": "尽快配送",
+  "merchantRejectTime": null,
+  "merchantRejectReason": null,
+  "items": [
+    {
+      "productId": 1,
+      "productName": "可乐",
+      "productImage": "product-url",
+      "productPrice": 1.00,
+      "quantity": 2,
+      "subtotal": 2.00
+    }
+  ],
+  "timeline": [
+    {
+      "oldStatus": 0,
+      "oldStatusName": "待商家接单",
+      "newStatus": 6,
+      "newStatusName": "商家已接单，制作中",
+      "operatorType": "MERCHANT",
+      "remark": "商家接单",
+      "createTime": "2026-07-18T12:05:00"
+    }
+  ]
+}
+```
+
+越权、不存在、非商品订单或已删除统一返回`404 订单不存在或无权限`。
+
+### 商家接单
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/merchant/order/{id}/accept` |
+| Authorization | 需要 |
+| 请求体 | 无 |
+
+仅允许已支付且`status = 0`的当前店铺商品订单，原子更新为`status = 6`并写入`merchant_accept_time`和订单日志。
+
+```json
+{
+  "code": 200,
+  "message": "商家接单成功",
+  "data": {
+    "orderId": 6,
+    "status": 6,
+    "statusName": "商家已接单，制作中",
+    "merchantAcceptTime": "2026-07-18T12:05:00",
+    "readyTime": null,
+    "rejectTime": null,
+    "rejectReason": null
+  }
+}
+```
+
+### 商家拒单
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/merchant/order/{id}/reject` |
+| Authorization | 需要 |
+
+```json
+{
+  "reason": "商品暂时缺货"
+}
+```
+
+`reason`去除首尾空格后长度必须为2～200。仅允许已支付且`status = 0`的当前店铺商品订单，原子更新为`status = 8`。
+
+```json
+{
+  "code": 200,
+  "message": "商家拒单已受理，等待退款处理",
+  "data": {
+    "orderId": 8,
+    "status": 8,
+    "statusName": "已关闭，待退款",
+    "merchantAcceptTime": null,
+    "readyTime": null,
+    "rejectTime": "2026-07-18T18:16:59.722493",
+    "rejectReason": "商品暂时缺货"
+  }
+}
+```
+
+拒单成功只将订单从`status = 0`更新为`status = 8`，并写入
+`merchant_reject_time`和`merchant_reject_reason`。不会把`pay_status`或
+`payment_order`标记为已退款；真实退款尚未开发，当前状态表示“等待退款处理”。
+
+### 商家出餐
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/merchant/order/{id}/ready` |
+| Authorization | 需要 |
+| 请求体 | 无 |
+
+仅允许已支付且`status = 6`的当前店铺商品订单，原子更新为`status = 7`并写入`merchant_ready_time`和订单日志。商品订单从此状态开始进入骑手大厅。
+
+```json
+{
+  "code": 200,
+  "message": "商家出餐成功",
+  "data": {
+    "orderId": 6,
+    "status": 7,
+    "statusName": "已出餐，待骑手接单",
+    "merchantAcceptTime": "2026-07-18T12:05:00",
+    "readyTime": "2026-07-18T12:15:00",
+    "rejectTime": null,
+    "rejectReason": null
+  }
+}
+```
+
+响应中的 `merchantAcceptTime`、`readyTime`、`rejectTime` 和 `rejectReason`
+均从更新后的订单真实数据读取。其中 API 字段`readyTime`对应数据库字段
+`merchant_ready_time`。
+
+商家订单操作异常：
+
+| code | message |
+| --- | --- |
+| 400/1004 | 参数错误 |
+| 401 | 未登录或登录已过期 |
+| 403 | 商家尚未通过审核或已被禁用 |
+| 404 | 商家信息不存在 |
+| 404 | 店铺不存在 |
+| 404 | 订单不存在或无权限 |
+| 409 | 订单未支付，商家不可操作 |
+| 409 | 当前订单状态不允许商家操作 |
 
 ## 七、公开店铺模块
 

@@ -1,6 +1,6 @@
 # 测试账号
 
-> 当前版本：V1.3 微信用户体系
+> 当前版本：V1.4 商家订单管理模块
 > 当前数据库：`wuxin_paotui`
 
 本文件统一维护项目测试账号。测试账号、密码、用户 ID 或身份发生变化时，必须同步修改本文档和 `TEST_ENVIRONMENT.md`。
@@ -49,7 +49,67 @@ rider_status = 1
 - `audit_status = 1` 表示审核通过。
 - `rider_status = 1` 表示骑手启用。
 
-## 四、Mock微信登录账号
+## 四、商家测试账号
+
+V1.4商家订单已通过人工验收。商家账号具体值仍必须从真实数据库确认后回填，
+不得根据测试订单或自增顺序猜测：
+
+| 字段 | 值 |
+| --- | --- |
+| username | 待确认 |
+| password | 待确认 |
+| userId | 待确认 |
+| merchantId | 待确认 |
+| storeId | 待确认 |
+| audit_status | 必须为`1` |
+| merchant_status | 必须为`1` |
+| store_status | 必须为`1` |
+
+越权测试还需准备第二个审核通过的商家账号。禁止根据数据库自增顺序猜测账号或ID。
+
+本轮验收记录：
+
+| 项 | 值 |
+| --- | --- |
+| 验收状态 | V1.4商家订单管理人工验收通过 |
+| orderId | `7` |
+| orderNo | `WX20260718173934516783` |
+| paymentNo | `PAY20260718174303093cf8566e8141b1ae648649340679c0` |
+| 验收用途 | 商家接单、出餐、骑手接单完整链路 |
+
+拒单验收使用独立订单，不能与完整配送链路复用：
+
+| 项 | 值 |
+| --- | --- |
+| orderId | `8` |
+| orderNo | `WX20260718180441574851` |
+| storeId | `1` |
+| userId | `2` |
+| paymentNo | `PAY2026071818153359038b94fc2a4cfc918b822dd4611cd1` |
+| 拒单结果 | `status = 8`，已关闭、待退款 |
+
+确认SQL：
+
+```sql
+SELECT
+    u.id AS user_id,
+    u.username,
+    m.id AS merchant_id,
+    m.audit_status,
+    m.merchant_status,
+    s.id AS store_id,
+    s.store_name,
+    s.store_status
+FROM sys_user u
+INNER JOIN merchant_info m ON m.user_id = u.id
+INNER JOIN merchant_store s ON s.merchant_id = m.id
+WHERE u.is_deleted = 0
+  AND m.is_deleted = 0
+  AND s.is_deleted = 0
+ORDER BY m.id;
+```
+
+## 五、Mock微信登录账号
 
 | 项 | 值 |
 | --- | --- |
@@ -78,7 +138,7 @@ Mock手机号授权 code：
 
 手机号授权 code 仅用于本地 Mock。测试时需设置 `MOCK_WECHAT_PHONE_ENABLED=true`，默认配置保持关闭。
 
-## 五、Token 获取
+## 六、Token 获取
 
 接口：
 
@@ -118,7 +178,9 @@ POST /api/user/wechat/login
 
 禁止将固定 Token 写入代码或提交到版本库。
 
-## 六、维护要求
+商家Token同样通过`POST /api/user/login`获取，使用本节已确认的真实商家账号。
+
+## 七、维护要求
 
 1. 修改测试账号密码时，必须同步修改本文档。
 2. 修改账号身份、用户 ID 或骑手状态时，必须同步修改本文档。
