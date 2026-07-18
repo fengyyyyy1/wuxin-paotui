@@ -1,7 +1,7 @@
 import type { UserInfo } from '@/types/auth'
 
-const TOKEN_KEY = 'wuxin_admin_token'
-const USER_INFO_KEY = 'wuxin_admin_user'
+export const TOKEN_KEY = 'wuxin_admin_token'
+export const USER_INFO_KEY = 'wuxin_admin_user'
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)

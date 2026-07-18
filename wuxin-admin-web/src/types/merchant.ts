@@ -1,15 +1,7 @@
 export type MerchantAuditStatus = 0 | 1 | 2
 export type EnabledStatus = 0 | 1
 
-export interface AdminMerchantPageQuery {
-  pageNum?: number
-  pageSize?: number
-  auditStatus?: MerchantAuditStatus
-  merchantStatus?: EnabledStatus
-  keyword?: string
-}
-
-export interface AdminMerchantSummary {
+interface AdminMerchantBaseVO {
   merchantId: number
   userId: number
   merchantName: string
@@ -29,7 +21,17 @@ export interface AdminMerchantSummary {
   auditTime: string | null
 }
 
-export interface AdminMerchantDetail extends AdminMerchantSummary {
+export interface AdminMerchantPageQuery {
+  pageNum?: number
+  pageSize?: number
+  auditStatus?: MerchantAuditStatus
+  merchantStatus?: EnabledStatus
+  keyword?: string
+}
+
+export type AdminMerchantPageVO = AdminMerchantBaseVO
+
+export interface AdminMerchantDetailVO extends AdminMerchantBaseVO {
   username: string
   nickname: string | null
   avatar: string | null

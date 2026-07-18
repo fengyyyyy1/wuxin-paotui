@@ -1,31 +1,77 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { Lock, User } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+
+import { useAuthStore } from '@/stores/auth'
+import { ApiError } from '@/utils/http'
 
 interface LoginForm {
   username: string
   password: string
 }
 
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const formRef = ref<FormInstance>()
+const errorMessage = ref('')
 const form = reactive<LoginForm>({
   username: '',
   password: '',
 })
 
+const loading = computed(() => authStore.loading)
+
 const rules: FormRules<LoginForm> = {
-  username: [{ required: true, message: '请输入管理员账号', trigger: 'blur' }],
+  username: [
+    {
+      validator: (_rule, value: string, callback) => {
+        if (!value || !value.trim()) {
+          callback(new Error('请输入管理员账号'))
+          return
+        }
+        callback()
+      },
+      trigger: 'blur',
+    },
+  ],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
+function getRedirectPath(): string {
+  const redirect = route.query.redirect
+  if (typeof redirect !== 'string' || !redirect.startsWith('/')) {
+    return '/dashboard'
+  }
+  return redirect
+}
+
 async function submit(): Promise<void> {
+  if (loading.value) {
+    return
+  }
+
+  errorMessage.value = ''
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) {
     return
   }
 
-  ElMessage.info('登录接口将在下一阶段联调')
+  try {
+    await authStore.login({
+      username: form.username.trim(),
+      password: form.password,
+    })
+    ElMessage.success('登录成功')
+    await router.replace(getRedirectPath())
+  } catch (error) {
+    const message =
+      error instanceof ApiError || error instanceof Error ? error.message : '登录失败，请稍后重试'
+    errorMessage.value = message || '登录失败，请稍后重试'
+    ElMessage.error(errorMessage.value)
+  }
 }
 </script>
 
@@ -33,10 +79,10 @@ async function submit(): Promise<void> {
   <main class="login-page">
     <section class="login-brand">
       <div class="login-brand__mark">五鑫</div>
-      <h1>五鑫跑腿</h1>
-      <p>总控管理后台</p>
+      <h1>五鑫跑腿管理后台</h1>
+      <p>总控端运营工作台</p>
       <div class="login-brand__line"></div>
-      <span>商家审核与平台运营工作台</span>
+      <span>商家审核、平台运营与权限管理</span>
     </section>
 
     <section class="login-panel" aria-labelledby="login-title">
@@ -45,6 +91,15 @@ async function submit(): Promise<void> {
           <span class="login-panel__eyebrow">ADMIN CONSOLE</span>
           <h2 id="login-title">管理员登录</h2>
         </div>
+
+        <el-alert
+          v-if="errorMessage"
+          class="login-error"
+          type="error"
+          :title="errorMessage"
+          show-icon
+          :closable="false"
+        />
 
         <el-form
           ref="formRef"
@@ -60,6 +115,7 @@ async function submit(): Promise<void> {
               :prefix-icon="User"
               autocomplete="username"
               placeholder="请输入管理员账号"
+              :disabled="loading"
             />
           </el-form-item>
           <el-form-item label="密码" prop="password">
@@ -70,9 +126,18 @@ async function submit(): Promise<void> {
               autocomplete="current-password"
               placeholder="请输入密码"
               show-password
+              :disabled="loading"
             />
           </el-form-item>
-          <el-button native-type="submit" type="primary" class="login-button">登录</el-button>
+          <el-button
+            native-type="submit"
+            type="primary"
+            class="login-button"
+            :loading="loading"
+            :disabled="loading"
+          >
+            登录
+          </el-button>
         </el-form>
 
         <p class="login-panel__footer">仅限已授权的平台管理员访问</p>
@@ -112,6 +177,7 @@ async function submit(): Promise<void> {
 }
 
 .login-brand h1 {
+  max-width: 520px;
   margin: 0;
   font-size: 42px;
   line-height: 1.15;
@@ -153,7 +219,7 @@ async function submit(): Promise<void> {
 }
 
 .login-panel__heading {
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .login-panel__eyebrow {
@@ -168,6 +234,10 @@ async function submit(): Promise<void> {
   color: #172033;
   font-size: 28px;
   letter-spacing: 0;
+}
+
+.login-error {
+  margin-bottom: 20px;
 }
 
 .login-button {

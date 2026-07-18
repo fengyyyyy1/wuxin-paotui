@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
 
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import { pinia } from '@/stores'
@@ -43,6 +43,14 @@ const router = createRouter({
             title: '商家管理',
           },
         },
+        {
+          path: 'merchants/:merchantId',
+          name: 'merchant-detail',
+          component: () => import('@/views/merchant/MerchantDetailView.vue'),
+          meta: {
+            title: '商家详情',
+          },
+        },
       ],
     },
     {
@@ -56,21 +64,48 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+function loginRedirect(to: RouteLocationNormalized) {
+  return {
+    name: 'login',
+    query: {
+      redirect: to.fullPath,
+    },
+  }
+}
+
+router.beforeEach(async (to) => {
   const authStore = useAuthStore(pinia)
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return {
-      name: 'login',
-      query: {
-        redirect: to.fullPath,
-      },
+  if (to.meta.requiresAuth) {
+    if (!authStore.isAuthenticated) {
+      return loginRedirect(to)
+    }
+
+    if (!authStore.adminVerified) {
+      const verified = await authStore.restoreSession()
+      if (!verified) {
+        return loginRedirect(to)
+      }
+    }
+
+    if (!authStore.isAdmin) {
+      authStore.clearSession()
+      return loginRedirect(to)
     }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return {
-      name: 'dashboard',
+    if (!authStore.adminVerified) {
+      const verified = await authStore.restoreSession()
+      if (!verified) {
+        return true
+      }
+    }
+
+    if (authStore.isAdmin) {
+      return {
+        name: 'dashboard',
+      }
     }
   }
 
