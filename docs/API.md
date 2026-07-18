@@ -1,9 +1,9 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V1.2 微信支付模块（第一阶段）
+> 当前版本：V1.3 微信用户体系
 >
-> 当前仅支持本地 Mock 支付联调，未连接真实微信支付。
+> 当前微信登录和手机号绑定支持本地固定映射 Mock 联调；真实 code2session 需要配置小程序 AppID 和 AppSecret，真实手机号接口尚未接入。
 
 ## 一、通用规范
 
@@ -65,6 +65,19 @@ Authorization: Bearer <token>
 | 409 | 购物车没有已选商品 | 结算时没有已选购物车记录 |
 | 409 | 商品信息已变化，请重新结算 | 预览后商品价格或状态发生变化 |
 | 404 | 收货地址不存在 | 地址不存在、已删除或不属于当前用户 |
+| 503 | 微信登录未启用 | 真实和 Mock 微信登录均关闭 |
+| 500 | 微信登录配置错误 | 网关同时开启、生产启用 Mock 或配置缺失 |
+| 400 | 微信登录凭证无效 | code 无效、过期或已经使用 |
+| 502 | 微信登录失败，请稍后重试 | 微信接口网络、超时或响应异常 |
+| 503 | 微信登录服务暂时不可用 | 微信接口连接或读取超时 |
+| 502 | 微信登录响应异常 | 微信响应无法安全解析 |
+| 403 | 当前账号已被禁用 | openid 对应用户状态不可登录 |
+| 503 | 微信手机号绑定未启用 | Mock 手机号网关默认关闭 |
+| 403 | 生产环境禁止使用模拟微信手机号服务 | `prod` 环境误开 Mock |
+| 400 | 微信手机号授权凭证无效 | Mock code 不在固定映射中 |
+| 400 | 微信返回的手机号格式错误 | 网关结果不是中国大陆手机号 |
+| 409 | 手机号已绑定其他用户 | 其他未删除用户已占用手机号 |
+| 502 | 微信手机号服务异常，请稍后重试 | 手机号网关或更新结果异常 |
 | 500 | 服务器内部错误 | 未知系统异常 |
 
 ## 二、用户模块
@@ -130,7 +143,10 @@ Authorization: Bearer <token>
     "userInfo": {
       "id": 2,
       "username": "test001",
-      "phone": "13800000000"
+      "nickname": null,
+      "avatar": null,
+      "phone": "13800000000",
+      "gender": 0
     }
   }
 }
@@ -143,6 +159,78 @@ Authorization: Bearer <token>
 | 1002 | 用户不存在 |
 | 1003 | 密码错误 |
 | 1004 | 参数错误 |
+
+### 微信小程序登录
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 微信小程序登录 |
+| 请求方式 | POST |
+| URL | `/api/user/wechat/login` |
+| Authorization | 不需要 |
+
+请求参数：
+
+```json
+{
+  "code": "wx.login返回的临时code"
+}
+```
+
+前端只能提交临时 `code`，不得提交 `openid`、`unionid`、`sessionKey`、用户 ID 或 JWT。
+
+本地 Mock 可用 code：
+
+| code | 身份 |
+| --- | --- |
+| `mock-code-new-user` | 自动注册固定 Mock 微信用户 |
+| `mock-code-new-user-repeat` | 与上一 code 映射到同一 openid，用于重复登录 |
+| `mock-code-test001` | 创建独立 Mock 微信用户，不会绑定现有 `test001` |
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "微信登录成功",
+  "data": {
+    "token": "jwt-token",
+    "userInfo": {
+      "id": 7,
+      "username": "wx_安全摘要",
+      "nickname": null,
+      "avatar": null,
+      "phone": null,
+      "gender": 0
+    },
+    "newUser": true
+  }
+}
+```
+
+说明：
+
+- 首次 openid 登录自动创建用户，`newUser=true`。
+- 再次使用同一 Mock 身份返回同一 `userId`，`newUser=false`。
+- 自动用户名使用 openid 的 SHA-256 摘要，不直接暴露完整 openid。
+- 自动用户密码保存随机 BCrypt 密文，不使用固定明文密码。
+- `session_key`只在本次后端调用内存中使用，不持久化、不返回。
+- 普通用户名密码登录保持兼容；本阶段不实现已有账号绑定、账号合并或手机号自动绑定。
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 400 | 参数错误 |
+| 400 | 微信登录凭证无效 |
+| 403 | 当前账号已被禁用 |
+| 409 | 微信用户创建失败 |
+| 500 | 微信登录配置错误 |
+| 502 | 微信登录失败，请稍后重试 |
+| 503 | 微信登录服务暂时不可用 |
+| 502 | 微信登录响应异常 |
+| 502 | 微信登录未返回用户标识 |
+| 503 | 微信登录未启用 |
 
 ### 获取当前用户
 
@@ -164,7 +252,10 @@ Authorization: Bearer <token>
   "data": {
     "id": 2,
     "username": "test001",
-    "phone": "13800000000"
+    "nickname": null,
+    "avatar": null,
+    "phone": "13800000000",
+    "gender": 0
   }
 }
 ```
@@ -175,6 +266,143 @@ Authorization: Bearer <token>
 | --- | --- |
 | 401 | 未登录或登录已过期 |
 | 1002 | 用户不存在 |
+
+### 获取用户资料
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 获取用户资料 |
+| 请求方式 | GET |
+| URL | `/api/user/profile` |
+| Authorization | 需要 |
+
+用户ID只从JWT对应的`UserContext`获取，不接收客户端userId。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": {
+    "id": 3,
+    "username": "wx_安全摘要",
+    "nickname": "悠悠球",
+    "avatar": "https://example.com/avatar.png",
+    "phone": null,
+    "gender": 0
+  }
+}
+```
+
+异常返回：`401 未登录或登录已过期`、`1002 用户不存在`。
+
+### 修改用户资料
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 修改用户资料 |
+| 请求方式 | PUT |
+| URL | `/api/user/profile` |
+| Authorization | 需要 |
+
+请求：
+
+```json
+{
+  "nickname": "悠悠球",
+  "avatar": "https://example.com/avatar.png",
+  "gender": 0
+}
+```
+
+参数规则：
+
+- `nickname`可为空，最长30个字符。
+- `avatar`可为空；真实数据库字段为`varchar(255)`，接口安全上限为255个字符。
+- `gender`必填，只允许`0`、`1`、`2`。
+- 接口只修改`nickname、avatar、gender`。
+- 禁止修改`username、openid、unionid、phone、password、status`。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": null
+}
+```
+
+异常返回：`400/1004 参数错误`、`401 未登录或登录已过期`、`1002 用户不存在`。
+
+### 绑定微信手机号
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 绑定微信手机号 |
+| 请求方式 | POST |
+| URL | `/api/user/phone/bind` |
+| Authorization | 需要 |
+
+用户 ID 只从 JWT 对应的 `UserContext` 获取。客户端只能提交微信手机号授权 `code`，不得提交 `userId` 或明文 `phone`。
+
+请求：
+
+```json
+{
+  "code": "mock-phone-code-13800000003"
+}
+```
+
+参数规则：
+
+- `code` 必填，去除首尾空格后使用，最长 128 个字符。
+- 本地 Mock 仅支持固定 code，不根据任意字符串生成手机号。
+- 服务端优先使用网关结果的 `purePhoneNumber`，并校验 `^1[3-9]\d{9}$`。
+- 重复绑定当前手机号幂等成功；更换为未占用手机号时允许覆盖。
+- 手机号已被其他未删除用户占用时拒绝绑定。
+
+本地 Mock 映射：
+
+| code | 手机号 |
+| --- | --- |
+| `mock-phone-code-13800000003` | `13800000003` |
+| `mock-phone-code-13900000003` | `13900000003` |
+| `mock-phone-code-invalid` | 返回业务异常 |
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "手机号绑定成功",
+  "data": {
+    "id": 3,
+    "username": "wx_安全摘要",
+    "nickname": "悠悠球",
+    "avatar": "https://example.com/avatar.png",
+    "phone": "13800000003",
+    "gender": 0
+  }
+}
+```
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 400/1004 | 参数错误 |
+| 400 | 微信手机号授权凭证无效 |
+| 400 | 微信返回的手机号格式错误 |
+| 401 | 未登录或登录已过期 |
+| 403 | 当前账号已被禁用 |
+| 403 | 生产环境禁止使用模拟微信手机号服务 |
+| 409 | 手机号已绑定其他用户 |
+| 502 | 微信手机号服务异常，请稍后重试 |
+| 503 | 微信手机号绑定未启用 |
+
+当前只实现 Mock 手机号网关。真实微信 `getuserphonenumber` 需要 access_token 管理能力，后续接入时继续复用同一网关接口。
 
 ### 用户列表
 

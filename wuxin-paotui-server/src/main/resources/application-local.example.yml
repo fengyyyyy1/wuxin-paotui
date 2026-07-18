@@ -8,6 +8,14 @@ spring:
     password: ${DB_PASSWORD}
 
 wuxin:
+  wechat-mini-program:
+    enabled: false
+    app-id: ${WECHAT_MINI_PROGRAM_APP_ID:}
+    app-secret: ${WECHAT_MINI_PROGRAM_APP_SECRET:}
+  mock-wechat-login:
+    enabled: ${MOCK_WECHAT_LOGIN_ENABLED:false}
+  mock-wechat-phone:
+    enabled: ${MOCK_WECHAT_PHONE_ENABLED:false}
   wechat-pay:
     enabled: false
   mock-payment:

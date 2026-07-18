@@ -1,6 +1,6 @@
 # 测试账号
 
-> 当前版本：V1.0 Completed
+> 当前版本：V1.3 微信用户体系
 > 当前数据库：`wuxin_paotui`
 
 本文件统一维护项目测试账号。测试账号、密码、用户 ID 或身份发生变化时，必须同步修改本文档和 `TEST_ENVIRONMENT.md`。
@@ -49,7 +49,36 @@ rider_status = 1
 - `audit_status = 1` 表示审核通过。
 - `rider_status = 1` 表示骑手启用。
 
-## 四、Token 获取
+## 四、Mock微信登录账号
+
+| 项 | 值 |
+| --- | --- |
+| 首次登录code | `mock-code-new-user` |
+| 重复身份code | `mock-code-new-user-repeat` |
+| 测试用户ID | `3` |
+| username | `wx_81e9fe4cdaded2877536f2e26ea529aa` |
+| openid | `mock_o***user`（脱敏） |
+| 验收状态 | Mock首次及重复登录已通过 |
+| Profile状态 | GET、PUT、参数校验和数据回查已通过 |
+| 手机号绑定状态 | Postman与Navicat人工验收通过 |
+
+说明：
+
+- 两个code映射同一个本地Mock微信身份。
+- `mock-code-test001`不会绑定已有`test001`，调用后会创建独立微信用户。
+- 不在本文档记录真实AppSecret、session_key、完整openid或完整unionid。
+
+Mock手机号授权 code：
+
+| code | 手机号 | 用途 |
+| --- | --- | --- |
+| `mock-phone-code-13800000003` | `13800000003` | 首次绑定与幂等测试 |
+| `mock-phone-code-13900000003` | `13900000003` | 更换手机号测试 |
+| `mock-phone-code-invalid` | 无 | 无效凭证异常测试 |
+
+手机号授权 code 仅用于本地 Mock。测试时需设置 `MOCK_WECHAT_PHONE_ENABLED=true`，默认配置保持关闭。
+
+## 五、Token 获取
 
 接口：
 
@@ -81,9 +110,15 @@ Token 仅保存在当前 Postman 环境变量中：
 {{token}}
 ```
 
+微信用户Token通过以下接口获取：
+
+```http
+POST /api/user/wechat/login
+```
+
 禁止将固定 Token 写入代码或提交到版本库。
 
-## 五、维护要求
+## 六、维护要求
 
 1. 修改测试账号密码时，必须同步修改本文档。
 2. 修改账号身份、用户 ID 或骑手状态时，必须同步修改本文档。

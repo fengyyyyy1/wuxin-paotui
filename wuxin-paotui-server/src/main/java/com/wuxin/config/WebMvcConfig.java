@@ -20,6 +20,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/api/user/login",
+                        "/api/user/wechat/login",
                         "/api/user/register",
                         "/error"
                 );

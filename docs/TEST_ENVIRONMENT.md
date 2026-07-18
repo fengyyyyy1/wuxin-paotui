@@ -1,7 +1,7 @@
 # 测试环境
 
-> 当前版本：V1.2 微信支付模块（第一阶段）
-> 最近一次完整测试时间：2026-07-17
+> 当前版本：V1.3 微信用户体系
+> 最近一次完整测试时间：2026-07-18
 
 本文件是项目测试环境、测试数据和验收断点的统一记录。以后所有测试环境变化必须维护本文件。
 
@@ -16,7 +16,8 @@
 | V1.1 升级脚本 | `11_add_rider_ranking_index.sql` |
 | V1.1 数据库状态 | 已执行并通过人工验证 |
 | V1.2升级脚本 | `12_create_payment_order.sql` |
-| V1.2数据库状态 | 待人工执行和验证 |
+| V1.2数据库状态 | 已人工执行并通过Mock支付验证 |
+| V1.3数据库变更 | 无，复用现有sys_user字段与索引 |
 
 ## 二、当前测试账号
 
@@ -44,7 +45,7 @@
 | --- | --- | --- |
 | `1` | 历史待接单测试订单 | 使用前需在数据库确认 |
 | `2` | 历史已接单测试订单 | 使用前需在数据库确认 |
-| V1.0 商品订单 ID | 商品订单完整流程 | 本轮实际 ID 未在历史文档保存，需从 `order_info` 或 Postman 环境回填 |
+| `6` | V1.2商品订单Mock支付完整流程 | 已支付 |
 
 ### 商品、店铺和分类
 
@@ -85,12 +86,42 @@ ORDER BY id DESC;
 | 模式 | 本地Mock，不连接真实微信 |
 | `MOCK_PAYMENT_ENABLED` | 人工测试时设置为`true` |
 | `WECHAT_PAY_ENABLED` | `false` |
-| 商品订单ID | 创建测试商品订单后回填 |
-| paymentNo | 创建支付单后回填 |
-| payment_order SQL | 待人工执行 |
-| Postman状态 | 24项测试待人工验收 |
+| 商品订单ID | `6` |
+| paymentNo | `PAY20260718001905b85f724b684044e8a34221a040ab4ab9` |
+| amountTotal | `200`分 |
+| payment_order状态 | `2 SUCCESS` |
+| order_info支付状态 | `pay_status=1` |
+| payment_order SQL | 已人工执行 |
+| Postman状态 | V1.2第一阶段已通过人工验收 |
 
-第一阶段Mock允许测试账号`openid`为空，不得向`sys_user`写入伪造openid。
+V1.2支付Mock允许测试账号`openid`为空，不需要为支付测试修改`sys_user.openid`。
+
+### V1.3微信登录联调
+
+| 数据 | 当前值 |
+| --- | --- |
+| `MOCK_WECHAT_LOGIN_ENABLED` | 人工测试时设置为`true` |
+| `WECHAT_MINI_PROGRAM_ENABLED` | 本地Mock测试时为`false` |
+| 首次登录code | `mock-code-new-user` |
+| 重复身份code | `mock-code-new-user-repeat` |
+| 新微信测试用户ID | `3` |
+| openid | `mock_o***user`（脱敏） |
+| 微信登录状态 | 已通过人工验收 |
+| Profile状态 | GET、PUT、参数校验和数据回查已通过 |
+
+### V1.3微信手机号绑定联调
+
+| 数据 | 当前值 |
+| --- | --- |
+| `MOCK_WECHAT_PHONE_ENABLED` | 默认`false`，人工测试时设置为`true` |
+| 测试用户ID | `3` |
+| 首次绑定code | `mock-phone-code-13800000003` |
+| 更换手机号code | `mock-phone-code-13900000003` |
+| 无效code | `mock-phone-code-invalid` |
+| 数据库变更 | 无，复用`sys_user.phone` |
+| 当前状态 | Postman与Navicat人工验收通过 |
+
+不得在本文档记录真实AppSecret、session_key、完整openid或完整unionid。
 
 ## 四、购物车状态
 
@@ -126,9 +157,15 @@ POST /api/user/login
 
 Token 会过期，不在文档中保存固定 Token。
 
+微信登录Token获取接口：
+
+```http
+POST /api/user/wechat/login
+```
+
 ## 六、最近一次完整测试
 
-测试日期：2026-07-17。
+测试日期：2026-07-18。
 
 测试范围：
 
@@ -171,7 +208,21 @@ V1.2第一阶段当前结果：
 
 - Java 21 Maven Compile已通过。
 - 未连接真实微信支付。
-- SQL、Postman和Navicat等待人工验收。
+- `12_create_payment_order.sql`已人工执行。
+- 商品订单`id=6`完成Mock支付，流水金额`200`分。
+- 支付流水为`SUCCESS(2)`，订单`pay_status=1`。
+- 重复确认未重复写订单日志，幂等验证通过。
+
+V1.3当前结果：
+
+- 微信小程序登录代码已完成。
+- 首次Mock登录曾因73字节随机原始密码超过BCrypt 72字节上限而失败。
+- 随机原始密码已改为单个UUID，固定36个UTF-8字节。
+- 首次/重复Mock登录与BCrypt单元回归测试已通过。
+- Mock微信登录已通过Postman和Navicat人工验收。
+- Profile GET、PUT、参数校验和数据回查已通过人工验收。
+- 微信手机号绑定代码、自动化测试、Postman与Navicat人工验收均已完成。
+- 真实code2session尚未使用真实AppID和AppSecret联调。
 
 ## 七、维护规则
 

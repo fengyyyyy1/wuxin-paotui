@@ -1,8 +1,8 @@
 # Postman 测试文档
 
-> 当前版本：V1.2 微信支付模块（第一阶段）
+> 当前版本：V1.3 微信用户体系
 >
-> 当前仅进行本地Mock支付联调，未连接真实微信支付。
+> 当前可进行本地固定映射Mock微信登录；真实微信联调需要小程序AppID和AppSecret。
 
 ## 一、环境变量
 
@@ -26,6 +26,8 @@
 | `riderId` | 从 `rider_info.id` 查询 | V1.1 骑手个人统计 ID |
 | `productOrderId` | 创建商品订单后返回 | V1.2待支付商品订单ID |
 | `v12PaymentNo` | 创建JSAPI支付单后返回 | V1.2平台支付单号 |
+| `wechatToken` | 微信登录后返回 | V1.3微信用户JWT |
+| `wechatUserId` | 微信首次登录后返回 | V1.3微信测试用户ID |
 
 登录后接口统一使用：
 
@@ -1240,30 +1242,430 @@ Authorization: Bearer {{token}}
 
 | 编号 | 测试项 | 状态 |
 | --- | --- | --- |
-| 1 | 创建商品订单支付单成功 | 待测试 |
-| 2 | 返回paymentNo和JSAPI模拟参数 | 待测试 |
-| 3 | payment_order写入WAITING_PAY | 待测试 |
-| 4 | 创建支付不修改order_info.pay_status | 待测试 |
-| 5 | 重复创建复用有效支付单 | 待测试 |
-| 6 | 模拟确认支付成功 | 待测试 |
-| 7 | payment_order更新为SUCCESS | 待测试 |
-| 8 | order_info.pay_status更新为1 | 待测试 |
-| 9 | pay_time和payment_no正确 | 待测试 |
-| 10 | 订单日志只写一次 | 待测试 |
-| 11 | 重复确认幂等 | 待测试 |
-| 12 | 查询支付状态成功 | 待测试 |
-| 13 | 查询无支付流水订单 | 待测试 |
-| 14 | 非订单用户不能创建支付 | 待测试 |
-| 15 | 非订单用户不能查询支付 | 待测试 |
-| 16 | 非订单用户不能模拟确认 | 待测试 |
-| 17 | 已支付订单不能重复创建 | 待测试 |
-| 18 | 非商品订单暂不支持支付 | 待测试 |
-| 19 | 非法订单金额被拒绝 | 待测试 |
-| 20 | Mock关闭时旧接口不可用 | 待测试 |
-| 21 | Mock关闭时新确认接口不可用 | 待测试 |
-| 22 | 不存在paymentNo | 待测试 |
-| 23 | 流水与订单金额不一致 | 待测试 |
-| 24 | 并发请求不生成多条有效流水 | 待测试 |
+| 1 | 创建商品订单支付单成功 | 通过 |
+| 2 | 返回paymentNo和JSAPI模拟参数 | 通过 |
+| 3 | payment_order写入WAITING_PAY | 通过 |
+| 4 | 创建支付不修改order_info.pay_status | 通过 |
+| 5 | 重复创建复用有效支付单 | 通过 |
+| 6 | 模拟确认支付成功 | 通过 |
+| 7 | payment_order更新为SUCCESS | 通过 |
+| 8 | order_info.pay_status更新为1 | 通过 |
+| 9 | pay_time和payment_no正确 | 通过 |
+| 10 | 订单日志只写一次 | 通过 |
+| 11 | 重复确认幂等 | 通过 |
+| 12 | 查询支付状态成功 | 通过 |
+| 13 | 查询无支付流水订单 | 通过 |
+| 14 | 非订单用户不能创建支付 | 通过 |
+| 15 | 非订单用户不能查询支付 | 通过 |
+| 16 | 非订单用户不能模拟确认 | 通过 |
+| 17 | 已支付订单不能重复创建 | 通过 |
+| 18 | 非商品订单暂不支持支付 | 通过 |
+| 19 | 非法订单金额被拒绝 | 通过 |
+| 20 | Mock关闭时旧接口不可用 | 通过 |
+| 21 | Mock关闭时新确认接口不可用 | 通过 |
+| 22 | 不存在paymentNo | 通过 |
+| 23 | 流水与订单金额不一致 | 通过 |
+| 24 | 并发请求不生成多条有效流水 | 通过 |
+
+### 72. 准备V1.3本地配置
+
+IDEA环境变量：
+
+```text
+MOCK_WECHAT_LOGIN_ENABLED=true
+WECHAT_MINI_PROGRAM_ENABLED=false
+```
+
+两个开关默认均为`false`。`prod` Profile即使误开Mock也会返回配置错误。
+
+### 73. Mock微信新用户首次登录
+
+```http
+POST {{host}}/api/user/wechat/login
+Content-Type: application/json
+```
+
+```json
+{
+  "code": "mock-code-new-user"
+}
+```
+
+该接口不携带旧JWT。预期返回`newUser=true`、JWT和用户信息，将token保存为`wechatToken`，用户ID保存为`wechatUserId`。
+
+BCrypt回归检查：
+
+- 自动注册原始随机密码使用单个UUID，为36个UTF-8字节。
+- 不再出现`password cannot be more than 72 bytes`。
+- `sys_user.password`应为60字符BCrypt密文，不得等于任何固定默认密码。
+
+### 74. 重复登录幂等
+
+分别重复使用：
+
+```json
+{
+  "code": "mock-code-new-user"
+}
+```
+
+```json
+{
+  "code": "mock-code-new-user-repeat"
+}
+```
+
+两个code映射同一Mock openid。预期返回相同`userId`、`newUser=false`，数据库不新增第二个用户。
+
+### 75. 微信JWT验证
+
+```http
+GET {{host}}/api/user/me
+Authorization: Bearer {{wechatToken}}
+```
+
+预期返回`id、username、nickname、avatar、phone`，不得返回`password、openid、unionid、session_key、is_deleted`。
+
+### 76. 网关关闭和冲突测试
+
+两者都关闭：
+
+```text
+MOCK_WECHAT_LOGIN_ENABLED=false
+WECHAT_MINI_PROGRAM_ENABLED=false
+```
+
+预期：`503 微信登录未启用`。
+
+两者同时开启：
+
+```text
+MOCK_WECHAT_LOGIN_ENABLED=true
+WECHAT_MINI_PROGRAM_ENABLED=true
+```
+
+预期：`500 微信登录配置错误`，不得调用微信网络。
+
+### 77. 参数与无效code测试
+
+空code：
+
+```json
+{
+  "code": ""
+}
+```
+
+预期参数错误。
+
+无效Mock code：
+
+```json
+{
+  "code": "invalid-mock-code"
+}
+```
+
+预期：`400 微信登录凭证无效`。
+
+### 78. 兼容与安全测试
+
+- 普通`POST /api/user/login`继续成功。
+- `POST /api/user/register`继续成功。
+- 禁用微信用户后登录返回`403 当前账号已被禁用`。
+- 并发调用同一Mock身份只生成一个`sys_user`。
+- 自动用户密码是BCrypt密文，不是固定明文。
+- 自动用户名唯一，且不包含完整openid。
+- 应用日志不得出现AppSecret、完整code、session_key或完整openid。
+- `mock-code-test001`创建独立微信用户，不得绑定现有`test001`。
+
+### 79. V1.3 Navicat验证
+
+查询微信用户：
+
+```sql
+SELECT
+    id,
+    username,
+    openid,
+    unionid,
+    nickname,
+    avatar,
+    status,
+    create_time,
+    update_time,
+    is_deleted
+FROM sys_user
+WHERE openid IS NOT NULL
+ORDER BY id DESC;
+```
+
+验证openid唯一：
+
+```sql
+SELECT openid, COUNT(*) AS count
+FROM sys_user
+WHERE openid IS NOT NULL
+  AND is_deleted = 0
+GROUP BY openid
+HAVING COUNT(*) > 1;
+```
+
+验证用户名唯一：
+
+```sql
+SELECT username, COUNT(*) AS count
+FROM sys_user
+GROUP BY username
+HAVING COUNT(*) > 1;
+```
+
+检查密码不是明文：
+
+```sql
+SELECT id, username, password
+FROM sys_user
+WHERE openid IS NOT NULL
+ORDER BY id DESC;
+```
+
+不要在公开截图或聊天中发送完整openid、unionid或密码哈希。
+
+### 80. V1.3人工验收清单
+
+| 编号 | 测试项 | 状态 |
+| --- | --- | --- |
+| 1 | Mock微信新用户首次登录成功 | 通过 |
+| 2 | 返回JWT | 通过 |
+| 3 | 首次返回newUser=true | 通过 |
+| 4 | sys_user新增一条openid用户 | 通过 |
+| 5 | password不是明文固定密码 | 通过 |
+| 6 | username唯一且不暴露完整openid | 通过 |
+| 7 | 相同Mock身份第二次登录 | 通过 |
+| 8 | 第二次返回相同userId | 通过 |
+| 9 | 第二次newUser=false | 通过 |
+| 10 | 不重复新增sys_user | 通过 |
+| 11 | 微信JWT调用/api/user/me | 通过 |
+| 12 | 微信登录接口无需旧JWT | 通过 |
+| 13 | 两个网关关闭 | 通过 |
+| 14 | 两个网关同时开启 | 通过 |
+| 15 | code为空 | 通过 |
+| 16 | 无效Mock code | 通过 |
+| 17 | 禁用用户拒绝登录 | 通过 |
+| 18 | 普通密码登录兼容 | 通过 |
+| 19 | 用户注册兼容 | 通过 |
+| 20 | /api/user/me不泄露微信敏感字段 | 通过 |
+| 21 | 并发同openid不生成重复用户 | 通过 |
+| 22 | 日志无敏感信息 | 通过 |
+
+本地单元回归已通过：
+
+- `mock-code-new-user`首次登录只插入一条用户记录。
+- 重复登录返回相同userId和`newUser=false`。
+- 随机密码连续生成100次均为36个UTF-8字节且不重复。
+- 保存对象中的密码为60字符BCrypt密文。
+
+### 81. 微信用户登录
+
+```http
+POST {{host}}/api/user/wechat/login
+Content-Type: application/json
+```
+
+```json
+{
+  "code": "mock-code-new-user"
+}
+```
+
+保存返回token为`wechatToken`。当前人工验收用户为`userId=3`。
+
+### 82. 获取Profile
+
+```http
+GET {{host}}/api/user/profile
+Authorization: Bearer {{wechatToken}}
+```
+
+预期返回`id、username、nickname、avatar、phone、gender`，不返回微信标识、密码或删除状态。
+
+### 83. 修改Profile
+
+```http
+PUT {{host}}/api/user/profile
+Authorization: Bearer {{wechatToken}}
+Content-Type: application/json
+```
+
+```json
+{
+  "nickname": "悠悠球",
+  "avatar": "https://example.com/avatar.png",
+  "gender": 0
+}
+```
+
+预期返回`200 成功`。接口不得接收或修改username、openid、unionid、phone、password、status。
+
+### 84. 再次获取Profile
+
+重新执行`GET /api/user/profile`，确认昵称、头像和性别已更新，username和phone保持不变。
+
+### 85. Profile异常测试
+
+- 不携带JWT，预期`401`。
+- `gender=-1`或`gender=3`，预期参数错误。
+- `gender`缺失，预期参数错误。
+- nickname超过30字符，预期参数错误。
+- avatar超过真实数据库安全上限255字符，预期参数错误。
+- 请求体携带username、openid、phone等额外字段不会修改对应数据库字段。
+
+### 86. Profile人工验收清单
+
+| 编号 | 测试项 | 状态 |
+| --- | --- | --- |
+| 1 | 微信JWT获取Profile | 通过 |
+| 2 | Profile返回六个允许字段 | 通过 |
+| 3 | 修改昵称和头像成功 | 通过 |
+| 4 | 修改gender成功 | 通过 |
+| 5 | 再次查询数据一致 | 通过 |
+| 6 | 未登录返回401 | 通过 |
+| 7 | gender范围校验 | 通过 |
+| 8 | nickname长度校验 | 通过 |
+| 9 | avatar长度校验 | 通过 |
+| 10 | 禁止字段未被修改 | 通过 |
+
+### 87. 准备微信手机号Mock配置
+
+IDEA环境变量：
+
+```text
+MOCK_WECHAT_PHONE_ENABLED=true
+```
+
+`application.yml`默认值必须保持`false`。手机号绑定接口需要JWT，不加入`WebMvcConfig`白名单。`prod` Profile禁止使用Mock手机号网关。
+
+先执行微信登录并保存`userId=3`对应JWT：
+
+```http
+POST {{host}}/api/user/wechat/login
+Content-Type: application/json
+```
+
+```json
+{
+  "code": "mock-code-new-user"
+}
+```
+
+### 88. 首次绑定手机号
+
+```http
+POST {{host}}/api/user/phone/bind
+Authorization: Bearer {{wechatToken}}
+Content-Type: application/json
+```
+
+```json
+{
+  "code": "mock-phone-code-13800000003"
+}
+```
+
+预期返回`200 手机号绑定成功`，`data.phone=13800000003`，并返回`id、username、nickname、avatar、phone、gender`。
+
+### 89. Profile回查
+
+```http
+GET {{host}}/api/user/profile
+Authorization: Bearer {{wechatToken}}
+```
+
+预期`phone=13800000003`，其他用户资料保持不变。
+
+### 90. 重复绑定幂等
+
+再次提交：
+
+```json
+{
+  "code": "mock-phone-code-13800000003"
+}
+```
+
+预期仍返回成功，不新增用户、不修改其他字段。
+
+### 91. 更换手机号
+
+```json
+{
+  "code": "mock-phone-code-13900000003"
+}
+```
+
+预期返回`phone=13900000003`。再次查询Profile，确认数据库回查一致；应用日志只能出现`139****0003`，不能出现完整授权code。
+
+### 92. 手机号绑定异常测试
+
+| 场景 | 操作 | 预期 |
+| --- | --- | --- |
+| 无效code | 提交`mock-phone-code-invalid` | `400 微信手机号授权凭证无效` |
+| 空code | 提交空字符串或空白 | 参数错误 |
+| code过长 | 提交超过128字符 | 参数错误 |
+| 未登录 | 不携带JWT | `401 未登录或登录已过期` |
+| Mock关闭 | `MOCK_WECHAT_PHONE_ENABLED=false` | `503 微信手机号绑定未启用` |
+| 他人手机号 | 先由另一未删除用户占用目标手机号 | `409 手机号已绑定其他用户` |
+| 生产误开Mock | `prod` Profile开启Mock | `403 生产环境禁止使用模拟微信手机号服务` |
+
+冲突测试只使用测试数据，并在测试结束后恢复原值；不要修改数据库结构或增加唯一索引。
+
+### 93. 手机号绑定Navicat验证
+
+```sql
+SELECT
+    id,
+    username,
+    phone,
+    nickname,
+    avatar,
+    gender,
+    status,
+    update_time,
+    is_deleted
+FROM sys_user
+WHERE id = 3;
+```
+
+检查当前未删除用户是否存在重复手机号：
+
+```sql
+SELECT phone, COUNT(*) AS user_count
+FROM sys_user
+WHERE phone IS NOT NULL
+  AND phone <> ''
+  AND is_deleted = 0
+GROUP BY phone
+HAVING COUNT(*) > 1;
+```
+
+当前`idx_phone`是普通索引，以上查询用于验收和数据治理检查，不代表数据库具备手机号唯一约束。
+
+### 94. 手机号绑定人工验收清单
+
+| 编号 | 测试项 | 状态 |
+| --- | --- | --- |
+| 1 | 微信JWT首次绑定手机号成功 | 通过 |
+| 2 | UserInfoVO返回正确手机号 | 通过 |
+| 3 | Profile回查一致 | 通过 |
+| 4 | 重复绑定相同手机号幂等成功 | 通过 |
+| 5 | 更换为未占用手机号成功 | 通过 |
+| 6 | 他人手机号冲突返回409 | 通过 |
+| 7 | 无效code返回业务错误 | 通过 |
+| 8 | Mock关闭返回503 | 通过 |
+| 9 | 未登录返回401 | 通过 |
+| 10 | 其他用户字段未被修改 | 通过 |
+| 11 | 日志只记录脱敏手机号 | 通过 |
+| 12 | 不出现服务器内部错误 | 通过 |
 
 ## 三、异常测试
 
@@ -1313,4 +1715,12 @@ Authorization: Bearer {{token}}
 | 支付金额非法或不一致 | `409 支付金额无效或不一致` |
 | 非商品订单创建新支付 | `409 当前订单类型暂不支持支付` |
 | 支付网关未启用或创建失败 | `409 支付单创建失败` |
+| 微信登录未启用 | `503 微信登录未启用` |
+| 微信网关配置冲突或缺失 | `500 微信登录配置错误` |
+| 微信code无效 | `400 微信登录凭证无效` |
+| 微信接口网络、超时或响应异常 | `502 微信登录失败，请稍后重试` |
+| 微信接口连接或读取超时 | `503 微信登录服务暂时不可用` |
+| 微信响应解析异常 | `502 微信登录响应异常` |
+| 微信账号禁用 | `403 当前账号已被禁用` |
+| Profile参数非法 | `400/1004 参数错误` |
 | 未知异常 | `500 服务器内部错误` |

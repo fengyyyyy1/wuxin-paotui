@@ -9,6 +9,14 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 wuxin:
+  wechat-mini-program:
+    enabled: ${WECHAT_MINI_PROGRAM_ENABLED:false}
+    app-id: ${WECHAT_MINI_PROGRAM_APP_ID:}
+    app-secret: ${WECHAT_MINI_PROGRAM_APP_SECRET:}
+  mock-wechat-login:
+    enabled: ${MOCK_WECHAT_LOGIN_ENABLED:false}
+  mock-wechat-phone:
+    enabled: ${MOCK_WECHAT_PHONE_ENABLED:false}
   wechat-pay:
     enabled: ${WECHAT_PAY_ENABLED:false}
     app-id: ${WECHAT_PAY_APP_ID:}

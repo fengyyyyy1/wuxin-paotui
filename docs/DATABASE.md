@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V1.2 微信支付模块（第一阶段）
+> 当前版本：V1.3 微信用户体系
 
 ## 一、sys_user
 
@@ -16,8 +16,10 @@
 | password | BCrypt 加密密码 |
 | phone | 手机号 |
 | openid | 微信 openid |
+| unionid | 微信 unionid，可为空 |
 | nickname | 昵称 |
 | avatar | 头像 |
+| gender | 性别：0 未知、1 男、2 女 |
 | status | 用户状态 |
 | create_time | 创建时间 |
 | update_time | 更新时间 |
@@ -28,12 +30,20 @@
 | 索引 | 说明 |
 | --- | --- |
 | PRIMARY KEY(id) | 主键 |
-| username 唯一索引 | 用户名唯一 |
+| uk_username(username) | 用户名唯一 |
+| uk_openid(openid) | 微信 openid 唯一，允许多个 NULL |
+| idx_phone(phone) | 手机号查询 |
 
 说明：
 
 - 普通账号登录使用 `username` 和 `password`。
 - 密码使用 BCrypt 加密保存。
+- 微信登录按 `openid` 查询且过滤 `is_deleted = 0`。
+- 自动注册用户使用摘要用户名和随机 BCrypt 密码，不保存 `session_key`。
+- `unionid`当前没有索引，也不用于自动合并账号。
+- 微信手机号绑定继续写入现有 `phone varchar(20)`，不新增字段。
+- 绑定前按 `phone`、`is_deleted = 0` 排除当前用户检查占用；重复绑定当前手机号幂等成功。
+- `idx_phone`是普通索引，不提供数据库唯一约束。当前业务层的“先检查、再更新”不能彻底消除并发绑定相同手机号的竞态，后续数据治理阶段需单独评估唯一约束。
 
 ## 二、user_address
 
@@ -509,12 +519,21 @@
 
 ## 十四、数据库升级历史
 
+### V1.3
+
+- 真实 `sys_user` 已包含 `openid`、`unionid`、`nickname`、`avatar`，无需新增字段。
+- 微信手机号绑定复用现有 `sys_user.phone`。
+- 已确认 `username varchar(50)`、`password`允许 NULL、`openid varchar(64)`。
+- 已确认索引 `uk_openid`、`uk_username`和`idx_phone`。
+- 手机号绑定不修改 `idx_phone`，不新增唯一索引。
+- 本版本不新增 SQL，不修改历史 SQL，不写入伪造 openid。
+
 ### V1.2 第一阶段
 
 - 新增`payment_order`支付流水表。
 - 新增有效支付单生成列和支付号、交易号、通知号唯一索引。
 - 新增脚本：`wuxin-paotui-server/src/main/resources/sql/12_create_payment_order.sql`。
-- 脚本只创建表，不写入或修改业务数据，等待人工执行。
+- 脚本已人工执行，`payment_order`创建成功并通过 Mock 支付链路验证。
 
 ### V1.1
 

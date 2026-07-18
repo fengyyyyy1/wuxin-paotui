@@ -1,5 +1,77 @@
 # 更新日志
 
+## V1.3 微信用户体系
+
+日期：2026-07-18
+
+### 新增
+
+- `POST /api/user/wechat/login`
+- `WeChatMiniProgramProperties`与`MockWeChatLoginProperties`
+- 微信小程序网关抽象、路由和真实 code2session 实现
+- 固定 code/openid 映射的本地 Mock 微信网关
+- 微信用户自动注册、JWT 返回和 `newUser`标识
+- openid 唯一索引冲突后的并发回查幂等处理
+- `UserInfoVO`补充昵称和头像
+- `GET /api/user/profile`
+- `PUT /api/user/profile`
+- `UpdateUserProfileDTO`及昵称、头像、性别校验
+- `UserInfoVO`补充gender
+- Profile只允许更新`nickname、avatar、gender`
+- `POST /api/user/phone/bind`
+- `BindWechatPhoneDTO`
+- `WeChatPhoneGateway`、`WeChatPhoneGatewayRouter`和`WeChatPhoneResult`
+- 固定 code/手机号映射的`MockWeChatPhoneGateway`
+- 当前用户手机号绑定、重复绑定幂等和更换手机号
+- 其他未删除用户手机号占用检查
+- 手机号绑定服务和JWT拦截回归测试
+
+### 安全
+
+- AppSecret仅通过环境变量注入，所有网关默认关闭
+- code不缓存，session_key不持久化、不返回、不记录
+- 自动用户名不暴露完整 openid
+- 自动用户密码使用随机 BCrypt 密文
+- Mock登录在`prod` Profile中禁止使用
+- JWT白名单仅新增精确路径`/api/user/wechat/login`
+- 手机号绑定接口保持JWT保护，用户ID只从`UserContext`获取
+- Mock手机号网关默认关闭，`prod`环境禁止使用
+- 不接受客户端明文手机号，只信任网关返回结果
+- 授权code不写入日志，手机号日志统一脱敏
+
+### 修复
+
+- 修复微信自动注册原始随机密码为73个UTF-8字节，超过BCrypt 72字节上限的问题
+- 随机原始密码改为单个UUID，每个用户独立生成，固定为36个UTF-8字节
+- BCrypt编码前增加UTF-8字节长度保护，生成异常转换为统一业务错误
+- 新增首次Mock登录、重复登录、单用户插入和BCrypt密文回归测试
+
+### 数据库
+
+- 复用真实`sys_user.openid/unionid/nickname/avatar`
+- Profile复用`nickname/avatar/gender/phone`，不修改数据库结构
+- 手机号绑定复用`sys_user.phone`与普通索引`idx_phone`
+- 复用`uk_openid`、`uk_username`和`idx_phone`
+- 不新增SQL，不修改数据库结构
+
+### 当前状态
+
+- BCrypt 72字节问题已修复，单元回归测试通过
+- Mock微信登录已通过人工验收
+- Profile接口已通过Postman人工验收
+- 微信手机号绑定已通过Postman与Navicat人工验收
+- V1.3本轮人工验收全部完成
+- 未接入真实微信支付
+- 已有账号绑定、账号合并留待后续版本
+
+### 人工验收
+
+- 微信Mock登录：通过
+- 微信Profile：通过
+- 微信手机号绑定：通过
+- Postman验证：通过
+- Navicat验证：通过
+
 ## V1.2 微信支付模块（第一阶段）
 
 日期：2026-07-18
