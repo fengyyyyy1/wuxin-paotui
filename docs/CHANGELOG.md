@@ -1,5 +1,48 @@
 # 更新日志
 
+## V1.5 总控端商家审核模块
+
+日期：2026-07-18
+
+### 新增
+
+- `GET /api/admin/merchant/page`
+- `GET /api/admin/merchant/{merchantId}`
+- `POST /api/admin/merchant/{merchantId}/approve`
+- `POST /api/admin/merchant/{merchantId}/reject`
+- `POST /api/admin/merchant/{merchantId}/enable`
+- `POST /api/admin/merchant/{merchantId}/disable`
+- `AdminMerchantController`、Service、Mapper、DTO和VO
+- 复用真实数据库已有的`sys_role`与`sys_user_role`最小RBAC表并补充唯一索引
+- `/api/admin/**`管理员权限拦截器
+- `merchant_audit_log`商家审核操作日志
+- `merchant_info.audit_admin_id`、`audit_time`和`reject_reason`
+- `14_create_admin_merchant_audit.sql`
+
+### 安全与一致性
+
+- 管理员权限按JWT用户ID实时查询角色，不依赖固定用户ID或前端传参
+- 未登录返回401，普通用户和普通商家访问总控接口返回403
+- 分页和详情不返回密码、Token、openid或unionid
+- 审核通过、拒绝、启用和禁用均使用原状态条件更新及事务
+- 并发重复操作只有一次成功，不重复写审核日志
+- 审核通过不自动把店铺设为营业中
+- 审核拒绝和商家禁用会禁用店铺并设置为休息中
+- 商家状态管理不删除商家、店铺或历史订单
+- 审核日志与订单日志分表管理
+- 清理`application.properties`中的硬编码数据库密码，统一改为环境变量占位
+
+### 当前状态
+
+- 代码、自动化测试、SQL和文档已完成
+- 14号SQL已在当前测试数据库人工执行，ADMIN角色及管理员授权已验证
+- 商家分页、详情、审核通过、审核拒绝、启用和禁用已通过Postman人工验收
+- 审核字段、店铺状态和`merchant_audit_log`已通过Navicat核对
+- 普通用户访问`/api/admin/**`返回`403 无管理员权限`
+- 审核通过请求字段由`remark`统一为`auditRemark`
+- V1.5总控端商家管理后端已完成并通过人工验收
+- 未执行Git Commit
+
 ## V1.4 商家订单管理模块
 
 日期：2026-07-18

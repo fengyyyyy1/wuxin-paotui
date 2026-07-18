@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V1.4 商家订单管理模块
+> 当前版本：V1.5 总控端商家审核模块
 
 ## 一、sys_user
 
@@ -297,6 +297,9 @@
 | id_card_back | 身份证反面地址 |
 | audit_status | 审核状态：0 待审核、1 通过、2 驳回 |
 | audit_remark | 审核意见 |
+| audit_admin_id | 审核管理员，对应 sys_user.id |
+| audit_time | 审核时间 |
+| reject_reason | 审核拒绝原因，最长 255 字符 |
 | merchant_status | 商家状态：0 禁用、1 启用 |
 | create_time | 创建时间 |
 | update_time | 更新时间 |
@@ -309,6 +312,7 @@
 | PRIMARY KEY(id) | 主键 |
 | uk_merchant_user_id(user_id) | 一个用户只能申请一个商家主体 |
 | idx_merchant_audit_status(audit_status, merchant_status, is_deleted) | 审核及启用状态查询 |
+| idx_merchant_deleted_create_time(is_deleted, create_time, id) | 总控端默认分页 |
 
 ## 八、merchant_store
 
@@ -530,7 +534,75 @@
 
 金额规则：商品订单从`order_info.total_amount`读取人民币元，Java使用`BigDecimal.movePointRight(2).setScale(0, UNNECESSARY).intValueExact()`转换为整数分。
 
-## 十四、数据库升级历史
+## 十四、sys_role
+
+作用：平台角色定义表。真实数据库已存在该表，本版本复用现有字段、补充角色编码
+唯一索引并初始化`ADMIN`角色，不自动给任何账号授权。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 角色 ID |
+| role_code | 角色编码，唯一 |
+| role_name | 角色名称 |
+| create_time | 创建时间 |
+
+## 十五、sys_user_role
+
+作用：用户与角色关联表。管理员身份通过当前 JWT 的`userId`实时关联查询，
+不依赖固定用户 ID 或前端参数。
+
+主要字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 关联 ID |
+| user_id | sys_user.id |
+| role_id | sys_role.id |
+| create_time | 创建时间 |
+
+唯一索引`uk_user_role(user_id, role_id)`防止重复授权。
+
+## 十六、merchant_audit_log
+
+作用：记录总控端商家审核和状态管理操作，不与`order_log`混用。
+
+| 字段 | 说明 |
+| --- | --- |
+| id | 日志 ID |
+| merchant_id | 商家主体 ID |
+| admin_user_id | 操作管理员 sys_user.id |
+| action | APPROVE、REJECT、ENABLE、DISABLE |
+| before_status | 操作前状态 |
+| after_status | 操作后状态 |
+| reason | 审核备注或操作原因 |
+| create_time | 操作时间 |
+
+索引：
+
+- `idx_audit_log_merchant_time(merchant_id, create_time)`
+- `idx_audit_log_admin_time(admin_user_id, create_time)`
+
+审核通过不会修改`business_status`为营业中；拒绝和禁用会将
+`store_status = 0`、`business_status = 0`。所有历史订单保持不变。
+
+## 十七、数据库升级历史
+
+### V1.5
+
+- 新增`14_create_admin_merchant_audit.sql`。
+- `merchant_info`新增`audit_admin_id`、`audit_time`和`reject_reason`。
+- 新增`idx_merchant_deleted_create_time`分页索引。
+- 复用真实数据库已有的`sys_role`和`sys_user_role`最小 RBAC 表。
+- 为现有角色表补充`uk_role_code`和`uk_user_role`唯一索引。
+- 新增`merchant_audit_log`商家审核操作日志表。
+- 初始化`ADMIN`角色，但不自动给任何用户授权。
+- 脚本支持重复执行；首次补唯一索引前必须确认角色编码和用户角色关联没有重复数据。
+- 14号脚本已在当前测试数据库人工执行并通过Navicat核对。
+- `ADMIN`角色已初始化，`admin`用户已通过`sys_user_role`绑定该角色。
+- `merchantId=2`审核通过、`merchantId=3`审核拒绝的字段与审核日志均已验证。
+- 本记录仅代表当前测试数据库，不代表生产数据库已经执行。
 
 ### V1.4
 

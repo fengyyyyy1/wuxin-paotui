@@ -1,7 +1,7 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V1.4 商家订单管理模块
+> 当前版本：V1.5 总控端商家审核模块
 >
 > 当前微信登录和手机号绑定支持本地固定映射 Mock 联调；真实 code2session 需要配置小程序 AppID 和 AppSecret，真实手机号接口尚未接入。
 
@@ -75,6 +75,10 @@ Authorization: Bearer <token>
 | 404 | 订单不存在或无权限 | 商家订单不存在、已删除或不属于当前店铺 |
 | 409 | 订单未支付，商家不可操作 | 商品订单尚未支付 |
 | 409 | 当前订单状态不允许商家操作 | 商家重复操作或状态不满足 |
+| 403 | 无管理员权限 | 当前登录用户没有有效 ADMIN 角色 |
+| 404 | 商家不存在 | 总控端查询或操作的商家不存在 |
+| 409 | 当前商家审核状态不可操作 | 重复审核或审核状态不满足 |
+| 409 | 当前商家状态不可操作 | 重复启用、重复禁用或状态不满足 |
 | 503 | 微信手机号绑定未启用 | Mock 手机号网关默认关闭 |
 | 403 | 生产环境禁止使用模拟微信手机号服务 | `prod` 环境误开 Mock |
 | 400 | 微信手机号授权凭证无效 | Mock code 不在固定映射中 |
@@ -2043,3 +2047,188 @@ Authorization: Bearer <merchant-token>
 ### 微信支付回调规划
 
 第二阶段计划路径为`POST /api/payment/wechat/notify`。第一阶段未注册该接口、未放行JWT，也没有任何假验签逻辑。真实实现必须使用官方SDK `NotificationParser`对原始请求验签、解密并校验金额后，才能调用统一支付确认事务。
+
+## 十、总控端商家审核模块
+
+所有接口均需要 JWT，并要求当前用户在`sys_user_role`中关联有效的
+`ADMIN`角色。未登录返回`401`，无管理员权限返回`403`。
+
+### 商家申请分页
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/admin/merchant/page` |
+| Authorization | 管理员 JWT |
+
+查询参数：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| pageNum | Integer | 否 | 1 | 最小 1 |
+| pageSize | Integer | 否 | 10 | 1～100 |
+| auditStatus | Integer | 否 | 无 | 0 待审核、1 通过、2 驳回 |
+| merchantStatus | Integer | 否 | 无 | 0 禁用、1 启用 |
+| keyword | String | 否 | 无 | 商家名称、联系人或手机号，最长 100 |
+
+固定过滤`merchant_info.is_deleted = 0`，按申请时间和商家 ID 倒序。
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": {
+    "records": [
+      {
+        "merchantId": 1,
+        "userId": 2,
+        "merchantName": "五鑫便利店",
+        "contactName": "测试联系人",
+        "contactPhone": "13800000000",
+        "auditStatus": 0,
+        "auditStatusText": "待审核",
+        "merchantStatus": 1,
+        "merchantStatusText": "启用",
+        "storeId": 1,
+        "storeName": "五鑫便利店",
+        "storeStatus": 1,
+        "storeStatusText": "启用",
+        "businessStatus": 0,
+        "businessStatusText": "休息中",
+        "applyTime": "2026-07-18T19:00:00",
+        "auditTime": null
+      }
+    ],
+    "total": 1,
+    "pageNum": 1,
+    "pageSize": 10,
+    "pages": 1
+  }
+}
+```
+
+### 商家申请详情
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | GET |
+| URL | `/api/admin/merchant/{merchantId}` |
+| Authorization | 管理员 JWT |
+
+返回商家申请资料、申请用户非敏感信息、店铺资料、审核管理员、审核时间、
+审核备注和拒绝原因。不会返回密码、Token、openid或unionid。
+
+不存在或已删除返回`404 商家不存在`。
+
+### 审核通过
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/admin/merchant/{merchantId}/approve` |
+| Authorization | 管理员 JWT |
+
+```json
+{
+  "auditRemark": "审核通过，资料齐全，符合入驻要求。"
+}
+```
+
+仅允许`audit_status = 0`。成功后：
+
+- `audit_status = 1`
+- `merchant_status = 1`
+- `store_status = 1`
+- 写入`audit_admin_id`、`audit_time`和`audit_remark`
+- `business_status`保持原值，不自动营业
+- 写入`merchant_audit_log`
+
+写接口统一返回`AdminMerchantOperationVO`：
+
+```json
+{
+  "code": 200,
+  "message": "商家审核通过",
+  "data": {
+    "merchantId": 1,
+    "auditStatus": 1,
+    "auditStatusText": "审核通过",
+    "merchantStatus": 1,
+    "merchantStatusText": "启用",
+    "storeStatus": 1,
+    "storeStatusText": "启用",
+    "businessStatus": 0,
+    "businessStatusText": "休息中",
+    "auditAdminId": 1,
+    "auditTime": "2026-07-18T19:30:00",
+    "auditRemark": "资料审核通过",
+    "rejectReason": null,
+    "operationTime": "2026-07-18T19:30:00"
+  }
+}
+```
+
+### 审核拒绝
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/admin/merchant/{merchantId}/reject` |
+| Authorization | 管理员 JWT |
+
+```json
+{
+  "reason": "营业执照信息不清晰"
+}
+```
+
+`reason`去除首尾空格后长度为2～255。仅允许`audit_status = 0`。
+成功后`audit_status = 2`、商家和店铺禁用、店铺停止营业，并写入审核人、
+审核时间、拒绝原因和审核日志。
+
+### 启用商家
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/admin/merchant/{merchantId}/enable` |
+| Authorization | 管理员 JWT |
+| 请求体 | 无 |
+
+仅允许审核已通过且当前禁用的商家。成功后启用商家和店铺，但不自动把
+`business_status`改为营业中，不修改历史审核结论。
+
+### 禁用商家
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | POST |
+| URL | `/api/admin/merchant/{merchantId}/disable` |
+| Authorization | 管理员 JWT |
+
+```json
+{
+  "reason": "存在违规经营行为"
+}
+```
+
+仅允许审核已通过且当前启用的商家。成功后：
+
+- `merchant_status = 0`
+- `store_status = 0`
+- `business_status = 0`
+- 不修改`audit_status`
+- 不删除商家、店铺或历史订单
+- 写入`merchant_audit_log`
+
+四个写接口均使用原状态条件更新并处于事务中。重复或并发操作返回：
+
+| code | message |
+| --- | --- |
+| 400/1004 | 参数错误 |
+| 401 | 未登录或登录已过期 |
+| 403 | 无管理员权限 |
+| 404 | 商家不存在 |
+| 404 | 店铺不存在 |
+| 409 | 当前商家审核状态不可操作 |
+| 409 | 当前商家状态不可操作 |

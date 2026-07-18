@@ -43,6 +43,15 @@ public class MerchantInfoEntity {
     @TableField("audit_remark")
     private String auditRemark;
 
+    @TableField("audit_admin_id")
+    private Long auditAdminId;
+
+    @TableField("audit_time")
+    private LocalDateTime auditTime;
+
+    @TableField("reject_reason")
+    private String rejectReason;
+
     @TableField("merchant_status")
     private Integer merchantStatus;
 

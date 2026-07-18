@@ -224,6 +224,8 @@ public class MerchantServiceImpl implements MerchantService {
         detailVO.setAuditStatus(merchantInfo.getAuditStatus());
         detailVO.setAuditStatusText(MerchantAuditStatusEnum.getTextByCode(merchantInfo.getAuditStatus()));
         detailVO.setAuditRemark(merchantInfo.getAuditRemark());
+        detailVO.setRejectReason(merchantInfo.getRejectReason());
+        detailVO.setAuditTime(merchantInfo.getAuditTime());
         detailVO.setMerchantStatus(merchantInfo.getMerchantStatus());
         detailVO.setMerchantStatusText(MerchantStatusEnum.getTextByCode(merchantInfo.getMerchantStatus()));
         detailVO.setStoreId(merchantStore.getId());

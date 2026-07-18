@@ -6,21 +6,19 @@
 
 最后更新时间：2026-07-18
 
-当前版本：V1.4 商家订单管理模块
+当前版本：V1.5 总控端商家审核模块
 
-项目状态：V1.4 商家订单管理模块已完成并通过人工验收。
+项目状态：V1.5 总控端商家管理后端已完成并通过人工验收。
 
 包含：
 
-- [x] 微信Mock登录
-- [x] 微信Profile
-- [x] 微信手机号绑定
-- [x] Postman验证
-- [x] Navicat验证
-- [x] 商家订单分页与详情
-- [x] 商家接单与出餐
-- [x] 出餐后进入骑手大厅
-- [x] 骑手接单与商家订单时间线
+- [x] 最小 RBAC 管理员权限
+- [x] 商家申请分页与详情
+- [x] 商家审核通过与拒绝
+- [x] 商家启用与禁用
+- [x] 审核原子更新与操作日志
+- [x] 14号 SQL 人工执行
+- [x] Postman 与 Navicat 人工验收
 
 ---
 
@@ -101,6 +99,14 @@
 - [x] 商家拒单并标记待退款
 - [x] 商家出餐
 - [x] 商品订单骑手大厅准入控制
+
+### 总控端模块
+
+- [x] 管理员 RBAC 权限校验
+- [x] 商家申请分页与详情
+- [x] 商家审核通过与拒绝
+- [x] 商家启用与禁用
+- [x] 商家审核日志
 
 ### 购物车模块
 
@@ -372,26 +378,27 @@ V1.2支付验收：
 当前开发断点：
 
 ```text
-V1.4 商家订单管理已完成并通过人工验收。
+V1.5 收尾完成，下一步创建 wuxin-admin-web。
 ```
 
-V1.4接口：
+V1.5接口：
 
 ```http
-GET /api/merchant/order/page
-GET /api/merchant/order/{id}
-POST /api/merchant/order/{id}/accept
-POST /api/merchant/order/{id}/reject
-POST /api/merchant/order/{id}/ready
+GET /api/admin/merchant/page
+GET /api/admin/merchant/{merchantId}
+POST /api/admin/merchant/{merchantId}/approve
+POST /api/admin/merchant/{merchantId}/reject
+POST /api/admin/merchant/{merchantId}/enable
+POST /api/admin/merchant/{merchantId}/disable
 ```
 
-下一步暂定：
+下一版本：
 
 ```text
-总控端商家审核
-↓
-真实微信支付第二阶段
+V1.6 总控管理后台前端
 ```
+
+后续完整版本顺序、功能边界和上线标准统一以`ROADMAP.md`为准。
 
 ## 七、待开发模块
 
@@ -413,7 +420,8 @@ POST /api/merchant/order/{id}/ready
 - [x] V1.3微信手机号绑定人工验收
 - [x] 商家订单代码
 - [x] V1.4 商家订单SQL、Postman和Navicat人工验收
-- [ ] 总控端商家审核
+- [x] 总控端商家审核代码
+- [x] V1.5 总控端SQL、Postman和Navicat人工验收
 - [ ] 微信支付
 - [ ] Redis
 - [ ] OSS
@@ -696,7 +704,52 @@ paymentNo = PAY2026071818153359038b94fc2a4cfc918b822dd4611cd1
 `merchant_reject_time`和`merchant_reject_reason`正确落库，支付状态仍为已支付。
 真实退款功能尚未实现，当前仅标记“已关闭，待退款”，等待后续退款处理。
 
-## 十九、V1.0 验收结果
+## 十九、V1.5总控端商家审核模块
+
+- [x] 管理员权限审计
+- [x] `sys_role`和`sys_user_role`最小 RBAC
+- [x] `/api/admin/merchant`统一管理员接口
+- [x] 商家申请分页、状态筛选和关键词查询
+- [x] 商家申请详情与申请人非敏感信息
+- [x] 审核通过原子条件更新
+- [x] 审核拒绝原子条件更新
+- [x] 审核通过不自动设置营业中
+- [x] 商家启用与禁用
+- [x] 禁用后店铺禁用并停止营业
+- [x] `merchant_audit_log`独立操作日志
+- [x] 并发审核保护
+- [x] 自动化测试
+- [x] 14号数据库升级脚本
+- [x] Navicat人工执行与字段、索引核对
+- [x] Postman管理员权限和业务流程验收
+
+权限方案：
+
+```text
+JWT userId
+→ sys_user_role
+→ sys_role.role_code = ADMIN
+→ 允许访问 /api/admin/**
+```
+
+JWT不保存管理员角色，角色变更可立即生效。迁移脚本不自动给任何账号授予管理员权限，
+必须在Navicat确认真实管理员账号后人工授权。
+
+人工验收结果：
+
+- [x] `14_create_admin_merchant_audit.sql`已在当前测试数据库执行
+- [x] `ADMIN`角色已初始化，`admin`用户`userId=1`已绑定该角色
+- [x] 管理员登录、商家分页和详情查询通过
+- [x] `merchantId=2`、`storeId=2`审核通过，审核字段与`APPROVE`日志正确
+- [x] `merchantId=2`重复审核返回409
+- [x] `merchantId=3`待审核时不能启用
+- [x] `merchantId=3`、`storeId=3`审核拒绝，状态与`REJECT`日志正确
+- [x] `merchantId=1`禁用和重新启用通过，重新启用后`business_status=0`
+- [x] 普通用户访问`/api/admin/**`返回`403 无管理员权限`
+
+验收结论：V1.5总控端商家管理后端已完成并通过人工验收。
+
+## 二十、V1.0 验收结果
 
 本轮已完成：
 
@@ -718,7 +771,7 @@ paymentNo = PAY2026071818153359038b94fc2a4cfc918b822dd4611cd1
 V1.0 测试全部通过。
 ```
 
-## 二十、本轮安全测试
+## 二十一、本轮安全测试
 
 ### 地址越权测试
 
@@ -748,7 +801,7 @@ V1.0 测试全部通过。
 
 说明：订单归属校验正常，接口不会向其他用户暴露订单是否真实存在。
 
-## 二十一、项目规范
+## 二十二、项目规范
 
 项目分层：
 
@@ -773,7 +826,7 @@ VO
 - [x] VO 返回前端数据
 - [x] Entity 不直接返回前端
 
-## 二十二、开发流程
+## 二十三、开发流程
 
 固定流程：
 

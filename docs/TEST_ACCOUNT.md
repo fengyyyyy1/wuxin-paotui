@@ -1,6 +1,6 @@
 # 测试账号
 
-> 当前版本：V1.4 商家订单管理模块
+> 当前版本：V1.5 总控端商家审核模块
 > 当前数据库：`wuxin_paotui`
 
 本文件统一维护项目测试账号。测试账号、密码、用户 ID 或身份发生变化时，必须同步修改本文档和 `TEST_ENVIRONMENT.md`。
@@ -11,12 +11,25 @@
 | --- | --- |
 | username | `admin` |
 | password | `123456` |
-| userId | 待从真实数据库 `sys_user` 确认并回填 |
+| userId | `1` |
 
 说明：
 
 - 本轮使用 `admin` 完成地址越权和订单越权测试。
-- 当前仓库和历史文档没有可靠记录管理员 `userId`，禁止根据自增顺序猜测。
+- 管理员`userId=1`已通过真实数据库只读查询确认。
+- V1.5管理员权限不再依据用户名或固定用户ID，而是要求该账号关联有效的`ADMIN`角色。
+- 14号SQL已执行，`admin`已绑定`ADMIN`角色并通过管理员权限测试。
+
+管理员角色验证：
+
+```sql
+SELECT u.id, u.username, r.role_code, ur.create_time
+FROM sys_user u
+INNER JOIN sys_user_role ur ON ur.user_id = u.id
+INNER JOIN sys_role r ON r.id = ur.role_id
+WHERE u.username = 'admin'
+  AND u.is_deleted = 0;
+```
 
 ## 二、普通用户
 
@@ -51,21 +64,34 @@ rider_status = 1
 
 ## 四、商家测试账号
 
-V1.4商家订单已通过人工验收。商家账号具体值仍必须从真实数据库确认后回填，
-不得根据测试订单或自增顺序猜测：
+V1.4商家订单已通过人工验收。当前商家账号已通过真实数据库只读查询确认：
 
 | 字段 | 值 |
 | --- | --- |
-| username | 待确认 |
-| password | 待确认 |
-| userId | 待确认 |
-| merchantId | 待确认 |
-| storeId | 待确认 |
+| username | `test001` |
+| password | `123456` |
+| userId | `2` |
+| merchantId | `1` |
+| storeId | `1` |
 | audit_status | 必须为`1` |
 | merchant_status | 必须为`1` |
 | store_status | 必须为`1` |
 
 越权测试还需准备第二个审核通过的商家账号。禁止根据数据库自增顺序猜测账号或ID。
+
+V1.5审核通过和审核拒绝必须分别使用两个新的普通测试账号提交独立商家申请。
+当前`merchantId=1`已经审核通过，只适合测试禁用和重新启用，不能用于待审核流程。
+
+V1.5测试账号用途：
+
+| username | 用途 | Token记录 |
+| --- | --- | --- |
+| `admin` | 管理员登录、权限和商家管理测试 | 不记录 |
+| `merchant_audit_01` | 提交审核通过测试申请 | 不记录 |
+| `merchant_audit_02` | 提交审核拒绝测试申请 | 不记录 |
+
+测试申请已分别生成`merchantId=2/storeId=2`和`merchantId=3/storeId=3`。
+本文档不新增或保存这些账号的Token。
 
 本轮验收记录：
 
@@ -186,3 +212,4 @@ POST /api/user/wechat/login
 2. 修改账号身份、用户 ID 或骑手状态时，必须同步修改本文档。
 3. 测试数据 ID 和最近一次测试时间统一维护在 `TEST_ENVIRONMENT.md`。
 4. 文档记录必须以真实数据库和实际登录结果为准，不得依赖记忆。
+5. 管理员授权变化时必须同步本文档和`TEST_ENVIRONMENT.md`，不得记录固定Token。

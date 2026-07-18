@@ -1,6 +1,6 @@
 # Postman 测试文档
 
-> 当前版本：V1.4 商家订单管理模块
+> 当前版本：V1.5 总控端商家审核模块
 >
 > 当前可进行本地固定映射Mock微信登录；真实微信联调需要小程序AppID和AppSecret。
 
@@ -35,6 +35,9 @@
 | `merchantOrderId` | 新建并支付的商品订单ID | 商家接单与出餐 |
 | `merchantOrderNo` | 新建商品订单返回 | 商家订单号搜索 |
 | `rejectMerchantOrderId` | 第二笔已支付商品订单ID | 商家拒单 |
+| `adminToken` | 管理员登录后返回 | V1.5总控端JWT |
+| `pendingMerchantId` | 待审核商家申请返回 | 审核通过测试 |
+| `rejectAuditMerchantId` | 另一笔待审核商家申请 | 审核拒绝测试 |
 
 登录后接口统一使用：
 
@@ -548,15 +551,20 @@ Authorization: Bearer {{token}}
 
 预期结果：返回商家主体和店铺资料，不包含身份证图片及逻辑删除字段。
 
-### 20. 手动通过商家审核
+### 20. 通过总控端审核商家
 
-当前没有总控端审核接口，在 Navicat 执行：
+V1.5的14号SQL和管理员角色授权已完成。重新验证时直接使用管理员Token请求：
 
-```sql
-UPDATE merchant_info
-SET audit_status = 1,
-    audit_remark = '测试审核通过'
-WHERE id = {{merchantId}};
+```http
+POST {{host}}/api/admin/merchant/{{merchantId}}/approve
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+```
+
+```json
+{
+  "auditRemark": "测试审核通过"
+}
 ```
 
 审核前调用店铺修改或营业状态接口应返回 `403 商家尚未通过审核或已被禁用`。
@@ -2083,6 +2091,239 @@ WHERE Key_name = 'idx_order_store_type_deleted_create_time';
 - 订单`8`的`merchant_reject_time`和`merchant_reject_reason`正确落库
 - 真实退款尚未实现，拒单后`pay_status`仍为`1`
 
+### 109. V1.5数据库与管理员准备
+
+在Navicat执行：
+
+```text
+wuxin-paotui-server/src/main/resources/sql/14_create_admin_merchant_audit.sql
+```
+
+执行前先确认角色表没有重复数据：
+
+```sql
+SELECT role_code, COUNT(*)
+FROM sys_role
+WHERE role_code IS NOT NULL
+GROUP BY role_code
+HAVING COUNT(*) > 1;
+
+SELECT user_id, role_id, COUNT(*)
+FROM sys_user_role
+WHERE user_id IS NOT NULL
+  AND role_id IS NOT NULL
+GROUP BY user_id, role_id
+HAVING COUNT(*) > 1;
+```
+
+两条查询都必须返回空结果。
+
+确认真实管理员账号后授权。下面语句按用户名查找账号，不使用固定`userId`：
+
+```sql
+INSERT INTO sys_user_role (
+    user_id,
+    role_id,
+    create_time
+)
+SELECT
+    u.id,
+    r.id,
+    NOW()
+FROM sys_user u
+INNER JOIN sys_role r ON r.role_code = 'ADMIN'
+WHERE u.username = 'admin'
+  AND u.status = 1
+  AND u.is_deleted = 0
+ON DUPLICATE KEY UPDATE
+    role_id = VALUES(role_id);
+```
+
+验证管理员角色：
+
+```sql
+SELECT u.id, u.username, r.role_code, ur.create_time
+FROM sys_user u
+INNER JOIN sys_user_role ur ON ur.user_id = u.id
+INNER JOIN sys_role r ON r.id = ur.role_id
+WHERE u.username = 'admin';
+```
+
+### 110. 管理员登录
+
+```http
+POST {{host}}/api/user/login
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "admin",
+  "password": "123456"
+}
+```
+
+保存返回Token为`adminToken`。不要把Token写入文档或Git。
+
+### 111. 准备两笔独立待审核申请
+
+使用两个不同的普通测试账号分别调用`POST /api/merchant/apply`，保存返回的商家ID：
+
+- 第一笔保存为`pendingMerchantId`，用于审核通过、禁用和启用。
+- 第二笔保存为`rejectAuditMerchantId`，用于审核拒绝。
+
+不要复用同一商家申请同时测试通过和拒绝，也不要直接修改审核状态准备数据。
+
+### 112. 查询待审核商家
+
+```http
+GET {{host}}/api/admin/merchant/page?pageNum=1&pageSize=10&auditStatus=0
+Authorization: Bearer {{adminToken}}
+```
+
+预期返回统一分页结构，并包含两笔待审核申请。继续测试：
+
+- `merchantStatus=0/1`
+- `keyword=商家名称`
+- `keyword=联系人`
+- `keyword=手机号`
+- `pageNum=0`、`pageSize=101`和非法状态返回参数错误
+
+### 113. 查询商家详情
+
+```http
+GET {{host}}/api/admin/merchant/{{pendingMerchantId}}
+Authorization: Bearer {{adminToken}}
+```
+
+预期返回商家、申请用户、店铺和审核资料，不返回密码、Token、openid或unionid。
+不存在的商家ID返回`404 商家不存在`。
+
+### 114. 审核通过
+
+```http
+POST {{host}}/api/admin/merchant/{{pendingMerchantId}}/approve
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+```
+
+```json
+{
+  "auditRemark": "审核通过，资料齐全，符合入驻要求。"
+}
+```
+
+预期`auditStatus=1`、`merchantStatus=1`、`storeStatus=1`，原
+`businessStatus`保持不变。重复请求返回`409 当前商家审核状态不可操作`。
+
+### 115. 未审核启用与审核拒绝
+
+先验证待审核的第二笔申请不能启用：
+
+```http
+POST {{host}}/api/admin/merchant/{{rejectAuditMerchantId}}/enable
+Authorization: Bearer {{adminToken}}
+```
+
+预期`409 当前商家审核状态不可操作`。
+
+再执行拒绝：
+
+```http
+POST {{host}}/api/admin/merchant/{{rejectAuditMerchantId}}/reject
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+```
+
+```json
+{
+  "reason": "营业执照信息不清晰"
+}
+```
+
+预期审核状态为驳回，商家和店铺禁用，店铺为休息中。空原因、1字符原因或
+超过255字符返回参数错误，重复拒绝返回409。
+
+### 116. 禁用和启用商家
+
+禁用已通过商家：
+
+```http
+POST {{host}}/api/admin/merchant/{{pendingMerchantId}}/disable
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+```
+
+```json
+{
+  "reason": "存在违规经营行为"
+}
+```
+
+预期`merchantStatus=0`、`storeStatus=0`、`businessStatus=0`，历史订单仍可查询。
+
+重新启用：
+
+```http
+POST {{host}}/api/admin/merchant/{{pendingMerchantId}}/enable
+Authorization: Bearer {{adminToken}}
+```
+
+预期商家和店铺启用，但`businessStatus`不会自动变为营业中。
+
+### 117. 普通用户越权
+
+使用普通用户`token`请求任意`/api/admin/merchant/**`接口，预期HTTP和响应体
+均为`403 无管理员权限`。不携带Token预期`401 未登录或登录已过期`。
+
+### 118. V1.5 Navicat验证
+
+```sql
+SELECT
+    id,
+    audit_status,
+    merchant_status,
+    audit_admin_id,
+    audit_time,
+    audit_remark,
+    reject_reason,
+    update_time,
+    is_deleted
+FROM merchant_info
+WHERE id IN ({{pendingMerchantId}}, {{rejectAuditMerchantId}});
+
+SELECT
+    id,
+    merchant_id,
+    business_status,
+    store_status,
+    update_time,
+    is_deleted
+FROM merchant_store
+WHERE merchant_id IN ({{pendingMerchantId}}, {{rejectAuditMerchantId}});
+
+SELECT
+    merchant_id,
+    admin_user_id,
+    action,
+    before_status,
+    after_status,
+    reason,
+    create_time
+FROM merchant_audit_log
+WHERE merchant_id IN ({{pendingMerchantId}}, {{rejectAuditMerchantId}})
+ORDER BY id;
+```
+
+确认每次成功操作只有一条日志，重复审核或重复状态操作不新增日志。
+
+V1.5人工验收结果：
+
+- `merchantId=2`、`storeId=2`审核通过，审核字段和`APPROVE`日志正确。
+- `merchantId=3`、`storeId=3`审核拒绝，商家和店铺保持禁用，`REJECT`日志正确。
+- `merchantId=1`禁用后重新启用成功，`business_status`保持`0`。
+- 普通用户访问`/api/admin/**`返回`403 无管理员权限`。
+
 ## 三、异常测试
 
 | 场景 | 预期结果 |
@@ -2105,6 +2346,10 @@ WHERE Key_name = 'idx_order_store_type_deleted_create_time';
 | 重复申请商家 | `409 当前用户已申请商家入驻` |
 | 未申请商家 | `404 商家信息不存在` |
 | 商家未审核或已禁用 | `403 商家尚未通过审核或已被禁用` |
+| 普通用户访问总控接口 | `403 无管理员权限` |
+| 总控端商家不存在 | `404 商家不存在` |
+| 重复审核或审核状态错误 | `409 当前商家审核状态不可操作` |
+| 重复启用、禁用或商家状态错误 | `409 当前商家状态不可操作` |
 | 店铺不可访问 | `404 店铺不存在` |
 | 商品分类不存在或不属于当前店铺 | `404 商品分类不存在` |
 | 同店铺分类重名 | `409 商品分类名称已存在` |
