@@ -1,0 +1,73 @@
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104rpx;
+  height: 104rpx;
+  overflow: hidden;
+  color: #ffffff;
+  background: #0f766e;
+  border-radius: 50%;
+  font-size: 38rpx;
+  font-weight: 700;
+}
+
+.avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.profile-name {
+  margin-bottom: 16rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.profile-line {
+  margin-bottom: 16rpx;
+  font-size: 26rpx;
+}
+
+.profile-empty {
+  margin-bottom: 24rpx;
+  font-size: 26rpx;
+}
+
+van-button + van-button {
+  margin-top: 20rpx;
+}
+
+.profile-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 88rpx;
+  margin: 20rpx 0 0;
+  padding: 0 28rpx;
+  color: #111827;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 16rpx;
+  font-size: 27rpx;
+  font-weight: 700;
+  line-height: 88rpx;
+  text-align: left;
+}
+
+.profile-entry::after {
+  border: 0;
+}
+
+.entry-extra {
+  color: #0f766e;
+  font-size: 24rpx;
+  font-weight: 700;
+}

@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="section">
+    <view class="title">编辑资料</view>
+    <view class="subtitle">本阶段仅支持修改昵称和头像URL，图片上传将在后续版本接入。</view>
+  </view>
+
+  <view class="card">
+    <van-field
+      label="昵称"
+      value="{{ nickname }}"
+      maxlength="30"
+      placeholder="请输入昵称"
+      bind:change="onNicknameChange"
+    />
+    <van-field
+      label="头像URL"
+      value="{{ avatar }}"
+      maxlength="255"
+      placeholder="请输入头像图片URL"
+      bind:change="onAvatarChange"
+    />
+    <view wx:if="{{ errorMessage }}" class="form-error">{{ errorMessage }}</view>
+    <van-button
+      type="primary"
+      block
+      loading="{{ saving }}"
+      loading-text="保存中"
+      bind:click="submitProfile"
+    >
+      保存资料
+    </van-button>
+  </view>
+</view>

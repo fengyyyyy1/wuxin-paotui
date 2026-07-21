@@ -1,0 +1,22 @@
+.login-page {
+  padding-top: 120rpx;
+}
+
+.login-hero {
+  margin-bottom: 48rpx;
+}
+
+.login-error {
+  margin-top: 24rpx;
+  color: #dc2626;
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
+.agreement-text {
+  margin-top: 28rpx;
+  color: #94a3b8;
+  font-size: 24rpx;
+  line-height: 1.6;
+  text-align: center;
+}

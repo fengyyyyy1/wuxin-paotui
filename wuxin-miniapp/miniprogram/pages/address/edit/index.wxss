@@ -1,0 +1,45 @@
+.address-edit-page {
+  padding-bottom: 48rpx;
+}
+
+.form-card {
+  padding: 20rpx 0 28rpx;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  box-shadow: 0 10rpx 24rpx rgba(15, 23, 42, 0.06);
+}
+
+.default-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 28rpx 32rpx;
+  border-top: 1rpx solid #f1f5f9;
+}
+
+.default-title {
+  color: #111827;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.default-desc {
+  margin-top: 8rpx;
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.form-error {
+  margin: 0 32rpx 24rpx;
+  color: #dc2626;
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
+van-button {
+  display: block;
+  margin: 0 32rpx;
+}

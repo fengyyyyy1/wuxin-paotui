@@ -1,0 +1,10 @@
+<view class="page apply-page">
+  <view class="apply-card">
+    <view class="apply-kicker">五鑫跑腿</view>
+    <view class="apply-title">商家入驻</view>
+    <view class="apply-text">
+      商家入驻资料收集、资质上传和后台审核流程将在 V1.8 完整开发。本阶段仅提供正式入口，不提交申请。
+    </view>
+    <button class="apply-button" bindtap="goBack">返回</button>
+  </view>
+</view>

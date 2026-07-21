@@ -1,0 +1,121 @@
+<view class="page home-page">
+  <view class="hero-card">
+    <view class="user-row">
+      <view class="avatar">
+        <image src="{{ avatarUrl }}" mode="aspectFill" bind:error="handleAvatarError" />
+      </view>
+      <view class="user-copy">
+        <view class="welcome">你好，{{ displayName }}</view>
+        <view class="user-meta">账号 {{ usernameText || '未登录' }} · {{ phoneText }}</view>
+      </view>
+    </view>
+    <view class="address-row" bind:tap="goToAddress">
+      <view>
+        <view class="address-label">当前收货地址</view>
+        <view class="address-text {{ hasDefaultAddress ? '' : 'address-placeholder' }}">
+          {{ addressText }}
+        </view>
+      </view>
+      <view class="address-action">管理</view>
+    </view>
+  </view>
+
+  <view class="search-bar" bind:tap="goToSearch">
+    <view class="search-icon"></view>
+    <view class="search-placeholder">搜索商品、商家或跑腿服务</view>
+  </view>
+
+  <swiper class="banner-swiper" autoplay circular interval="3600" duration="450">
+    <swiper-item wx:for="{{ banners }}" wx:key="id">
+      <view class="banner-card" data-id="{{ item.id }}" bind:tap="handleBannerTap">
+        <image class="banner-image" src="{{ item.imageUrl }}" mode="aspectFill" />
+        <view class="banner-copy">
+          <view class="banner-title">{{ item.title }}</view>
+          <view class="banner-subtitle">{{ item.subtitle }}</view>
+        </view>
+      </view>
+    </swiper-item>
+  </swiper>
+
+  <view class="module">
+    <view class="module-title">常用服务</view>
+    <view class="service-grid">
+      <view
+        wx:for="{{ serviceEntries }}"
+        wx:key="id"
+        class="service-card"
+        data-id="{{ item.id }}"
+        bind:tap="handleServiceTap"
+      >
+        <view class="service-icon">{{ item.iconText }}</view>
+        <view class="service-title">{{ item.title }}</view>
+        <view class="service-desc">{{ item.description }}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="module">
+    <view class="module-title">公益特色</view>
+    <view class="public-list">
+      <view
+        wx:for="{{ publicEntries }}"
+        wx:key="id"
+        class="public-card"
+        data-id="{{ item.id }}"
+        bind:tap="goToPublicPage"
+      >
+        <view class="public-tag">{{ item.tag }}</view>
+        <view class="public-title">{{ item.title }}</view>
+        <view class="public-desc">{{ item.description }}</view>
+      </view>
+    </view>
+  </view>
+
+  <view id="store-section" class="module store-module">
+    <view class="module-header">
+      <view>
+        <view class="module-title">推荐门店</view>
+        <view class="module-subtitle">真实接口数据 · GET /api/store/list</view>
+      </view>
+      <van-button size="small" loading="{{ storeLoading }}" bind:click="loadStores">刷新</van-button>
+    </view>
+
+    <view wx:if="{{ storeErrorMessage }}" class="store-error">
+      <view>{{ storeErrorMessage }}</view>
+      <van-button size="small" type="primary" bind:click="loadStores">重新加载</van-button>
+    </view>
+
+    <view wx:if="{{ !storeErrorMessage && storeLoading && !stores.length }}" class="loading-card">门店加载中...</view>
+
+    <block wx:elif="{{ !storeErrorMessage && stores.length }}">
+      <view
+        wx:for="{{ stores }}"
+        wx:key="storeId"
+        class="store-card"
+        data-id="{{ item.storeId }}"
+        bind:tap="goToStoreDetail"
+      >
+        <image
+          class="store-image"
+          src="{{ item.imageUrl }}"
+          mode="aspectFill"
+          data-id="{{ item.storeId }}"
+          bind:error="handleImageError"
+        />
+        <view class="store-content">
+          <view class="store-top">
+            <view class="store-name">{{ item.storeName }}</view>
+            <view class="store-status {{ item.statusClass }}">{{ item.statusText }}</view>
+          </view>
+          <view class="store-desc">{{ item.storeDescription || '门店介绍待补充' }}</view>
+          <view class="store-meta">{{ item.timeText }} · {{ item.addressText || '地址待补充' }}</view>
+          <view class="store-hint">进入门店浏览商品</view>
+        </view>
+      </view>
+    </block>
+
+    <view wx:elif="{{ !storeErrorMessage }}" class="empty-card">
+      <empty-state title="{{ storeEmptyText }}" description="暂无可展示门店，请稍后再试。" />
+    </view>
+  </view>
+</view>

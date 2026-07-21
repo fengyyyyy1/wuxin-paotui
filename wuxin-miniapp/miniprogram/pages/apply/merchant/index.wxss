@@ -1,0 +1,52 @@
+.apply-page {
+  display: flex;
+  align-items: center;
+  min-height: 100vh;
+  padding: 32rpx;
+  background: #f5f7fb;
+}
+
+.apply-card {
+  width: 100%;
+  padding: 42rpx 34rpx;
+  background: #ffffff;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 22rpx;
+  box-shadow: 0 12rpx 30rpx rgba(15, 23, 42, 0.06);
+}
+
+.apply-kicker {
+  color: #0f766e;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.apply-title {
+  margin-top: 14rpx;
+  color: #111827;
+  font-size: 42rpx;
+  font-weight: 900;
+}
+
+.apply-text {
+  margin-top: 20rpx;
+  color: #475569;
+  font-size: 27rpx;
+  line-height: 1.7;
+}
+
+.apply-button {
+  height: 82rpx;
+  margin: 34rpx 0 0;
+  color: #ffffff;
+  background: #0f766e;
+  border: 0;
+  border-radius: 18rpx;
+  font-size: 27rpx;
+  font-weight: 900;
+  line-height: 82rpx;
+}
+
+.apply-button::after {
+  border: 0;
+}

@@ -1,0 +1,57 @@
+<view class="page product-detail-page">
+  <view wx:if="{{ loading && !product }}" class="state-card">商品详情加载中...</view>
+
+  <view wx:elif="{{ errorMessage }}" class="state-card">
+    <empty-state title="商品详情加载失败" description="{{ errorMessage }}" />
+    <view class="state-actions">
+      <van-button size="small" type="primary" bind:click="refresh">重新加载</van-button>
+    </view>
+  </view>
+
+  <block wx:elif="{{ product }}">
+    <image class="product-hero" src="{{ product.imageUrl }}" mode="aspectFill" bind:error="handleImageError" />
+
+    <view class="info-card">
+      <view class="product-name">{{ product.productName }}</view>
+      <view class="price-row">
+        <view>
+          <text class="price-prefix">¥</text>
+          <text class="price">{{ product.priceText }}</text>
+        </view>
+        <view class="status-tag">{{ product.statusText }}</view>
+      </view>
+      <view class="meta-row">
+        <text>{{ product.stockText }}</text>
+        <text>{{ product.categoryName || '未分类' }}</text>
+      </view>
+    </view>
+
+    <view class="info-card">
+      <view class="section-title">商品说明</view>
+      <view class="description">{{ product.productDescription || '商品说明待补充' }}</view>
+    </view>
+
+    <view class="info-card">
+      <view class="section-title">购买前确认</view>
+      <view class="info-line">所属门店：{{ storeName || '从门店进入后展示' }}</view>
+      <view class="info-line">商品价格与库存以后端返回为准，后续购物车和下单流程不会信任前端价格。</view>
+    </view>
+
+    <view class="bottom-bar">
+      <button class="cart-entry-button" bindtap="goToCart">
+        购物车
+        <text wx:if="{{ cartCount > 0 }}" class="cart-badge">{{ cartCount }}</text>
+      </button>
+      <van-button
+        custom-class="cart-action-button"
+        block
+        type="primary"
+        loading="{{ addingCart }}"
+        disabled="{{ addingCart || !product.canAddToCart }}"
+        bind:click="handleCartClick"
+      >
+        {{ product.cartButtonText }}
+      </van-button>
+    </view>
+  </block>
+</view>

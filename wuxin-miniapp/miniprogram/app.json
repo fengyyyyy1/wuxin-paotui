@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/home/index",
+    "pages/cart/index",
+    "pages/search/index",
+    "pages/store/detail/index",
+    "pages/product/detail/index",
+    "pages/apply/merchant/index",
+    "pages/apply/rider/index",
+    "pages/public/missing/index",
+    "pages/public/bullying/index",
+    "pages/public/rescue/index",
+    "pages/address/list/index",
+    "pages/address/edit/index",
+    "pages/order/list/index",
+    "pages/profile/index",
+    "pages/profile/edit/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "五鑫跑腿",
+    "navigationBarBackgroundColor": "#0f766e",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f7fb"
+  },
+  "tabBar": {
+    "color": "#64748b",
+    "selectedColor": "#0f766e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/order/list/index",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

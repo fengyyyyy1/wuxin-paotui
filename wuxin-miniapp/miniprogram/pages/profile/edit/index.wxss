@@ -1,0 +1,10 @@
+.form-error {
+  margin: 24rpx 0;
+  color: #dc2626;
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
+van-button {
+  margin-top: 28rpx;
+}

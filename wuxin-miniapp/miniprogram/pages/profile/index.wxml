@@ -1,0 +1,53 @@
+<view class="page">
+  <view class="section">
+    <view class="title">个人中心</view>
+    <view class="subtitle">管理你的基础资料和手机号绑定状态。</view>
+  </view>
+
+  <view class="card">
+    <block wx:if="{{ userInfo }}">
+      <view class="profile-header">
+        <view class="avatar">
+          <image src="{{ avatarUrl }}" mode="aspectFill" bind:error="handleAvatarError" />
+        </view>
+        <view>
+          <view class="profile-name">{{ displayName }}</view>
+          <view class="profile-line muted">用户名：{{ usernameText }}</view>
+        </view>
+      </view>
+      <view class="profile-line muted">手机号：{{ phoneText }}</view>
+      <view class="profile-line muted">性别：{{ genderText }}</view>
+      <van-button
+        block
+        type="{{ canBindPhone ? 'primary' : 'default' }}"
+        disabled="{{ !canBindPhone }}"
+        loading="{{ bindingPhone }}"
+        loading-text="绑定中"
+        open-type="{{ phoneBindOpenType }}"
+        bind:click="handleBindPhoneClick"
+        bind:getphonenumber="handleGetPhoneNumber"
+      >
+        {{ phoneButtonText }}
+      </van-button>
+      <button class="profile-entry" bindtap="goToCart">
+        <text>我的购物车</text>
+        <text class="entry-extra">{{ cartCount > 0 ? cartCount + '件' : '去看看' }}</text>
+      </button>
+      <van-button block bind:click="goToAddressList">收货地址</van-button>
+      <button class="profile-entry" bindtap="goToMerchantApply">
+        <text>商家入驻</text>
+        <text class="entry-extra">V1.8开放</text>
+      </button>
+      <button class="profile-entry" bindtap="goToRiderApply">
+        <text>申请成为骑手</text>
+        <text class="entry-extra">V1.8开放</text>
+      </button>
+      <van-button type="primary" block bind:click="goToEditProfile">编辑资料</van-button>
+      <van-button block bind:click="logout">退出登录</van-button>
+    </block>
+    <block wx:else>
+      <view class="muted profile-empty">登录后查看个人资料。</view>
+      <van-button type="primary" block bind:click="goToLogin">去登录</van-button>
+    </block>
+  </view>
+</view>

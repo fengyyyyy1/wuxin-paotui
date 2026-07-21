@@ -713,6 +713,35 @@ GET {{host}}/api/store/product/{{productId}}
 
 预期结果：只返回营业中店铺的启用分类下已上架、未删除且库存大于 0 的商品，不返回 `storeId`、逻辑删除和内部状态字段。
 
+### 31A. V1.7-7A 商品链路复测
+
+用于复测“门店详情正常但商品为空”的问题。以下请求不携带 Authorization：
+
+```http
+GET {{host}}/api/store/1
+GET {{host}}/api/store/1/categories
+GET {{host}}/api/store/1/products?pageNum=1&pageSize=10
+GET {{host}}/api/store/product/2
+```
+
+复测前置数据：
+
+- `merchant_store.id=1`
+- `store_status=1`
+- `business_status=1`
+- 对应商家`audit_status=1`、`merchant_status=1`
+- `merchant_category.id=2`启用且未删除
+- `merchant_product.id=2`上架、未删除且库存大于0
+
+预期结果：
+
+- 店铺详情返回`storeId=1`和`businessStatus=1`
+- 分类列表返回`categoryId=2`
+- 商品列表返回`productId=2`
+- 商品详情`GET /api/store/product/2`返回成功
+
+审计结论：公开商品分类和商品列表要求店铺`business_status=1`。若测试店铺为休息中，门店详情仍可返回，但商品分类和商品列表会被过滤为空。
+
 ### 32. 删除保护和逻辑删除
 
 1. 商品未删除时调用 `DELETE /api/merchant/category/{{categoryId}}`，预期返回 `409 分类下存在商品，不能删除`。
@@ -810,7 +839,25 @@ Content-Type: application/json
 
 预期结果：选中状态更新。将商品下架或分类禁用后，失效商品不能重新选中。
 
-### 40. 失效商品测试
+### 40. 全选和取消全选
+
+```http
+PUT {{host}}/api/cart/selected/all
+Authorization: Bearer {{token}}
+Content-Type: application/json
+```
+
+```json
+{
+  "selected": 1
+}
+```
+
+预期结果：返回最新购物车列表；有效商品被统一选中，失效商品不参与全选、不计入合计金额。
+
+将 `selected` 改为 `0` 时预期有效商品统一取消选中。
+
+### 41. 失效商品测试
 
 分别在 Navicat 或商家接口调整商品状态、分类状态、店铺营业状态和库存，再查询购物车：
 
@@ -824,7 +871,16 @@ Content-Type: application/json
 
 失效记录应继续保留，但不能计入选中总额。
 
-### 41. 删除和清空购物车
+清理失效商品：
+
+```http
+DELETE {{host}}/api/cart/invalid
+Authorization: Bearer {{token}}
+```
+
+预期结果：仅逻辑删除当前用户购物车中的失效商品；没有失效商品时同样返回成功。
+
+### 42. 删除和清空购物车
 
 ```http
 DELETE {{host}}/api/cart/{{cartId}}
@@ -834,7 +890,23 @@ Authorization: Bearer {{token}}
 
 单个删除后重复删除应返回 `404 购物车不存在`。清空空购物车仍应返回成功。删除后重新加入同一商品应复用逻辑删除记录并正常成功。
 
-### 42. V0.9 完整测试结果
+### 43. V1.7-8 小程序购物车回归结果
+
+| 测试项 | 结果 |
+| --- | --- |
+| 空购物车 | 通过 |
+| 首次加入商品 | 通过 |
+| 重复加入同一商品 | 通过，数量合并 |
+| 修改数量 | 通过 |
+| 超库存修改 | 后端返回业务失败，购物车数量保持不变 |
+| 单项选中/取消 | 通过 |
+| 全选/取消全选 | 通过 |
+| 清理失效商品 | 通过 |
+| 删除单个商品 | 通过 |
+| 清空购物车 | 通过 |
+| 跨店铺加购 | 当前公开测试数据只有一个可用门店商品，待补充第二门店商品后继续复测 |
+
+### 44. V0.9 完整测试结果
 
 正常流程：
 
@@ -862,7 +934,7 @@ Authorization: Bearer {{token}}
 | 库存不足或累加超库存 | `409`，通过 |
 | 失效商品重新选中 | 拒绝操作，通过 |
 
-### 43. 执行 V1.0 数据库升级
+### 45. 执行 V1.0 数据库升级
 
 在 Navicat 中选择 `wuxin_paotui` 数据库并执行：
 
@@ -872,7 +944,7 @@ wuxin-paotui-server/src/main/resources/sql/10_create_order_item_and_update_order
 
 预期创建 `order_item`，扩展 `order_info` 的商品订单字段及查询索引。脚本重复执行不应报错，也不修改已有订单业务数据。
 
-### 44. 准备 V1.0 结算数据
+### 46. 准备 V1.0 结算数据
 
 1. 使用 `POST /api/user/login` 获取并保存 `{{token}}`。
 2. 确认 `{{addressId}}` 属于当前用户且未删除。
@@ -880,7 +952,7 @@ wuxin-paotui-server/src/main/resources/sql/10_create_order_item_and_update_order
 4. 调用 `POST /api/cart/add` 加入至少一个商品。
 5. 如需验证未选商品保留，再加入同店铺第二个商品并通过 `PUT /api/cart/selected` 设置 `selected = 0`。
 
-### 45. 购物车结算预览
+### 47. 购物车结算预览
 
 ```http
 POST {{host}}/api/order/settlement/preview
@@ -896,7 +968,7 @@ Content-Type: application/json
 
 预期返回 `200`，`items` 只包含已选商品，`productAmount` 为商品小计之和，`deliveryFee = 0.00`，且库存、购物车和订单表均不发生变化。
 
-### 46. 从购物车创建商品订单
+### 48. 从购物车创建商品订单
 
 ```http
 POST {{host}}/api/order/create-from-cart
@@ -913,7 +985,7 @@ Content-Type: application/json
 
 预期返回 `200 商品订单创建成功`。保存响应中的 `orderId`，并确认 `orderType = 1`、`payStatus = 0`、`status = 0`、`deliveryFee = 0.00`。
 
-### 47. 商品订单详情与快照
+### 49. 商品订单详情与快照
 
 ```http
 GET {{host}}/api/order/{{orderId}}
@@ -922,7 +994,7 @@ Authorization: Bearer {{token}}
 
 预期返回店铺、金额和 `items`。在测试环境临时修改 `merchant_product` 的名称、图片或价格后再次查询，`items` 中的历史数据仍应保持下单时快照；验证后恢复商品数据。
 
-### 48. 重复提交与购物车清理
+### 50. 重复提交与购物车清理
 
 创建成功后立即重复调用创建接口：
 
@@ -932,7 +1004,7 @@ Authorization: Bearer {{token}}
 - 未选购物车项保持 `is_deleted = 0`
 - 再次加入已结算商品时可恢复逻辑删除记录
 
-### 49. 库存与事务回滚测试
+### 51. 库存与事务回滚测试
 
 1. 加入有效商品并完成结算预览。
 2. 将商品库存调低到小于购物车数量。
@@ -942,7 +1014,7 @@ Authorization: Bearer {{token}}
 
 并发测试可使用两个 Runner 请求同时提交同一用户购物车。预期最多一个请求成功，库存不为负数，只生成一套订单、明细和日志。
 
-### 50. V1.0 Navicat 验证
+### 52. V1.0 Navicat 验证
 
 ```sql
 SELECT id, order_no, user_id, order_type, store_id, delivery_address_id,
@@ -971,7 +1043,7 @@ ORDER BY id;
 
 预期日志为 `old_status = 0`、`new_status = 0`、`operator_type = USER`、`remark = 用户从购物车创建商品订单`。
 
-### 51. V1.0 完整测试结果
+### 53. V1.0 完整测试结果
 
 | 测试范围 | 结果 |
 | --- | --- |
@@ -988,7 +1060,7 @@ ORDER BY id;
 | 订单越权 | 返回订单不存在或无权限，通过 |
 | Navicat 数据一致性 | 通过 |
 
-### 52. 执行 V1.1 排行榜索引升级
+### 54. 执行 V1.1 排行榜索引升级
 
 在 Navicat 中人工执行：
 
@@ -998,7 +1070,7 @@ wuxin-paotui-server/src/main/resources/sql/11_add_rider_ranking_index.sql
 
 脚本只新增 `idx_order_status_deleted_finish_rider` 索引，不新增表、字段或测试数据，可重复执行。
 
-### 53. 准备 V1.1 测试数据
+### 55. 准备 V1.1 测试数据
 
 先确认真实骑手和已完成订单，不得根据自增 ID 猜测：
 
@@ -1023,7 +1095,7 @@ ORDER BY id DESC;
 
 不要在正式数据中直接插入或改造测试订单。
 
-### 54. 今日排行榜查询成功
+### 56. 今日排行榜查询成功
 
 ```http
 GET {{host}}/api/rider/ranking?type=today&limit=10
@@ -1032,7 +1104,7 @@ Authorization: Bearer {{token}}
 
 预期：`code = 200`；只统计当前自然日 `finish_time` 范围内的已完成未删除订单；`rank` 从 1 连续递增。
 
-### 55. 本周、本月和累计排行榜
+### 57. 本周、本月和累计排行榜
 
 依次请求：
 
@@ -1049,7 +1121,7 @@ Authorization: Bearer {{token}}
 - 月榜统计本月 1 日 00:00:00 至下月 1 日 00:00:00。
 - 累计榜统计全部 `status = 4`、`rider_id` 非空、`deleted = 0` 的订单。
 
-### 56. limit 边界与默认值
+### 58. limit 边界与默认值
 
 依次请求：
 
@@ -1063,7 +1135,7 @@ GET {{host}}/api/rider/ranking?type=today&limit=101
 
 预期：省略 `limit` 时按 10；`1` 和 `100` 成功；`0` 和 `101` 返回 `400`。
 
-### 57. 非法排行榜类型
+### 59. 非法排行榜类型
 
 ```http
 GET {{host}}/api/rider/ranking?type=year&limit=10
@@ -1072,7 +1144,7 @@ Authorization: Bearer {{token}}
 
 预期：`400 排行榜类型参数错误`。
 
-### 58. 空榜与统计过滤
+### 60. 空榜与统计过滤
 
 在没有符合当前时间范围订单的测试环境查询对应榜单，预期 `data = []`。
 
@@ -1082,11 +1154,11 @@ Authorization: Bearer {{token}}
 - `deleted = 1` 的订单不计入。
 - 今日榜依据 `finish_time`，不依据 `create_time` 或 `accept_time`。
 
-### 59. 稳定排序
+### 61. 稳定排序
 
 准备两个完成单量相同的骑手后查询同一榜单。预期先比较周期内最早 `finish_time`，更早者在前；仍相同时 `riderId` 小者在前；名次仍为连续的 1、2、3。
 
-### 60. 骑手个人统计
+### 62. 骑手个人统计
 
 ```http
 GET {{host}}/api/rider/{{riderId}}/statistics
@@ -1104,7 +1176,7 @@ Authorization: Bearer {{token}}
 
 预期：`404 骑手不存在`。
 
-### 61. Navicat 结果一致性
+### 63. Navicat 结果一致性
 
 将以下时间替换为当前测试周期的真实左闭右开边界：
 
@@ -1150,7 +1222,7 @@ V1.1 人工验收结果：
 | 17 | 不存在骑手 | 通过 |
 | 18 | API 与数据库 SQL 一致 | 通过 |
 
-### 62. 准备V1.2本地配置
+### 64. 准备V1.2本地配置
 
 参考`application-local.example.yml`创建未跟踪的`application-local.yml`，或设置：
 
@@ -1165,7 +1237,7 @@ DB_PASSWORD=本地数据库密码
 
 不得在项目文件中写入真实商户密钥、证书或APIv3密钥。
 
-### 63. 执行V1.2数据库脚本
+### 65. 执行V1.2数据库脚本
 
 在Navicat中人工执行：
 
@@ -1175,7 +1247,7 @@ wuxin-paotui-server/src/main/resources/sql/12_create_payment_order.sql
 
 确认`payment_order`、生成列`active_order_id`及全部索引创建成功。
 
-### 64. 创建商品订单支付单
+### 66. 创建商品订单支付单
 
 准备`order_type=1`、`status=0`、`pay_status=0`且`total_amount>0`的当前用户商品订单。
 
@@ -1207,11 +1279,11 @@ WHERE id = {{productOrderId}};
 
 预期流水`status=1`，订单仍为`pay_status=0`。
 
-### 65. 重复创建支付单
+### 67. 重复创建支付单
 
 重复创建请求，预期复用同一`paymentNo`，数据库只有一条`CREATED/WAITING_PAY`有效流水。
 
-### 66. Mock确认支付成功
+### 68. Mock确认支付成功
 
 ```http
 POST {{host}}/api/payment/mock/{{v12PaymentNo}}/success
@@ -1220,11 +1292,11 @@ Authorization: Bearer {{token}}
 
 预期流水变为`SUCCESS(2)`，订单`pay_status=1`，正确写入`pay_time、payment_no`和一条“订单支付成功”日志。
 
-### 67. 重复确认幂等
+### 69. 重复确认幂等
 
 重复执行Mock确认，预期仍返回成功；流水、订单不重复更新，订单日志不增加第二条。
 
-### 68. 查询支付状态
+### 70. 查询支付状态
 
 ```http
 GET {{host}}/api/payment/order/{{productOrderId}}/status
@@ -1233,7 +1305,7 @@ Authorization: Bearer {{token}}
 
 预期返回订单支付状态、流水状态、支付单号、交易号、整数分金额和成功时间。查询没有支付流水的本人订单时正常返回订单`payStatus`，流水字段为`null`。
 
-### 69. 权限、状态和金额测试
+### 71. 权限、状态和金额测试
 
 - 其他用户不能创建该订单支付单。
 - 其他用户不能查询该订单支付状态。
@@ -1244,7 +1316,7 @@ Authorization: Bearer {{token}}
 - 不存在`paymentNo`返回`404 支付单不存在`。
 - 流水金额与订单金额不一致时，确认失败且订单不更新。
 
-### 70. 环境开关测试
+### 72. 环境开关测试
 
 设置`MOCK_PAYMENT_ENABLED=false`并重新启动人工测试环境：
 
@@ -1254,7 +1326,7 @@ Authorization: Bearer {{token}}
 
 第一阶段未注册`POST /api/payment/wechat/notify`，不得通过任意回调请求修改订单。
 
-### 71. V1.2人工验收清单
+### 73. V1.2人工验收清单
 
 | 编号 | 测试项 | 状态 |
 | --- | --- | --- |
@@ -1283,7 +1355,7 @@ Authorization: Bearer {{token}}
 | 23 | 流水与订单金额不一致 | 通过 |
 | 24 | 并发请求不生成多条有效流水 | 通过 |
 
-### 72. 准备V1.3本地配置
+### 74. 准备V1.3本地配置
 
 IDEA环境变量：
 
@@ -1294,7 +1366,7 @@ WECHAT_MINI_PROGRAM_ENABLED=false
 
 两个开关默认均为`false`。`prod` Profile即使误开Mock也会返回配置错误。
 
-### 73. Mock微信新用户首次登录
+### 75. Mock微信新用户首次登录
 
 ```http
 POST {{host}}/api/user/wechat/login
@@ -1315,7 +1387,7 @@ BCrypt回归检查：
 - 不再出现`password cannot be more than 72 bytes`。
 - `sys_user.password`应为60字符BCrypt密文，不得等于任何固定默认密码。
 
-### 74. 重复登录幂等
+### 76. 重复登录幂等
 
 分别重复使用：
 
@@ -1333,7 +1405,7 @@ BCrypt回归检查：
 
 两个code映射同一Mock openid。预期返回相同`userId`、`newUser=false`，数据库不新增第二个用户。
 
-### 75. 微信JWT验证
+### 77. 微信JWT验证
 
 ```http
 GET {{host}}/api/user/me
@@ -1342,7 +1414,7 @@ Authorization: Bearer {{wechatToken}}
 
 预期返回`id、username、nickname、avatar、phone`，不得返回`password、openid、unionid、session_key、is_deleted`。
 
-### 76. 网关关闭和冲突测试
+### 78. 网关关闭和冲突测试
 
 两者都关闭：
 
@@ -1362,7 +1434,7 @@ WECHAT_MINI_PROGRAM_ENABLED=true
 
 预期：`500 微信登录配置错误`，不得调用微信网络。
 
-### 77. 参数与无效code测试
+### 79. 参数与无效code测试
 
 空code：
 
@@ -1384,7 +1456,7 @@ WECHAT_MINI_PROGRAM_ENABLED=true
 
 预期：`400 微信登录凭证无效`。
 
-### 78. 兼容与安全测试
+### 80. 兼容与安全测试
 
 - 普通`POST /api/user/login`继续成功。
 - `POST /api/user/register`继续成功。
@@ -1395,7 +1467,7 @@ WECHAT_MINI_PROGRAM_ENABLED=true
 - 应用日志不得出现AppSecret、完整code、session_key或完整openid。
 - `mock-code-test001`创建独立微信用户，不得绑定现有`test001`。
 
-### 79. V1.3 Navicat验证
+### 81. V1.3 Navicat验证
 
 查询微信用户：
 
@@ -1447,7 +1519,7 @@ ORDER BY id DESC;
 
 不要在公开截图或聊天中发送完整openid、unionid或密码哈希。
 
-### 80. V1.3人工验收清单
+### 82. V1.3人工验收清单
 
 | 编号 | 测试项 | 状态 |
 | --- | --- | --- |
@@ -1481,7 +1553,7 @@ ORDER BY id DESC;
 - 随机密码连续生成100次均为36个UTF-8字节且不重复。
 - 保存对象中的密码为60字符BCrypt密文。
 
-### 81. 微信用户登录
+### 83. 微信用户登录
 
 ```http
 POST {{host}}/api/user/wechat/login
@@ -1496,7 +1568,7 @@ Content-Type: application/json
 
 保存返回token为`wechatToken`。当前人工验收用户为`userId=3`。
 
-### 82. 获取Profile
+### 84. 获取Profile
 
 ```http
 GET {{host}}/api/user/profile
@@ -1505,7 +1577,7 @@ Authorization: Bearer {{wechatToken}}
 
 预期返回`id、username、nickname、avatar、phone、gender`，不返回微信标识、密码或删除状态。
 
-### 83. 修改Profile
+### 85. 修改Profile
 
 ```http
 PUT {{host}}/api/user/profile
@@ -1516,18 +1588,18 @@ Content-Type: application/json
 ```json
 {
   "nickname": "悠悠球",
-  "avatar": "https://example.com/avatar.png",
+  "avatar": "/assets/images/default-avatar.svg",
   "gender": 0
 }
 ```
 
 预期返回`200 成功`。接口不得接收或修改username、openid、unionid、phone、password、status。
 
-### 84. 再次获取Profile
+### 86. 再次获取Profile
 
 重新执行`GET /api/user/profile`，确认昵称、头像和性别已更新，username和phone保持不变。
 
-### 85. Profile异常测试
+### 87. Profile异常测试
 
 - 不携带JWT，预期`401`。
 - `gender=-1`或`gender=3`，预期参数错误。
@@ -1536,7 +1608,7 @@ Content-Type: application/json
 - avatar超过真实数据库安全上限255字符，预期参数错误。
 - 请求体携带username、openid、phone等额外字段不会修改对应数据库字段。
 
-### 86. Profile人工验收清单
+### 88. Profile人工验收清单
 
 | 编号 | 测试项 | 状态 |
 | --- | --- | --- |
@@ -1551,7 +1623,7 @@ Content-Type: application/json
 | 9 | avatar长度校验 | 通过 |
 | 10 | 禁止字段未被修改 | 通过 |
 
-### 87. 准备微信手机号Mock配置
+### 89. 准备微信手机号Mock配置
 
 IDEA环境变量：
 
@@ -1574,7 +1646,7 @@ Content-Type: application/json
 }
 ```
 
-### 88. 首次绑定手机号
+### 90. 首次绑定手机号
 
 ```http
 POST {{host}}/api/user/phone/bind
@@ -1590,7 +1662,7 @@ Content-Type: application/json
 
 预期返回`200 手机号绑定成功`，`data.phone=13800000003`，并返回`id、username、nickname、avatar、phone、gender`。
 
-### 89. Profile回查
+### 91. Profile回查
 
 ```http
 GET {{host}}/api/user/profile
@@ -1599,7 +1671,7 @@ Authorization: Bearer {{wechatToken}}
 
 预期`phone=13800000003`，其他用户资料保持不变。
 
-### 90. 重复绑定幂等
+### 92. 重复绑定幂等
 
 再次提交：
 
@@ -1611,7 +1683,7 @@ Authorization: Bearer {{wechatToken}}
 
 预期仍返回成功，不新增用户、不修改其他字段。
 
-### 91. 更换手机号
+### 93. 更换手机号
 
 ```json
 {
@@ -1621,7 +1693,7 @@ Authorization: Bearer {{wechatToken}}
 
 预期返回`phone=13900000003`。再次查询Profile，确认数据库回查一致；应用日志只能出现`139****0003`，不能出现完整授权code。
 
-### 92. 手机号绑定异常测试
+### 94. 手机号绑定异常测试
 
 | 场景 | 操作 | 预期 |
 | --- | --- | --- |
@@ -1635,7 +1707,7 @@ Authorization: Bearer {{wechatToken}}
 
 冲突测试只使用测试数据，并在测试结束后恢复原值；不要修改数据库结构或增加唯一索引。
 
-### 93. 手机号绑定Navicat验证
+### 95. 手机号绑定Navicat验证
 
 ```sql
 SELECT
@@ -1666,7 +1738,7 @@ HAVING COUNT(*) > 1;
 
 当前`idx_phone`是普通索引，以上查询用于验收和数据治理检查，不代表数据库具备手机号唯一约束。
 
-### 94. 手机号绑定人工验收清单
+### 96. 手机号绑定人工验收清单
 
 | 编号 | 测试项 | 状态 |
 | --- | --- | --- |
@@ -1683,7 +1755,7 @@ HAVING COUNT(*) > 1;
 | 11 | 日志只记录脱敏手机号 | 通过 |
 | 12 | 不出现服务器内部错误 | 通过 |
 
-### 95. V1.4测试准备
+### 97. V1.4测试准备
 
 完整配送链路按以下顺序执行：
 
@@ -1727,7 +1799,7 @@ WECHAT_PAY_ENABLED=false
 
 不得根据自增顺序猜测`storeId、productId、merchantId`。
 
-### 96. 获取普通用户Token
+### 98. 获取普通用户Token
 
 ```http
 POST {{host}}/api/user/login
@@ -1743,7 +1815,7 @@ Content-Type: application/json
 
 保存为`token`。
 
-### 97. 获取商家Token
+### 99. 获取商家Token
 
 使用`TEST_ACCOUNT.md`中经真实数据库确认的商家账号：
 
@@ -1761,7 +1833,7 @@ Content-Type: application/json
 
 保存为`merchantToken`。执行`GET /api/merchant/me`确认返回的`storeId`与商品所属店铺一致。
 
-### 98. 创建并支付商品订单
+### 100. 创建并支付商品订单
 
 先加入当前商家店铺商品：
 
@@ -1818,7 +1890,7 @@ Authorization: Bearer {{token}}
 
 预期`order_info.pay_status=1`，订单`status=0`，状态文字为“待商家接单”。
 
-### 99. 商家订单分页
+### 101. 商家订单分页
 
 ```http
 GET {{host}}/api/merchant/order/page?pageNum=1&pageSize=10&status=0
@@ -2385,3 +2457,52 @@ V1.5人工验收结果：
 | 微信账号禁用 | `403 当前账号已被禁用` |
 | Profile参数非法 | `400/1004 参数错误` |
 | 未知异常 | `500 服务器内部错误` |
+
+## 四、V1.7用户微信小程序联调说明
+
+V1.7-1完成小程序基础工程、请求层、认证基础和页面骨架。V1.7-2完成微信登录闭环代码，不新增后端接口。
+
+小程序第一阶段依赖的既有接口：
+
+```http
+POST /api/user/wechat/login
+GET /api/user/me
+GET /api/user/profile
+```
+
+本地Mock微信登录联调前，后端通过IDEA启动并设置：
+
+```text
+MOCK_WECHAT_LOGIN_ENABLED=true
+WECHAT_MINI_PROGRAM_ENABLED=false
+```
+
+小程序目录执行：
+
+```bash
+npm install
+npm run type-check
+npm run lint
+npm run build
+```
+
+人工联调顺序预留：
+
+1. 微信开发者工具导入`wuxin-miniapp`。
+2. 微信开发者工具执行“构建npm”。
+3. 开发阶段勾选“不校验合法域名、web-view、TLS版本以及HTTPS证书”。
+4. 后端本地8080启动。
+5. 普通真实模式：点击“微信一键登录”，小程序调用`wx.login`并提交临时`code`。
+6. 本地Mock模式：微信开发者工具Storage设置`WUXIN_MINIAPP_DEV_USE_MOCK_WECHAT_LOGIN=true`，后端设置`MOCK_WECHAT_LOGIN_ENABLED=true`和`WECHAT_MINI_PROGRAM_ENABLED=false`。
+7. 后端返回JWT后，小程序保存Token、userInfo和newUser并进入首页。
+8. 访问首页、地址、订单和个人中心，确认未登录时会跳转登录页。
+9. 在个人中心点击退出登录，确认后清理Token并返回登录页。
+
+Mock模式说明：
+
+- 默认提交`mock-code-new-user`。
+- Mock开关只用于微信开发者工具本地联调。
+- 小程序release环境会强制禁用Mock模式。
+- 不得在文档保存真实Token、完整openid、session_key或AppSecret。
+
+本阶段不测试完整地址、订单、购物车或支付链路。

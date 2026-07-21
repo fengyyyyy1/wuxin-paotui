@@ -1,0 +1,130 @@
+<view class="cart-page">
+  <view class="cart-header">
+    <view class="cart-title">购物车</view>
+    <button class="cart-refresh" loading="{{ loading }}" disabled="{{ loading }}" bindtap="refresh">刷新</button>
+  </view>
+
+  <view wx:if="{{ errorMessage }}" class="cart-state">
+    <empty-state title="购物车加载失败" description="{{ errorMessage }}" />
+    <button class="state-action" bindtap="refresh">重新加载</button>
+  </view>
+
+  <view wx:elif="{{ loading && !hasItems }}" class="cart-state">购物车加载中...</view>
+
+  <view wx:elif="{{ !hasItems }}" class="cart-state">
+    <empty-state title="购物车是空的" description="快去逛逛商品吧。" />
+    <button class="state-action" bindtap="goShopping">去逛逛</button>
+  </view>
+
+  <block wx:else>
+    <view class="cart-store-card">
+      <view class="store-label">当前门店</view>
+      <view class="store-name">{{ storeName || '门店信息待确认' }}</view>
+      <button class="store-clear" bindtap="clearAll">清空购物车</button>
+    </view>
+
+    <view class="cart-list">
+      <view class="cart-section-title">可结算商品</view>
+      <view wx:if="{{ !hasValidItems }}" class="cart-section-empty">暂无可结算商品</view>
+      <block wx:for="{{ items }}" wx:key="cartId">
+        <view wx:if="{{ !item.invalidReason }}" class="cart-item">
+          <view class="select-wrap">
+            <button
+              class="select-box {{ item.selectedChecked ? 'select-box-active' : '' }}"
+              data-id="{{ item.cartId }}"
+              bindtap="toggleSelected"
+            >
+              {{ item.selectedChecked ? '✓' : '' }}
+            </button>
+          </view>
+          <view class="item-image-wrap">
+            <image
+              class="item-image"
+              src="{{ item.imageUrl }}"
+              mode="aspectFill"
+              data-id="{{ item.cartId }}"
+              bind:error="handleImageError"
+            />
+          </view>
+          <view class="item-main">
+            <view class="item-title-row">
+              <view class="item-name">{{ item.productName }}</view>
+              <button class="item-delete" data-id="{{ item.cartId }}" bindtap="deleteItem">删</button>
+            </view>
+            <view class="item-stock">{{ item.stockText }}</view>
+            <view class="item-bottom">
+              <view class="item-price"><text>¥</text>{{ item.priceText }}</view>
+              <view class="item-stepper">
+                <button
+                  class="stepper-minus"
+                  data-id="{{ item.cartId }}"
+                  data-delta="-1"
+                  disabled="{{ operationKey || item.quantity <= 1 }}"
+                  bindtap="changeQuantity"
+                >
+                  -
+                </button>
+                <view class="stepper-value">{{ item.quantity }}</view>
+                <button
+                  class="stepper-plus"
+                  data-id="{{ item.cartId }}"
+                  data-delta="1"
+                  disabled="{{ operationKey || item.quantity >= item.stock }}"
+                  bindtap="changeQuantity"
+                >
+                  +
+                </button>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view wx:if="{{ hasInvalidItems }}" class="cart-list invalid-list">
+      <view class="cart-section-header">
+        <view class="cart-section-title">失效商品</view>
+        <button class="invalid-clear" bindtap="clearInvalid">清理失效</button>
+      </view>
+      <block wx:for="{{ items }}" wx:key="cartId">
+        <view wx:if="{{ item.invalidReason }}" class="cart-item invalid-item">
+          <view class="select-wrap">
+            <view class="invalid-tag">失效</view>
+          </view>
+          <view class="item-image-wrap">
+            <image
+              class="item-image"
+              src="{{ item.imageUrl }}"
+              mode="aspectFill"
+              data-id="{{ item.cartId }}"
+              bind:error="handleImageError"
+            />
+          </view>
+          <view class="item-main">
+            <view class="item-title-row">
+              <view class="item-name">{{ item.productName }}</view>
+              <button class="item-delete" data-id="{{ item.cartId }}" bindtap="deleteItem">删</button>
+            </view>
+            <view class="item-invalid">{{ item.invalidReason }}</view>
+            <view class="item-stock">数量 {{ item.quantity }} · {{ item.stockText }}</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </block>
+
+  <view wx:if="{{ hasItems }}" class="cart-footer">
+    <button
+      class="select-all {{ allSelected ? 'select-all-active' : '' }}"
+      disabled="{{ !hasValidItems || operationKey }}"
+      bindtap="toggleAllSelected"
+    >
+      {{ allSelected ? '取消全选' : '全选' }}
+    </button>
+    <view class="cart-total">
+      <view class="total-amount">合计 <text>¥{{ selectedTotalAmountText }}</text></view>
+      <view class="total-count">已选 {{ selectedProductCount }} 件</view>
+    </view>
+    <button class="checkout-button" disabled="{{ !selectedProductCount || operationKey }}" bindtap="checkout">去结算</button>
+  </view>
+</view>

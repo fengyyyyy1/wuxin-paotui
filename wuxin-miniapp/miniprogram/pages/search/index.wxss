@@ -1,0 +1,106 @@
+.search-page {
+  padding-bottom: 64rpx;
+  background: #f5f7fb;
+}
+
+.search-box,
+.notice-card,
+.state-card,
+.store-card {
+  background: #ffffff;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 18rpx;
+  box-shadow: 0 10rpx 24rpx rgba(15, 23, 42, 0.05);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 18rpx;
+}
+
+.search-input {
+  min-width: 0;
+  flex: 1;
+  height: 72rpx;
+  padding: 0 18rpx;
+  background: #f8fafc;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+}
+
+.notice-card {
+  margin-top: 20rpx;
+  padding: 26rpx;
+}
+
+.notice-title {
+  color: #111827;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.notice-text {
+  margin-top: 12rpx;
+  color: #64748b;
+  font-size: 25rpx;
+  line-height: 1.65;
+}
+
+.state-card {
+  margin-top: 22rpx;
+  padding: 34rpx;
+  color: #64748b;
+  font-size: 26rpx;
+  text-align: center;
+}
+
+.store-card {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 18rpx;
+  padding: 20rpx;
+}
+
+.store-image {
+  flex: 0 0 auto;
+  width: 150rpx;
+  height: 150rpx;
+  background: #e2e8f0;
+  border-radius: 16rpx;
+}
+
+.store-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.store-name {
+  overflow: hidden;
+  color: #111827;
+  font-size: 30rpx;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.store-desc,
+.store-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.store-desc {
+  margin-top: 14rpx;
+  color: #475569;
+  font-size: 24rpx;
+}
+
+.store-meta {
+  margin-top: 14rpx;
+  color: #0f766e;
+  font-size: 23rpx;
+  font-weight: 700;
+}

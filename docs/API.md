@@ -1,7 +1,7 @@
 # API 文档
 
 > 项目：五鑫跑腿（Wuxin Paotui）  
-> 当前版本：V1.5 总控端商家审核模块
+> 当前版本：V1.7 用户微信小程序商品链路审计
 >
 > 当前微信登录和手机号绑定支持本地固定映射 Mock 联调；真实 code2session 需要配置小程序 AppID 和 AppSecret，真实手机号接口尚未接入。
 
@@ -295,7 +295,7 @@ Authorization: Bearer <token>
     "id": 3,
     "username": "wx_安全摘要",
     "nickname": "悠悠球",
-    "avatar": "https://example.com/avatar.png",
+    "avatar": "/assets/images/default-avatar.svg",
     "phone": null,
     "gender": 0
   }
@@ -318,7 +318,7 @@ Authorization: Bearer <token>
 ```json
 {
   "nickname": "悠悠球",
-  "avatar": "https://example.com/avatar.png",
+  "avatar": "/assets/images/default-avatar.svg",
   "gender": 0
 }
 ```
@@ -337,7 +337,7 @@ Authorization: Bearer <token>
 {
   "code": 200,
   "message": "成功",
-  "data": null
+  "data": "新增地址成功"
 }
 ```
 
@@ -388,7 +388,7 @@ Authorization: Bearer <token>
     "id": 3,
     "username": "wx_安全摘要",
     "nickname": "悠悠球",
-    "avatar": "https://example.com/avatar.png",
+    "avatar": "/assets/images/default-avatar.svg",
     "phone": "13800000003",
     "gender": 0
   }
@@ -480,6 +480,90 @@ Authorization: Bearer <token>
 | 401 | 未登录或登录已过期 |
 | 1004 | 参数错误 |
 
+### 编辑地址
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 编辑地址 |
+| 请求方式 | PUT |
+| URL | `/api/user/address/{id}` |
+| Authorization | 需要 |
+
+请求参数：路径参数 `id`。
+
+请求体：
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| receiverName | String | 是 | 收件人，最长30个字符 |
+| receiverPhone | String | 是 | 11位手机号 |
+| province | String | 否 | 省，最长30个字符 |
+| city | String | 否 | 市，最长30个字符 |
+| district | String | 否 | 区，最长30个字符 |
+| detailAddress | String | 是 | 详细地址，最长120个字符 |
+| latitude | BigDecimal | 否 | 纬度 |
+| longitude | BigDecimal | 否 | 经度 |
+| isDefault | Integer | 否 | 是否默认地址，`1`表示默认 |
+
+业务规则：
+
+- 用户只能修改自己的未删除地址。
+- 地址不存在、已删除或不属于当前用户时返回业务异常。
+- `isDefault=1`时自动取消当前用户其它默认地址。
+- 同一用户最多一个默认地址。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": "修改地址成功"
+}
+```
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 401 | 未登录或登录已过期 |
+| 404 | 地址不存在或无权操作 |
+| 1004 | 参数错误 |
+
+### 设置默认地址
+
+| 项 | 内容 |
+| --- | --- |
+| 接口名称 | 设置默认地址 |
+| 请求方式 | PUT |
+| URL | `/api/user/address/{id}/default` |
+| Authorization | 需要 |
+
+请求参数：路径参数 `id`。
+
+业务规则：
+
+- 用户只能将自己的未删除地址设为默认地址。
+- 设置成功后自动取消当前用户其它默认地址。
+- 同一用户最多一个默认地址。
+
+成功返回：
+
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "data": "设置默认地址成功"
+}
+```
+
+异常返回：
+
+| code | message |
+| --- | --- |
+| 401 | 未登录或登录已过期 |
+| 404 | 地址不存在或无权操作 |
+
 ### 删除地址
 
 | 项 | 内容 |
@@ -497,7 +581,7 @@ Authorization: Bearer <token>
 {
   "code": 200,
   "message": "成功",
-  "data": null
+  "data": "删除地址成功"
 }
 ```
 
@@ -506,7 +590,7 @@ Authorization: Bearer <token>
 | code | message |
 | --- | --- |
 | 401 | 未登录或登录已过期 |
-| 1004 | 参数错误 |
+| 404 | 地址不存在或无权操作 |
 
 ### 地址列表
 
@@ -611,7 +695,7 @@ Authorization: Bearer <token>
       {
         "productId": 2,
         "productName": "测试商品",
-        "productImage": "https://example.com/product.jpg",
+        "productImage": "product-image-url",
         "price": 1.00,
         "quantity": 2,
         "subtotal": 2.00,
@@ -806,7 +890,7 @@ Authorization: Bearer <token>
       {
         "productId": 2,
         "productName": "测试商品",
-        "productImage": "https://example.com/product.jpg",
+        "productImage": "product-image-url",
         "productPrice": 1.00,
         "quantity": 2,
         "subtotal": 2.00
@@ -1759,6 +1843,21 @@ Authorization: Bearer <merchant-token>
 
 以下接口当前阶段无需 Authorization。
 
+V1.7-6用户小程序首页已复用本模块真实接口：推荐门店调用
+`GET /api/store/list`，门店详情占位页调用`GET /api/store/{id}`。
+首页Banner、核心服务入口和公益入口当前为本地静态展示数据，不对应新增后端接口。
+
+V1.7-7用户小程序门店与商品浏览继续复用本模块真实接口：
+门店详情调用`GET /api/store/{id}`，商品分类调用
+`GET /api/store/{storeId}/categories`，商品列表调用
+`GET /api/store/{storeId}/products`，商品详情调用
+`GET /api/store/product/{id}`。本阶段未新增后端接口。
+
+V1.7-7A商品链路审计结论：门店详情公开查询只要求商家审核通过、商家启用、
+店铺启用且未删除；商品分类、商品列表和商品详情还要求店铺
+`business_status = 1`。因此测试数据中若店铺为休息中，会出现门店详情正常但
+商品分类和商品列表为空。当前测试库已将`storeId=1`设为营业中后完成复测。
+
 ### 店铺列表
 
 | 项 | 内容 |
@@ -1802,6 +1901,10 @@ Authorization: Bearer <merchant-token>
 | Authorization | 不需要 |
 
 只返回营业中且可公开访问店铺内启用、未删除的分类，返回 `PublicCategoryVO` 列表。
+过滤条件包含商家审核通过、商家启用、店铺启用、店铺营业、店铺未删除、
+分类启用和分类未删除。
+
+返回字段：`categoryId`、`categoryName`、`sort`。
 
 ### 公开商品列表
 
@@ -1819,6 +1922,12 @@ Authorization: Bearer <merchant-token>
 | keyword | String | 否 | 无 | 商品名称模糊查询 |
 
 只返回营业中店铺的启用分类下已上架、未删除且库存大于 0 的商品，返回 `PageResultVO<PublicProductVO>`。
+过滤条件包含商家审核通过、商家启用、店铺启用、店铺营业、店铺未删除、
+分类启用、分类未删除、商品上架、商品未删除和库存大于 0。
+
+`PublicProductVO`字段：`productId`、`categoryId`、`categoryName`、`productName`、
+`productImage`、`productDescription`、`price`、`originalPrice`、`stock`、`sales`、`sort`。
+用户小程序V1.7-7不展示虚假销量、评分、优惠或购买成功状态。
 
 ### 公开商品详情
 
@@ -1828,7 +1937,9 @@ Authorization: Bearer <merchant-token>
 | URL | `/api/store/product/{id}` |
 | Authorization | 不需要 |
 
-只允许查询审核通过且启用的商家、启用店铺、启用分类下已上架且有库存的商品。查询不到返回 `404 商品不存在`。
+只允许查询审核通过且启用的商家、启用且营业中的店铺、启用分类下已上架且有库存的商品。查询不到返回 `404 商品不存在`。
+
+用户小程序V1.7-8起商品详情页“加入购物车”调用真实购物车接口；下单与支付仍在后续阶段完成。
 
 ## 八、购物车模块
 
@@ -1925,6 +2036,24 @@ Authorization: Bearer <merchant-token>
 
 `selected` 只能为 0 或 1。失效商品可以取消选中，但不能重新设置为选中。
 
+### 全选或取消全选
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | PUT |
+| URL | `/api/cart/selected/all` |
+| Authorization | 需要 |
+
+```json
+{
+  "selected": 1
+}
+```
+
+`selected` 只能为 0 或 1。接口只更新当前用户购物车中的有效商品，失效商品不参与全选、不计入金额和数量。
+
+成功返回最新 `CartListVO`，用于前端刷新列表、合计金额和购物车角标。
+
 ### 删除购物车商品
 
 | 项 | 内容 |
@@ -1934,6 +2063,16 @@ Authorization: Bearer <merchant-token>
 | Authorization | 需要 |
 
 仅逻辑删除当前用户自己的购物车记录。重复删除或记录不存在返回 `404 购物车不存在`。
+
+### 清理失效商品
+
+| 项 | 内容 |
+| --- | --- |
+| 请求方式 | DELETE |
+| URL | `/api/cart/invalid` |
+| Authorization | 需要 |
+
+接口按购物车列表同一套实时校验规则识别 `invalidReason != null` 的商品，并仅逻辑删除当前用户自己的失效购物车记录。没有失效商品时同样返回成功。
 
 ### 清空购物车
 

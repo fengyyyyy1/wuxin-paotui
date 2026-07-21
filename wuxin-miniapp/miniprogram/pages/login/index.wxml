@@ -1,0 +1,24 @@
+<view class="page login-page">
+  <view class="section login-hero">
+    <view class="title">五鑫跑腿</view>
+    <view class="subtitle">微信一键登录后，可继续管理地址、查看订单和个人资料。</view>
+  </view>
+
+  <view class="card">
+    <van-button
+      type="primary"
+      block
+      round
+      loading="{{ loading }}"
+      loading-text="登录中"
+      disabled="{{ checkingSession }}"
+      bind:click="handleWechatLogin"
+    >
+      微信一键登录
+    </van-button>
+    <view wx:if="{{ errorMessage }}" class="login-error">{{ errorMessage }}</view>
+    <view class="agreement-text">
+      登录即表示同意《用户协议》和《隐私政策》。协议页面将在后续阶段完善。
+    </view>
+  </view>
+</view>
