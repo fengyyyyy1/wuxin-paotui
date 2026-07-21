@@ -1,0 +1,8 @@
+.stepper { display:flex; align-items:center; height:64rpx; overflow:hidden; background:#f5f6f7; border-radius:32rpx; }
+.stepper-button { display:flex; align-items:center; justify-content:center; width:64rpx; height:64rpx; color:#666666; background:transparent; font-size:30rpx; }
+.stepper-button::after { border:0; }
+.stepper-button[disabled] { color:#cccccc; }
+.stepper-plus { color:#ffffff; background:#18b566; }
+.stepper-plus[disabled] { color:#ffffff; background:#bde7d0; }
+.stepper-value { min-width:52rpx; color:#111111; font-size:26rpx; font-weight:600; text-align:center; }
+.is-disabled { opacity:.65; }

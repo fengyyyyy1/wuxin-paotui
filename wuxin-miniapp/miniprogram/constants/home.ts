@@ -1,105 +1,44 @@
+import { ROUTES } from './routes';
+
 export interface HomeBanner {
   id: string;
   title: string;
   subtitle: string;
   imageUrl: string;
-  actionType: 'toast' | 'page';
   target?: string;
 }
 
-export interface HomeServiceEntry {
+export interface HomeEntry {
   id: string;
   title: string;
   description: string;
   iconText: string;
-  actionType: 'store' | 'toast';
+  target: string;
 }
 
 export interface PublicEntry {
-  id: 'missing' | 'bullying' | 'rescue';
+  id: 'missing' | 'rescue' | 'bullying';
   title: string;
-  tag: string;
+  label: string;
   description: string;
-  route: string;
+  accent: string;
 }
 
 export const HOME_BANNERS: HomeBanner[] = [
-  {
-    id: 'brand',
-    title: '五鑫跑腿',
-    subtitle: '校园生活服务，更快一步到身边',
-    imageUrl: '/assets/images/home/banner-brand.svg',
-    actionType: 'toast'
-  },
-  {
-    id: 'campus',
-    title: '便捷校园生活',
-    subtitle: '代取、帮买、配送入口逐步开放',
-    imageUrl: '/assets/images/home/banner-campus.svg',
-    actionType: 'toast'
-  },
-  {
-    id: 'public',
-    title: '公益信息',
-    subtitle: '走失儿童公益宣传与免费求助入口',
-    imageUrl: '/assets/images/home/banner-public.svg',
-    actionType: 'page',
-    target: ROUTES.publicMissing
-  }
+  { id: 'brand', title: '五鑫跑腿', subtitle: '本地生活好物，安心送到身边', imageUrl: '/assets/images/home/banner-brand.svg', target: ROUTES.storeList },
+  { id: 'campus', title: '便捷生活服务', subtitle: '精选附近门店，发现日常所需', imageUrl: '/assets/images/home/banner-campus.svg', target: ROUTES.search },
+  { id: 'public', title: '五鑫公益', subtitle: '让每一份需要都被认真看见', imageUrl: '/assets/images/home/banner-public.svg', target: `${ROUTES.publicService}?type=missing` }
 ];
 
-export const SERVICE_ENTRIES: HomeServiceEntry[] = [
-  {
-    id: 'pickup',
-    title: '跑腿代取',
-    description: '快递、资料、物品代取',
-    iconText: '取',
-    actionType: 'toast'
-  },
-  {
-    id: 'store',
-    title: '商品配送',
-    description: '浏览已入驻门店',
-    iconText: '店',
-    actionType: 'store'
-  },
-  {
-    id: 'buy',
-    title: '帮买服务',
-    description: '超市、日用品帮买',
-    iconText: '买',
-    actionType: 'toast'
-  },
-  {
-    id: 'send',
-    title: '帮送服务',
-    description: '同城物品帮送',
-    iconText: '送',
-    actionType: 'toast'
-  }
+export const SERVICE_ENTRIES: HomeEntry[] = [
+  { id: 'stores', title: '附近门店', description: '本地好店', iconText: '店', target: ROUTES.storeList },
+  { id: 'search', title: '搜索商品', description: '快速发现', iconText: '搜', target: ROUTES.search },
+  { id: 'cart', title: '购物车', description: '已选好物', iconText: '篮', target: ROUTES.cart },
+  { id: 'address', title: '地址管理', description: '配送地址', iconText: '址', target: ROUTES.addressList }
 ];
 
 export const PUBLIC_ENTRIES: PublicEntry[] = [
-  {
-    id: 'missing',
-    title: '走失儿童公益信息',
-    tag: '公益信息',
-    description: '当前为本地静态展示数据，不展示真实个人敏感信息。',
-    route: ROUTES.publicMissing
-  },
-  {
-    id: 'bullying',
-    title: '校园欺凌免费求助',
-    tag: '免费求助',
-    description: '提供说明页与安全提醒，暂不收集真实求助内容。',
-    route: ROUTES.publicBullying
-  },
-  {
-    id: 'rescue',
-    title: '紧急免费救援',
-    tag: '紧急免费救援',
-    description: '试运营范围说明与紧急电话提醒，不提交救援订单。',
-    route: ROUTES.publicRescue
-  }
+  { id: 'missing', title: '寻找走失儿童', label: '公益寻人', description: '了解信息发布与隐私保护规范', accent: 'green' },
+  { id: 'rescue', title: '免费紧急救援', label: '紧急协助', description: '查看紧急情形下的求助指引', accent: 'orange' },
+  { id: 'bullying', title: '免费反校园欺凌', label: '安全守护', description: '获取保护自己与求助的方式', accent: 'blue' }
 ];
-import { ROUTES } from './routes';

@@ -1,10 +1,1 @@
-<view class="page apply-page">
-  <view class="apply-card">
-    <view class="apply-kicker">五鑫跑腿</view>
-    <view class="apply-title">申请成为骑手</view>
-    <view class="apply-text">
-      骑手资质、实名认证、接单能力和配送端流程将在 V1.8 完整开发。本阶段仅提供正式入口，不提交申请。
-    </view>
-    <button class="apply-button" bindtap="goBack">返回</button>
-  </view>
-</view>
+<view class="rider-page"><view class="hero"><text class="hero-label">五鑫骑手</text><text class="hero-title">让每一次出发都有价值</text><text class="hero-text">骑手线上申请接口尚未开放，本页仅展示申请条件与流程，不会收集身份资料。</text></view><view class="section"><text class="section-title">基础条件</text><view class="condition"><text>01</text><view><text>身份真实有效</text><text>具备有效身份证明与完全民事行为能力</text></view></view><view class="condition"><text>02</text><view><text>熟悉本地路线</text><text>能够安全、及时完成本地配送服务</text></view></view><view class="condition"><text>03</text><view><text>遵守平台规范</text><text>重视用户隐私、商品安全与服务质量</text></view></view></view><view class="section"><text class="section-title">申请流程</text><view class="steps"><text>资料准备</text><text>平台审核</text><text>培训认证</text><text>开始接单</text></view></view><view class="notice"><text>线上申请尚未开放</text><text>平台提供真实骑手申请接口后，本页将接入正式提交与审核进度。</text></view><button class="back" bindtap="backProfile">返回我的</button></view>

@@ -1,6 +1,6 @@
 import { ROUTES } from '../../constants/routes';
 import { getCartCount, refreshCartSummary, restoreCartSummary } from '../../services/cart';
-import { bindMockPhone, bindPhoneWithCode, getAuthState, logout } from '../../services/auth';
+import { bindMockPhone, bindPhoneWithCode, getAuthState, logout as clearAndLogout, refreshProfile } from '../../services/auth';
 import type { UserInfo } from '../../types/user';
 import { DEFAULT_AVATAR, normalizeImageUrl } from '../../utils/image';
 import { maskPhone } from '../../utils/phone';
@@ -29,7 +29,7 @@ Page({
       return;
     }
     this.applyUserInfo(getAuthState().userInfo);
-    void this.refreshCartBadge();
+    void Promise.all([this.refreshUser(), this.refreshCartBadge()]);
   },
 
   goToLogin() {
@@ -47,6 +47,11 @@ Page({
   goToCart() {
     wx.navigateTo({ url: ROUTES.cart });
   },
+
+  goToOrders() { wx.switchTab({ url: ROUTES.orderList }); },
+  goToPublic() { wx.navigateTo({ url: ROUTES.publicService }); },
+  goToAbout() { wx.navigateTo({ url: ROUTES.about }); },
+  goToSettings() { wx.navigateTo({ url: ROUTES.settings }); },
 
   goToMerchantApply() {
     wx.navigateTo({ url: ROUTES.merchantApply });
@@ -88,7 +93,7 @@ Page({
           return;
         }
         this.applyUserInfo(null);
-        logout();
+        clearAndLogout();
       }
     });
   },
@@ -134,6 +139,10 @@ Page({
     } catch {
       this.setData({ cartCount: getCartCount() });
     }
+  },
+
+  async refreshUser() {
+    try { this.applyUserInfo(await refreshProfile()); } catch { this.applyUserInfo(getAuthState().userInfo); }
   }
 });
 

@@ -1,24 +1,15 @@
-<view class="page login-page">
-  <view class="section login-hero">
-    <view class="title">五鑫跑腿</view>
-    <view class="subtitle">微信一键登录后，可继续管理地址、查看订单和个人资料。</view>
+<view class="login-page">
+  <view class="brand-mark"><text>五鑫</text></view>
+  <view class="login-copy">
+    <text class="welcome">欢迎来到五鑫跑腿</text>
+    <text class="intro">附近好店与生活服务，一站轻松抵达</text>
   </view>
-
-  <view class="card">
-    <van-button
-      type="primary"
-      block
-      round
-      loading="{{ loading }}"
-      loading-text="登录中"
-      disabled="{{ checkingSession }}"
-      bind:click="handleWechatLogin"
-    >
-      微信一键登录
-    </van-button>
-    <view wx:if="{{ errorMessage }}" class="login-error">{{ errorMessage }}</view>
-    <view class="agreement-text">
-      登录即表示同意《用户协议》和《隐私政策》。协议页面将在后续阶段完善。
-    </view>
+  <view class="feature-list">
+    <view class="feature"><text class="feature-icon">近</text><view><text class="feature-title">本地好店</text><text class="feature-text">发现身边可靠商家</text></view></view>
+    <view class="feature"><text class="feature-icon">快</text><view><text class="feature-title">便捷下单</text><text class="feature-text">购物车、地址和订单顺畅衔接</text></view></view>
+    <view class="feature"><text class="feature-icon">安</text><view><text class="feature-title">安全透明</text><text class="feature-text">订单状态清晰可查</text></view></view>
   </view>
+  <button class="login-button" loading="{{loading}}" disabled="{{loading}}" bindtap="handleWechatLogin">{{loading ? '正在登录' : '微信一键登录'}}</button>
+  <text class="agreement">登录即表示你已阅读并同意平台服务与隐私规则</text>
+  <view wx:if="{{errorMessage}}" class="login-error">{{errorMessage}}</view>
 </view>

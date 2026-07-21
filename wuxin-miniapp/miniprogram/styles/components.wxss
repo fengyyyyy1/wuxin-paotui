@@ -5,7 +5,7 @@
   min-width: 0;
   height: 80rpx;
   padding: 0 24rpx;
-  background: #f1f3f5;
+  background: #f0f2f4;
   border-radius: 40rpx;
 }
 
@@ -19,20 +19,20 @@
   flex: 1;
   min-width: 0;
   height: 80rpx;
-  color: #171a1d;
+  color: #111111;
   font-size: 26rpx;
   line-height: 80rpx;
 }
 
 .wuxin-search-placeholder {
-  color: #969ba1;
+  color: #999999;
 }
 
 .wuxin-search-clear {
   flex-shrink: 0;
   width: 16rpx;
   height: 56rpx;
-  color: #969ba1;
+  color: #999999;
   font-size: 28rpx;
   line-height: 56rpx;
   text-align: center;
@@ -44,8 +44,8 @@
   align-items: center;
   height: 60rpx;
   padding: 0 24rpx;
-  color: #5e6369;
-  background: #f1f3f5;
+  color: #666666;
+  background: #f0f2f4;
   border-radius: 999rpx;
   font-size: 24rpx;
   font-weight: 500;
@@ -54,13 +54,13 @@
 }
 
 .wuxin-tag-active {
-  color: #16a76a;
-  background: #eaf8f1;
+  color: #18b566;
+  background: #eaf8f0;
 }
 
 .wuxin-tag-disabled {
-  color: #969ba1;
-  background: #eceef1;
+  color: #999999;
+  background: #eeeeee;
 }
 
 .wuxin-stepper {
@@ -70,7 +70,7 @@
   height: 64rpx;
   overflow: hidden;
   background: #ffffff;
-  border: 1rpx solid #eceef1;
+  border: 1rpx solid #eeeeee;
   border-radius: 999rpx;
   white-space: nowrap;
 }
@@ -78,7 +78,7 @@
 .wuxin-stepper-button {
   width: 64rpx;
   height: 64rpx;
-  color: #16a76a;
+  color: #18b566;
   font-size: 32rpx;
   font-weight: 600;
   line-height: 64rpx;
@@ -88,7 +88,7 @@
 .wuxin-stepper-value {
   min-width: 56rpx;
   height: 64rpx;
-  color: #171a1d;
+  color: #111111;
   font-size: 26rpx;
   font-weight: 600;
   line-height: 64rpx;
@@ -104,7 +104,7 @@
   width: 64rpx;
   height: 64rpx;
   color: #ffffff;
-  background: #16a76a;
+  background: #18b566;
   border-radius: 50%;
   font-size: 36rpx;
   font-weight: 600;
@@ -115,12 +115,71 @@
   display: block;
   width: 144rpx;
   height: 144rpx;
-  background: #f1f3f5;
+  background: #f0f2f4;
   border-radius: 20rpx;
 }
 
 .wuxin-empty-wrap {
   padding: 56rpx 24rpx;
-  color: #969ba1;
+  color: #999999;
   text-align: center;
+}
+
+.wuxin-field {
+  display: flex;
+  align-items: center;
+  min-height: 96rpx;
+  padding: 0 28rpx;
+  background: #ffffff;
+  border: 1rpx solid #eeeeee;
+  border-radius: 24rpx;
+}
+
+.wuxin-field-input {
+  flex: 1;
+  min-width: 0;
+  height: 96rpx;
+  color: #111111;
+  font-size: 28rpx;
+}
+
+.wuxin-label {
+  margin-bottom: 12rpx;
+  color: #666666;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.wuxin-form-group {
+  margin-bottom: 24rpx;
+}
+
+.wuxin-error-banner {
+  margin-bottom: 24rpx;
+  padding: 20rpx 24rpx;
+  color: #c73335;
+  background: #fff1f1;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.wuxin-status-dot {
+  display: inline-block;
+  width: 12rpx;
+  height: 12rpx;
+  margin-right: 10rpx;
+  background: #18b566;
+  border-radius: 50%;
+}
+
+.wuxin-fixed-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1rpx solid #eeeeee;
 }

@@ -1,0 +1,1 @@
+<view class="status-page"><view class="pay-spinner"></view><text class="status-title">正在唤起微信支付</text><text class="status-text">请在支付完成前不要关闭当前页面</text></view>

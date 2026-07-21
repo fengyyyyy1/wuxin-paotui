@@ -1,7 +1,7 @@
 {
   "navigationBarTitleText": "搜索",
   "usingComponents": {
-    "empty-state": "/components/empty-state/index",
-    "van-button": "@vant/weapp/button/index"
+    "page-state": "/components/page-state/index",
+    "store-card": "/components/store-card/index"
   }
 }

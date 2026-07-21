@@ -1,57 +1,20 @@
-<view class="page product-detail-page">
-  <view wx:if="{{ loading && !product }}" class="state-card">商品详情加载中...</view>
-
-  <view wx:elif="{{ errorMessage }}" class="state-card">
-    <empty-state title="商品详情加载失败" description="{{ errorMessage }}" />
-    <view class="state-actions">
-      <van-button size="small" type="primary" bind:click="refresh">重新加载</van-button>
+<view class="product-page">
+  <page-state loading="{{loading}}" error="{{errorMessage}}" empty="{{!loading && !errorMessage && !product}}" empty-title="商品不存在" bind:retry="refresh" />
+  <block wx:if="{{product}}">
+    <view class="media-card"><image src="{{product.imageUrl}}" mode="aspectFill" binderror="handleImageError" /><text wx:if="{{!product.canAddToCart}}" class="availability">{{product.statusText}}</text></view>
+    <view class="detail-card">
+      <view class="price-row"><view class="price"><text>¥</text><text class="price-number">{{product.priceText}}</text></view><text class="stock">{{product.stockText}}</text></view>
+      <text class="product-name">{{product.productName}}</text>
+      <view class="meta-row"><text wx:if="{{product.categoryName}}">{{product.categoryName}}</text><text wx:if="{{product.sales !== null && product.sales !== undefined}}">已售 {{product.sales}}</text><text>{{product.statusText}}</text></view>
+      <view class="divider"></view>
+      <text class="section-title">商品介绍</text>
+      <text class="description">{{product.productDescription || '商家暂未填写商品介绍'}}</text>
     </view>
-  </view>
-
-  <block wx:elif="{{ product }}">
-    <image class="product-hero" src="{{ product.imageUrl }}" mode="aspectFill" bind:error="handleImageError" />
-
-    <view class="info-card">
-      <view class="product-name">{{ product.productName }}</view>
-      <view class="price-row">
-        <view>
-          <text class="price-prefix">¥</text>
-          <text class="price">{{ product.priceText }}</text>
-        </view>
-        <view class="status-tag">{{ product.statusText }}</view>
-      </view>
-      <view class="meta-row">
-        <text>{{ product.stockText }}</text>
-        <text>{{ product.categoryName || '未分类' }}</text>
-      </view>
-    </view>
-
-    <view class="info-card">
-      <view class="section-title">商品说明</view>
-      <view class="description">{{ product.productDescription || '商品说明待补充' }}</view>
-    </view>
-
-    <view class="info-card">
-      <view class="section-title">购买前确认</view>
-      <view class="info-line">所属门店：{{ storeName || '从门店进入后展示' }}</view>
-      <view class="info-line">商品价格与库存以后端返回为准，后续购物车和下单流程不会信任前端价格。</view>
-    </view>
-
-    <view class="bottom-bar">
-      <button class="cart-entry-button" bindtap="goToCart">
-        购物车
-        <text wx:if="{{ cartCount > 0 }}" class="cart-badge">{{ cartCount }}</text>
-      </button>
-      <van-button
-        custom-class="cart-action-button"
-        block
-        type="primary"
-        loading="{{ addingCart }}"
-        disabled="{{ addingCart || !product.canAddToCart }}"
-        bind:click="handleCartClick"
-      >
-        {{ product.cartButtonText }}
-      </van-button>
+    <view class="service-card"><view><text class="service-icon">✓</text><text>商品信息来自商家实时维护</text></view><view><text class="service-icon">✓</text><text>库存与价格以下单结算为准</text></view></view>
+    <view class="bottom-space"></view>
+    <view class="action-bar">
+      <button class="cart-entry" bindtap="goToCart"><view class="cart-icon"><image src="/assets/images/icons/cart-line.svg" /><text wx:if="{{cartCount}}">{{cartCount}}</text></view><text>购物车</text></button>
+      <button class="add-cart" loading="{{addingCart}}" disabled="{{addingCart || !product.canAddToCart}}" bindtap="handleCartClick">{{product.cartButtonText}}</button>
     </view>
   </block>
 </view>

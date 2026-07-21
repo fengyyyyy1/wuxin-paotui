@@ -1,9 +1,12 @@
-<view class="page">
-  <view class="section">
-    <view class="title">我的订单</view>
-    <view class="subtitle">订单列表和详情将在后续阶段接入真实接口。</view>
+<view class="orders-page">
+  <view class="heading"><text class="title">我的订单</text><text class="subtitle">每一步状态都清晰可见</text></view>
+  <scroll-view class="tabs" scroll-x enhanced show-scrollbar="{{false}}"><view class="tab-row"><button wx:for="{{filters}}" wx:key="key" class="tab {{activeFilter === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="selectFilter">{{item.label}}</button></view></scroll-view>
+  <view class="order-list">
+    <view class="order-card" wx:for="{{orders}}" wx:key="id" data-id="{{item.id}}" bindtap="viewOrder">
+      <view class="order-top"><view><text class="order-no">订单 {{item.orderNo}}</text><text class="order-time">{{item.createTimeText}}</text></view><text class="status status-{{item.statusTone}}">{{item.payStatus === 0 && item.status === 0 ? '待付款' : item.statusText}}</text></view>
+      <view class="order-summary"><view class="summary-icon">单</view><view class="summary-copy"><text>{{item.summaryText}}</text><text>{{item.payStatusText}}</text></view><view class="amount"><text>实付</text><text>¥{{item.amountText}}</text></view></view>
+      <view class="order-actions"><button class="detail" data-id="{{item.id}}" catchtap="viewOrder">查看详情</button><button wx:if="{{item.canCancel}}" class="secondary" data-id="{{item.id}}" catchtap="cancelOrder">取消订单</button><button wx:if="{{item.canPay}}" class="primary" data-id="{{item.id}}" catchtap="payOrder">立即支付</button></view>
+    </view>
   </view>
-  <view class="card">
-    <empty-state title="暂无订单数据" description="V1.7-1 仅保留页面骨架。" />
-  </view>
+  <page-state loading="{{loading}}" error="{{errorMessage}}" empty="{{!loading && !errorMessage && orders.length === 0}}" empty-title="暂无相关订单" empty-description="去附近门店发现喜欢的商品" action-text="去逛逛" bind:retry="retry" bind:action="goShopping" />
 </view>

@@ -1,0 +1,16 @@
+<view wx:if="{{loading}}" class="state state-loading">
+  <view class="spinner"></view>
+  <text class="state-caption">正在加载</text>
+</view>
+<view wx:elif="{{error}}" class="state">
+  <view class="state-symbol state-error">!</view>
+  <text class="state-title">加载失败</text>
+  <text class="state-caption">{{error}}</text>
+  <button class="state-action" bindtap="handleRetry">重新加载</button>
+</view>
+<view wx:elif="{{empty}}" class="state">
+  <view class="state-symbol">○</view>
+  <text class="state-title">{{emptyTitle}}</text>
+  <text class="state-caption">{{emptyDescription}}</text>
+  <button wx:if="{{actionText}}" class="state-action" bindtap="handleAction">{{actionText}}</button>
+</view>

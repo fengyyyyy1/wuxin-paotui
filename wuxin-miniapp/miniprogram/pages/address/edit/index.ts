@@ -15,6 +15,8 @@ Page({
     city: '',
     district: '',
     detailAddress: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     isDefault: false,
     saving: false,
     errorMessage: ''
@@ -39,32 +41,47 @@ Page({
     }
   },
 
-  onReceiverNameChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ receiverName: String(event.detail || '') });
+  onReceiverNameChange(event: WechatMiniprogram.Input) {
+    this.setData({ receiverName: event.detail.value });
   },
 
-  onReceiverPhoneChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ receiverPhone: String(event.detail || '') });
+  onReceiverPhoneChange(event: WechatMiniprogram.Input) {
+    this.setData({ receiverPhone: event.detail.value });
   },
 
-  onProvinceChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ province: String(event.detail || '') });
+  onProvinceChange(event: WechatMiniprogram.Input) {
+    this.setData({ province: event.detail.value });
   },
 
-  onCityChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ city: String(event.detail || '') });
+  onCityChange(event: WechatMiniprogram.Input) {
+    this.setData({ city: event.detail.value });
   },
 
-  onDistrictChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ district: String(event.detail || '') });
+  onDistrictChange(event: WechatMiniprogram.Input) {
+    this.setData({ district: event.detail.value });
   },
 
-  onDetailAddressChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ detailAddress: String(event.detail || '') });
+  onDetailAddressChange(event: WechatMiniprogram.Input) {
+    this.setData({ detailAddress: event.detail.value });
   },
 
-  onDefaultChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ isDefault: Boolean(event.detail) });
+  onDefaultChange(event: WechatMiniprogram.CustomEvent<{ value: boolean }>) {
+    this.setData({ isDefault: event.detail.value });
+  },
+
+  chooseLocation() {
+    wx.chooseLocation({
+      success: (location) => {
+        this.setData({
+          detailAddress: location.address || location.name || this.data.detailAddress,
+          latitude: location.latitude,
+          longitude: location.longitude
+        });
+      },
+      fail: (error) => {
+        if (!error.errMsg.includes('cancel')) wx.showToast({ title: '地图位置选择失败', icon: 'none' });
+      }
+    });
   },
 
   async submitAddress() {
@@ -113,6 +130,8 @@ Page({
       city: address.city || '',
       district: address.district || '',
       detailAddress: address.detailAddress || '',
+      latitude: address.latitude ?? null,
+      longitude: address.longitude ?? null,
       isDefault: address.isDefault === 1
     });
   },
@@ -139,8 +158,8 @@ Page({
       city: normalizeOptionalText(this.data.city),
       district: normalizeOptionalText(this.data.district),
       detailAddress: this.data.detailAddress.trim(),
-      latitude: null,
-      longitude: null,
+      latitude: this.data.latitude,
+      longitude: this.data.longitude,
       isDefault: this.data.isDefault ? 1 : 0
     };
   }

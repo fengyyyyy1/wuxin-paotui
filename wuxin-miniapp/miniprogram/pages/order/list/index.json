@@ -1,6 +1,5 @@
 {
   "navigationBarTitleText": "我的订单",
-  "usingComponents": {
-    "empty-state": "../../../components/empty-state/index"
-  }
+  "enablePullDownRefresh": true,
+  "usingComponents": { "page-state": "/components/page-state/index" }
 }

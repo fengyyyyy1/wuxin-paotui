@@ -10,9 +10,15 @@ export const ROUTES = {
   profile: '/pages/profile/index',
   profileEdit: '/pages/profile/edit/index',
   search: '/pages/search/index',
+  storeList: '/pages/store/list/index',
   storeDetail: '/pages/store/detail/index',
   productDetail: '/pages/product/detail/index',
-  publicMissing: '/pages/public/missing/index',
-  publicBullying: '/pages/public/bullying/index',
-  publicRescue: '/pages/public/rescue/index'
+  checkout: '/pages/checkout/index',
+  orderDetail: '/pages/order/detail/index',
+  paymentProcessing: '/pages/payment/processing/index',
+  paymentSuccess: '/pages/payment/success/index',
+  paymentFailure: '/pages/payment/failure/index',
+  publicService: '/pages/public/index',
+  about: '/pages/about/index',
+  settings: '/pages/settings/index'
 } as const;

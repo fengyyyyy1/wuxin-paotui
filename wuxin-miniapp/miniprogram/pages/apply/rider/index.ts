@@ -1,9 +1,3 @@
 Page({
-  goBack() {
-    wx.navigateBack({
-      fail: () => {
-        wx.switchTab({ url: '/pages/profile/index' });
-      }
-    });
-  }
+  backProfile() { wx.switchTab({ url: '/pages/profile/index' }); }
 });

@@ -1,7 +1,7 @@
 {
   "navigationBarTitleText": "地址管理",
+  "enablePullDownRefresh": true,
   "usingComponents": {
-    "empty-state": "../../../components/empty-state/index",
-    "van-button": "@vant/weapp/button/index"
+    "page-state": "/components/page-state/index"
   }
 }

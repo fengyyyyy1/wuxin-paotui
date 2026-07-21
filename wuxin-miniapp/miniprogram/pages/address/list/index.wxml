@@ -1,59 +1,13 @@
-<view class="page address-page">
-  <view class="section address-header">
-    <view>
-      <view class="title">地址管理</view>
-      <view class="subtitle">管理收货地址，后续商品订单将直接复用。</view>
+<view class="address-page">
+  <view class="page-heading"><text class="title">{{selectMode ? '选择收货地址' : '收货地址'}}</text><text class="subtitle">默认地址优先用于订单配送</text></view>
+  <view class="address-list">
+    <view class="address-card" wx:for="{{addresses}}" wx:key="id" data-id="{{item.id}}" bindtap="selectAddress">
+      <view class="address-top"><view class="contact"><text class="name">{{item.receiverName}}</text><text class="phone">{{item.maskedPhone}}</text><text wx:if="{{item.isDefault === 1}}" class="default-tag">默认</text></view><text wx:if="{{selectMode}}" class="select-arrow">›</text></view>
+      <text class="full-address">{{item.fullAddress}}</text>
+      <view wx:if="{{!selectMode}}" class="address-actions"><button wx:if="{{item.isDefault !== 1}}" data-id="{{item.id}}" catchtap="setDefaultAddress">设为默认</button><view class="action-right"><button data-id="{{item.id}}" catchtap="editAddress">编辑</button><button class="delete" data-id="{{item.id}}" catchtap="confirmDeleteAddress">删除</button></view></view>
     </view>
-    <van-button size="small" loading="{{ loading }}" bind:click="loadAddresses">刷新</van-button>
   </view>
-
-  <view wx:if="{{ errorMessage }}" class="error-card">
-    <view>{{ errorMessage }}</view>
-    <van-button size="small" type="primary" bind:click="loadAddresses">重新加载</van-button>
-  </view>
-
-  <view wx:if="{{ loading && !addresses.length }}" class="loading-card">地址加载中...</view>
-
-  <block wx:elif="{{ addresses.length }}">
-    <view
-      wx:for="{{ addresses }}"
-      wx:key="id"
-      class="address-card {{ item.isDefault === 1 ? 'address-card-default' : '' }}"
-    >
-      <view class="address-main">
-        <view class="receiver-row">
-          <view class="receiver-name">{{ item.receiverName }}</view>
-          <view class="receiver-phone">{{ item.maskedPhone }}</view>
-          <view wx:if="{{ item.isDefault === 1 }}" class="default-tag">默认</view>
-        </view>
-        <view class="address-text">{{ item.fullAddress }}</view>
-      </view>
-      <view class="address-actions">
-        <view class="address-action address-action-primary" bindtap="editAddress" data-id="{{ item.id }}">编辑</view>
-        <view
-          wx:if="{{ item.isDefault !== 1 }}"
-          class="address-action"
-          bindtap="setDefaultAddress"
-          data-id="{{ item.id }}"
-        >
-          设为默认
-        </view>
-        <view
-          class="address-action address-action-danger"
-          bindtap="confirmDeleteAddress"
-          data-id="{{ item.id }}"
-        >
-          {{ deletingId === item.id ? '删除中' : '删除' }}
-        </view>
-      </view>
-    </view>
-  </block>
-
-  <view wx:else class="empty-card">
-    <empty-state title="暂无地址数据" description="添加常用收货地址，后续下单会更顺手。" />
-  </view>
-
-  <view class="fixed-action">
-    <van-button type="primary" block bind:click="goToCreateAddress">新增地址</van-button>
-  </view>
+  <page-state loading="{{loading && addresses.length === 0}}" error="{{errorMessage}}" empty="{{!loading && !errorMessage && addresses.length === 0}}" empty-title="还没有收货地址" empty-description="新增地址后即可用于订单配送" action-text="新增地址" bind:retry="loadAddresses" bind:action="goToCreateAddress" />
+  <view class="bottom-space"></view>
+  <view class="add-bar"><button class="add-address" bindtap="goToCreateAddress">＋ 新增收货地址</button></view>
 </view>

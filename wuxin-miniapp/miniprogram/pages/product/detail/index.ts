@@ -75,7 +75,6 @@ Page({
     if (!this.data.product || this.data.product.imageUrl === DEFAULT_PRODUCT_IMAGE) {
       return;
     }
-    console.warn('[product-detail] product image load failed:', this.data.product.imageUrl);
     this.setData({ product: { ...this.data.product, imageUrl: DEFAULT_PRODUCT_IMAGE } });
   },
 

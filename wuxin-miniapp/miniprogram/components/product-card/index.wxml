@@ -1,0 +1,22 @@
+<view class="product-card {{compact ? 'is-compact' : ''}}" bindtap="handleTap">
+  <view class="image-wrap">
+    <image class="product-image" src="{{product.imageUrl}}" mode="aspectFill" binderror="handleImageError" />
+    <text wx:if="{{product.stock <= 0}}" class="sold-out">售罄</text>
+    <text wx:elif="{{product.discountText}}" class="discount">{{product.discountText}}</text>
+  </view>
+  <view class="product-copy">
+    <text class="product-name">{{product.productName}}</text>
+    <text class="product-description">{{product.productDescription || '品质好物，放心选购'}}</text>
+    <view class="sales-row">
+      <text wx:if="{{product.salesText}}">{{product.salesText}}</text>
+      <text>{{product.stockText}}</text>
+    </view>
+    <view class="price-row">
+      <view class="price-wrap">
+        <text class="currency">¥</text><text class="price">{{product.priceText}}</text>
+        <text wx:if="{{product.originalPriceText}}" class="original-price">¥{{product.originalPriceText}}</text>
+      </view>
+      <button wx:if="{{showAdd}}" class="add-button" disabled="{{!product.canAdd}}" catchtap="handleAdd">＋</button>
+    </view>
+  </view>
+</view>

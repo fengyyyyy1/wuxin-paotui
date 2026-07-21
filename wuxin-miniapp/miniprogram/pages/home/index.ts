@@ -1,200 +1,188 @@
-import { getAddressList, getStoreList } from '../../api/index';
+import { addCart, clearCart, getAddressList, getStoreList, getStoreProducts } from '../../api/index';
 import { HOME_BANNERS, PUBLIC_ENTRIES, SERVICE_ENTRIES } from '../../constants/home';
 import { ROUTES } from '../../constants/routes';
+import { saveRecentStore } from '../../services/discovery';
 import { getAuthState, refreshProfile } from '../../services/auth';
+import { refreshCartSummary } from '../../services/cart';
 import type { Address } from '../../types/address';
-import type { StoreListItem } from '../../types/store';
 import type { UserInfo } from '../../types/user';
 import { buildAddressSummary, findDefaultAddress } from '../../utils/address';
-import { DEFAULT_AVATAR, DEFAULT_STORE_IMAGE, normalizeImageUrl } from '../../utils/image';
-import { maskPhone } from '../../utils/phone';
+import {
+  replaceProductImage,
+  replaceStoreImage,
+  toProductCard,
+  toStoreCard,
+  type ProductCardView,
+  type StoreCardView
+} from '../../utils/catalog';
+import { DEFAULT_AVATAR, normalizeImageUrl } from '../../utils/image';
 import { requireLogin } from '../../utils/route-guard';
 
-interface HomeStoreCard extends StoreListItem {
-  imageUrl: string;
-  statusText: string;
-  statusClass: string;
-  timeText: string;
-  addressText: string;
+interface HomeProduct extends ProductCardView {
+  storeId: number;
+  storeName: string;
 }
 
 Page({
   data: {
-    userInfo: null as UserInfo | null,
     displayName: '微信用户',
-    usernameText: '',
-    phoneText: '未绑定',
     avatarUrl: DEFAULT_AVATAR,
     addressText: '请选择收货地址',
-    hasDefaultAddress: false,
     banners: HOME_BANNERS,
     serviceEntries: SERVICE_ENTRIES,
     publicEntries: PUBLIC_ENTRIES,
-    stores: [] as HomeStoreCard[],
-    profileLoading: false,
-    addressLoading: false,
-    storeLoading: false,
-    storeErrorMessage: '',
-    storeEmptyText: '暂无推荐门店'
+    stores: [] as StoreCardView[],
+    hotProducts: [] as HomeProduct[],
+    recommendedProducts: [] as HomeProduct[],
+    favoriteProducts: [] as HomeProduct[],
+    loading: true,
+    errorMessage: '',
+    addingProductId: 0
   },
 
   async onShow() {
-    const loggedIn = await requireLogin();
-    if (!loggedIn) {
-      return;
-    }
-    this.applyUserInfo(getAuthState().userInfo);
-    await Promise.all([this.refreshUserProfile(), this.loadDefaultAddress(), this.loadStores()]);
+    if (!await requireLogin()) return;
+    this.applyUser(getAuthState().userInfo);
+    await this.loadHome();
   },
 
-  async refreshUserProfile() {
-    this.setData({ profileLoading: true });
-    try {
-      const userInfo = await refreshProfile();
-      this.applyUserInfo(userInfo);
-    } catch {
-      this.applyUserInfo(getAuthState().userInfo);
-    } finally {
-      this.setData({ profileLoading: false });
-    }
+  async onPullDownRefresh() {
+    await this.loadHome();
+    wx.stopPullDownRefresh();
   },
 
-  async loadDefaultAddress() {
-    this.setData({ addressLoading: true });
-    try {
-      const addresses = await getAddressList();
-      const defaultAddress = findDefaultAddress(addresses);
-      this.applyAddress(defaultAddress);
-    } catch {
-      this.setData({
-        addressText: '请选择收货地址',
-        hasDefaultAddress: false
+  async loadHome() {
+    this.setData({ loading: true, errorMessage: '' });
+    const [profileResult, addressResult, storeResult] = await Promise.allSettled([
+      refreshProfile(),
+      getAddressList(),
+      getStoreList({ pageNum: 1, pageSize: 8 })
+    ]);
+
+    if (profileResult.status === 'fulfilled') this.applyUser(profileResult.value);
+    if (addressResult.status === 'fulfilled') this.applyAddress(findDefaultAddress(addressResult.value));
+
+    if (storeResult.status === 'fulfilled') {
+      const stores = storeResult.value.records.map(toStoreCard);
+      this.setData({ stores });
+      await this.loadHomeProducts(stores);
+    } else {
+      this.setData({ errorMessage: storeResult.reason instanceof Error ? storeResult.reason.message : '首页数据加载失败' });
+    }
+    this.setData({ loading: false });
+  },
+
+  async loadHomeProducts(stores: StoreCardView[]) {
+    const candidates = stores.filter((store) => store.businessStatus === 1).slice(0, 3);
+    const results = await Promise.allSettled(
+      candidates.map((store) => getStoreProducts(store.storeId, { pageNum: 1, pageSize: 6 }))
+    );
+    const products: HomeProduct[] = [];
+    results.forEach((result, index) => {
+      if (result.status !== 'fulfilled') return;
+      const store = candidates[index];
+      result.value.records.forEach((product) => {
+        products.push({ ...toProductCard(product, { storeId: store.storeId, storeName: store.storeName }), storeId: store.storeId, storeName: store.storeName });
       });
-    } finally {
-      this.setData({ addressLoading: false });
-    }
+    });
+    const bySales = [...products].sort((left, right) => Number(right.sales || 0) - Number(left.sales || 0));
+    this.setData({
+      hotProducts: bySales.slice(0, 4),
+      recommendedProducts: products.slice(4, 8),
+      favoriteProducts: products.slice(8, 12)
+    });
   },
 
-  async loadStores() {
-    this.setData({ storeLoading: true, storeErrorMessage: '' });
-    try {
-      const pageResult = await getStoreList({ pageNum: 1, pageSize: 6 });
-      this.setData({
-        stores: pageResult.records.map(toStoreCard),
-        storeEmptyText: '暂无推荐门店'
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '门店加载失败';
-      this.setData({ storeErrorMessage: message });
-    } finally {
-      this.setData({ storeLoading: false });
-    }
-  },
-
-  goToAddress() {
-    wx.navigateTo({ url: ROUTES.addressList });
-  },
-
-  goToSearch() {
-    wx.navigateTo({ url: ROUTES.search });
-  },
+  goToAddress() { wx.navigateTo({ url: ROUTES.addressList }); },
+  goToSearch() { wx.navigateTo({ url: ROUTES.search }); },
+  goToStoreList() { wx.navigateTo({ url: ROUTES.storeList }); },
 
   handleBannerTap(event: WechatMiniprogram.BaseEvent) {
     const banner = this.data.banners.find((item) => item.id === event.currentTarget.dataset.id);
-    if (!banner) {
-      return;
-    }
-    if (banner.actionType === 'page' && banner.target) {
-      wx.navigateTo({ url: banner.target });
-      return;
-    }
-    wx.showToast({ title: '功能建设中', icon: 'none' });
+    if (banner?.target) wx.navigateTo({ url: banner.target });
   },
 
   handleServiceTap(event: WechatMiniprogram.BaseEvent) {
-    const service = this.data.serviceEntries.find((item) => item.id === event.currentTarget.dataset.id);
-    if (!service) {
-      return;
-    }
-    if (service.actionType === 'store') {
-      wx.pageScrollTo({ selector: '#store-section', duration: 250 });
-      return;
-    }
-    wx.showToast({ title: '功能将在后续版本开放', icon: 'none' });
+    const entry = this.data.serviceEntries.find((item) => item.id === event.currentTarget.dataset.id);
+    if (entry) wx.navigateTo({ url: entry.target });
   },
 
   goToPublicPage(event: WechatMiniprogram.BaseEvent) {
-    const entry = this.data.publicEntries.find((item) => item.id === event.currentTarget.dataset.id);
-    if (!entry) {
-      return;
-    }
-    wx.navigateTo({ url: entry.route });
+    const type = String(event.currentTarget.dataset.id || 'missing');
+    wx.navigateTo({ url: `${ROUTES.publicService}?type=${type}` });
   },
 
-  goToStoreDetail(event: WechatMiniprogram.BaseEvent) {
-    const storeId = Number(event.currentTarget.dataset.id);
-    if (!Number.isFinite(storeId)) {
-      return;
-    }
-    wx.navigateTo({ url: `${ROUTES.storeDetail}?id=${storeId}` });
+  goToStoreDetail(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
+    const store = this.data.stores.find((item) => item.storeId === Number(event.detail.id));
+    if (!store) return;
+    saveRecentStore(store);
+    wx.navigateTo({ url: `${ROUTES.storeDetail}?id=${store.storeId}` });
   },
 
-  handleImageError(event: WechatMiniprogram.BaseEvent) {
-    const storeId = Number(event.currentTarget.dataset.id);
-    if (!Number.isFinite(storeId)) {
-      return;
-    }
-    const failedStore = this.data.stores.find((store) => store.storeId === storeId);
-    if (!failedStore || failedStore.imageUrl === DEFAULT_STORE_IMAGE) {
-      return;
-    }
-    console.warn('[home] store image load failed:', failedStore.imageUrl);
-    const stores = this.data.stores.map((store) =>
-      store.storeId === storeId ? { ...store, imageUrl: DEFAULT_STORE_IMAGE } : store
-    );
-    this.setData({ stores });
+  goToProductDetail(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
+    const product = this.findProduct(Number(event.detail.id));
+    if (!product) return;
+    wx.navigateTo({ url: `${ROUTES.productDetail}?id=${product.productId}&storeId=${product.storeId}&storeName=${encodeURIComponent(product.storeName)}&storeCanSell=1` });
   },
 
-  handleAvatarError() {
-    if (this.data.avatarUrl === DEFAULT_AVATAR) {
-      return;
+  async addProduct(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
+    const productId = Number(event.detail.id);
+    if (!productId || this.data.addingProductId) return;
+    this.setData({ addingProductId: productId });
+    try {
+      await addCart({ productId, quantity: 1 });
+      await refreshCartSummary();
+      wx.showToast({ title: '已加入购物车', icon: 'success' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '加入购物车失败';
+      if (message.includes('购物车') && message.includes('其他')) {
+        this.confirmReplaceCart(productId);
+      } else {
+        wx.showToast({ title: message, icon: 'none' });
+      }
+    } finally {
+      this.setData({ addingProductId: 0 });
     }
-    console.warn('[home] avatar image load failed:', this.data.avatarUrl);
-    this.setData({ avatarUrl: DEFAULT_AVATAR });
   },
 
-  applyUserInfo(userInfo: UserInfo | null) {
-    this.setData({
-      userInfo,
-      displayName: userInfo?.nickname || '微信用户',
-      usernameText: userInfo?.username || '',
-      phoneText: maskPhone(userInfo?.phone),
-      avatarUrl: normalizeImageUrl(userInfo?.avatar, DEFAULT_AVATAR)
+  confirmReplaceCart(productId: number) {
+    wx.showModal({
+      title: '更换门店商品',
+      content: '购物车中已有其他门店商品，是否清空后加入当前商品？',
+      confirmText: '清空并加入',
+      success: (result) => {
+        if (!result.confirm) return;
+        void clearCart().then(() => addCart({ productId, quantity: 1 })).then(() => refreshCartSummary()).then(() => {
+          wx.showToast({ title: '已加入购物车', icon: 'success' });
+        }).catch((error: Error) => wx.showToast({ title: error.message || '加入失败', icon: 'none' }));
+      }
     });
   },
 
-  applyAddress(address: Address | null) {
+  handleStoreImageError(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
+    this.setData({ stores: replaceStoreImage(this.data.stores, Number(event.detail.id)) });
+  },
+
+  handleProductImageError(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
+    const id = Number(event.detail.id);
     this.setData({
-      addressText: buildAddressSummary(address),
-      hasDefaultAddress: Boolean(address)
+      hotProducts: replaceProductImage(this.data.hotProducts, id) as HomeProduct[],
+      recommendedProducts: replaceProductImage(this.data.recommendedProducts, id) as HomeProduct[],
+      favoriteProducts: replaceProductImage(this.data.favoriteProducts, id) as HomeProduct[]
     });
+  },
+
+  handleAvatarError() { this.setData({ avatarUrl: DEFAULT_AVATAR }); },
+  retry() { void this.loadHome(); },
+
+  applyUser(userInfo: UserInfo | null) {
+    this.setData({ displayName: userInfo?.nickname || '微信用户', avatarUrl: normalizeImageUrl(userInfo?.avatar, DEFAULT_AVATAR) });
+  },
+
+  applyAddress(address: Address | null) { this.setData({ addressText: buildAddressSummary(address) }); },
+
+  findProduct(productId: number): HomeProduct | undefined {
+    return [...this.data.hotProducts, ...this.data.recommendedProducts, ...this.data.favoriteProducts]
+      .find((item) => item.productId === productId);
   }
 });
-
-function toStoreCard(store: StoreListItem): HomeStoreCard {
-  return {
-    ...store,
-    imageUrl: normalizeImageUrl(store.storeLogo, DEFAULT_STORE_IMAGE),
-    statusText: store.businessStatusText || (store.businessStatus === 1 ? '营业中' : '休息中'),
-    statusClass: store.businessStatus === 1 ? 'store-status-open' : 'store-status-rest',
-    timeText: buildStoreTimeText(store),
-    addressText: [store.district, store.detailAddress].filter(Boolean).join('')
-  };
-}
-
-function buildStoreTimeText(store: StoreListItem): string {
-  if (!store.openTime || !store.closeTime) {
-    return '营业时间待补充';
-  }
-  return `${store.openTime.slice(0, 5)}-${store.closeTime.slice(0, 5)}`;
-}

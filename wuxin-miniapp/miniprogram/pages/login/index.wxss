@@ -1,22 +1,17 @@
-.login-page {
-  padding-top: 120rpx;
-}
-
-.login-hero {
-  margin-bottom: 48rpx;
-}
-
-.login-error {
-  margin-top: 24rpx;
-  color: #dc2626;
-  font-size: 26rpx;
-  line-height: 1.5;
-}
-
-.agreement-text {
-  margin-top: 28rpx;
-  color: #94a3b8;
-  font-size: 24rpx;
-  line-height: 1.6;
-  text-align: center;
-}
+page { background:#ffffff; }
+.login-page { min-height:100vh; padding:120rpx 56rpx calc(48rpx + env(safe-area-inset-bottom)); background:linear-gradient(180deg,#f0fbf5 0,#ffffff 42%); }
+.brand-mark { display:flex; align-items:center; justify-content:center; width:128rpx; height:128rpx; color:#ffffff; background:#18b566; border-radius:38rpx; box-shadow:0 18rpx 42rpx rgba(24,181,102,.24); font-size:36rpx; font-weight:800; }
+.login-copy { margin-top:48rpx; }
+.welcome { display:block; color:#111111; font-size:48rpx; font-weight:800; line-height:1.25; }
+.intro { display:block; margin-top:16rpx; color:#666666; font-size:27rpx; line-height:1.6; }
+.feature-list { margin-top:72rpx; }
+.feature { display:flex; align-items:center; gap:24rpx; margin-bottom:34rpx; }
+.feature-icon { display:flex; flex-shrink:0; align-items:center; justify-content:center; width:72rpx; height:72rpx; color:#18b566; background:#eaf8f0; border-radius:22rpx; font-size:24rpx; font-weight:700; }
+.feature-title,.feature-text { display:block; }
+.feature-title { color:#111111; font-size:28rpx; font-weight:650; }
+.feature-text { margin-top:5rpx; color:#999999; font-size:23rpx; }
+.login-button { display:flex; align-items:center; justify-content:center; height:104rpx; margin-top:70rpx; color:#ffffff; background:#18b566; border-radius:30rpx; box-shadow:0 16rpx 32rpx rgba(24,181,102,.2); font-size:31rpx; font-weight:700; }
+.login-button::after { border:0; }
+.login-button[disabled] { opacity:.65; }
+.agreement { display:block; margin-top:24rpx; color:#aaaaaa; font-size:21rpx; line-height:1.5; text-align:center; }
+.login-error { margin-top:24rpx; padding:18rpx 22rpx; color:#c73335; background:#fff1f1; border-radius:18rpx; font-size:23rpx; text-align:center; }

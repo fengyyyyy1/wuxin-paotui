@@ -1,55 +1,16 @@
-<view class="page search-page">
-  <view class="search-box">
-    <input
-      class="search-input"
-      value="{{ keyword }}"
-      placeholder="搜索商家或门店"
-      confirm-type="search"
-      bindinput="onInput"
-      bindconfirm="submitSearch"
-    />
-    <van-button type="primary" size="small" loading="{{ loading }}" bind:click="submitSearch">搜索</van-button>
-    <van-button wx:if="{{ keyword }}" size="small" bind:click="clearSearch">清空</van-button>
-  </view>
+<view class="search-page">
+  <view class="search-bar"><image src="/assets/images/icons/search-line.svg" /><input value="{{keyword}}" placeholder="搜索门店名称" confirm-type="search" focus bindinput="onInput" bindconfirm="submitSearch" /><button wx:if="{{keyword}}" class="clear" bindtap="clearInput">×</button><button class="submit" bindtap="submitSearch">搜索</button></view>
+  <view wx:if="{{suggestions.length}}" class="suggestions"><button wx:for="{{suggestions}}" wx:key="*this" data-value="{{item}}" bindtap="useKeyword"><text>{{item}}</text><text>›</text></button></view>
 
-  <view class="notice-card">
-    <view class="notice-title">搜索说明</view>
-    <view class="notice-text">
-      当前已接入门店名称搜索。商品名称搜索请进入具体门店后使用店内商品搜索，完整全局商品搜索后续再扩展。
-    </view>
-  </view>
-
-  <view wx:if="{{ errorMessage }}" class="state-card">
-    <empty-state title="搜索失败" description="{{ errorMessage }}" />
-    <van-button size="small" type="primary" bind:click="retrySearch">重新搜索</van-button>
-  </view>
-
-  <view wx:elif="{{ loading && !stores.length }}" class="state-card">搜索中...</view>
-
-  <block wx:elif="{{ stores.length }}">
-    <view
-      wx:for="{{ stores }}"
-      wx:key="storeId"
-      class="store-card"
-      data-id="{{ item.storeId }}"
-      bindtap="goToStoreDetail"
-    >
-      <image
-        class="store-image"
-        src="{{ item.imageUrl }}"
-        mode="aspectFill"
-        data-id="{{ item.storeId }}"
-        bind:error="handleStoreImageError"
-      />
-      <view class="store-info">
-        <view class="store-name">{{ item.storeName }}</view>
-        <view class="store-desc">{{ item.storeDescription || '门店介绍待补充' }}</view>
-        <view class="store-meta">{{ item.statusText }} · {{ item.addressText || '地址待补充' }}</view>
-      </view>
-    </view>
+  <block wx:if="{{!searched}}">
+    <view wx:if="{{history.length}}" class="search-section"><view class="section-title-row"><text>搜索历史</text><button bindtap="clearHistory">清空</button></view><view class="keyword-list"><button wx:for="{{history}}" wx:key="*this" data-value="{{item}}" bindtap="useKeyword">{{item}}</button></view></view>
+    <view wx:if="{{discoveryStores.length}}" class="search-section"><view class="section-title-row"><text>热门搜索</text></view><view class="keyword-list"><button wx:for="{{discoveryStores}}" wx:key="storeId" wx:if="{{index < 8}}" data-value="{{item.storeName}}" bindtap="useKeyword">{{item.storeName}}</button></view></view>
+    <view wx:if="{{recentStores.length}}" class="search-section"><view class="section-title-row"><text>最近浏览</text></view><view class="store-list"><store-card wx:for="{{recentStores}}" wx:key="storeId" store="{{item}}" bind:select="openStore" bind:imageerror="handleImageError" /></view></view>
   </block>
 
-  <view wx:elif="{{ searched }}" class="state-card">
-    <empty-state title="没有找到相关门店" description="可调整关键词后重新搜索。" />
+  <view wx:else class="result-section">
+    <text class="result-title">搜索结果</text>
+    <view class="store-list"><store-card wx:for="{{stores}}" wx:key="storeId" store="{{item}}" bind:select="openStore" bind:imageerror="handleImageError" /></view>
+    <page-state loading="{{loading}}" error="{{errorMessage}}" empty="{{!loading && !errorMessage && stores.length === 0}}" empty-title="没有找到相关门店" empty-description="换一个关键词试试" bind:retry="retry" />
   </view>
 </view>

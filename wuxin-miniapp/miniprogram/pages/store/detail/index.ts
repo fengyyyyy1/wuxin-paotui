@@ -8,6 +8,7 @@ import {
   updateCartQuantity
 } from '../../../api/index';
 import { ROUTES } from '../../../constants/routes';
+import { saveRecentStore } from '../../../services/discovery';
 import { refreshCartDetail as fetchCartDetail, restoreCartSummary } from '../../../services/cart';
 import type { CartItem, CartList } from '../../../types/cart';
 import type { ProductCategory, ProductItem } from '../../../types/product';
@@ -15,6 +16,7 @@ import type { StoreDetail } from '../../../types/store';
 import { formatMoney } from '../../../utils/format';
 import { DEFAULT_PRODUCT_IMAGE, DEFAULT_STORE_IMAGE, normalizeImageUrl } from '../../../utils/image';
 import { requireLogin } from '../../../utils/route-guard';
+import { toStoreCard } from '../../../utils/catalog';
 
 interface CategoryTab {
   categoryId: number | null;
@@ -105,6 +107,7 @@ Page({
     this.setData({ loadingStore: true, errorMessage: '' });
     try {
       const store = await getStoreDetail(this.data.storeId);
+      saveRecentStore(toStoreCard(store));
       this.setData({ store: toStoreDetailDisplay(store) });
     } catch (error) {
       const message = error instanceof Error ? error.message : '门店详情加载失败';
@@ -318,14 +321,14 @@ Page({
       wx.showToast({ title: '请先选择商品', icon: 'none' });
       return;
     }
-    wx.showToast({ title: '提交订单功能将在 V1.7-9 开放', icon: 'none' });
+    this.closeCartPanel();
+    wx.navigateTo({ url: ROUTES.checkout });
   },
 
   handleStoreImageError() {
     if (!this.data.store || this.data.store.imageUrl === DEFAULT_STORE_IMAGE) {
       return;
     }
-    console.warn('[store-detail] store image load failed:', this.data.store.imageUrl);
     this.setData({ store: { ...this.data.store, imageUrl: DEFAULT_STORE_IMAGE } });
   },
 
@@ -338,7 +341,6 @@ Page({
     if (!failedProduct || failedProduct.imageUrl === DEFAULT_PRODUCT_IMAGE) {
       return;
     }
-    console.warn('[store-detail] product image load failed:', failedProduct.imageUrl);
     this.setData({
       products: this.data.products.map((product) =>
         product.productId === productId ? { ...product, imageUrl: DEFAULT_PRODUCT_IMAGE } : product

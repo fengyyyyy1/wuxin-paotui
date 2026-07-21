@@ -21,12 +21,16 @@ Page({
     this.applyUserInfo(getAuthState().userInfo);
   },
 
-  onNicknameChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ nickname: String(event.detail || '') });
+  onNicknameChange(event: WechatMiniprogram.Input) {
+    this.setData({ nickname: event.detail.value });
   },
 
-  onAvatarChange(event: WechatMiniprogram.CustomEvent) {
-    this.setData({ avatar: String(event.detail || '') });
+  onAvatarChange(event: WechatMiniprogram.Input) {
+    this.setData({ avatar: event.detail.value });
+  },
+
+  onGenderChange(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
+    this.setData({ gender: Number(event.detail.value) as 0 | 1 | 2 });
   },
 
   async submitProfile() {

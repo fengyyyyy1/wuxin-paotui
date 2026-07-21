@@ -1,77 +1,13 @@
-<view class="page address-edit-page">
-  <view class="section">
-    <view class="title">{{ mode === 'edit' ? '编辑地址' : '新增地址' }}</view>
-    <view class="subtitle">收货地址将用于后续商品订单下单流程。</view>
-  </view>
-
+<view class="form-page">
+  <text class="page-title">{{mode === 'edit' ? '编辑地址' : '新增地址'}}</text>
+  <text class="page-subtitle">请填写真实配送信息，便于骑手准确送达</text>
+  <view wx:if="{{errorMessage}}" class="error-banner">{{errorMessage}}</view>
   <view class="form-card">
-    <van-field
-      label="收件人"
-      value="{{ receiverName }}"
-      required
-      maxlength="30"
-      placeholder="请输入收件人"
-      bind:change="onReceiverNameChange"
-    />
-    <van-field
-      label="手机号"
-      value="{{ receiverPhone }}"
-      required
-      maxlength="11"
-      type="number"
-      placeholder="请输入11位手机号"
-      bind:change="onReceiverPhoneChange"
-    />
-    <van-field
-      label="省"
-      value="{{ province }}"
-      maxlength="30"
-      placeholder="请输入省份"
-      bind:change="onProvinceChange"
-    />
-    <van-field
-      label="市"
-      value="{{ city }}"
-      maxlength="30"
-      placeholder="请输入城市"
-      bind:change="onCityChange"
-    />
-    <van-field
-      label="区"
-      value="{{ district }}"
-      maxlength="30"
-      placeholder="请输入区县"
-      bind:change="onDistrictChange"
-    />
-    <van-field
-      label="详细地址"
-      value="{{ detailAddress }}"
-      required
-      maxlength="120"
-      type="textarea"
-      autosize
-      placeholder="请输入街道、门牌号等"
-      bind:change="onDetailAddressChange"
-    />
-
-    <view class="default-row">
-      <view>
-        <view class="default-title">设为默认地址</view>
-        <view class="default-desc">默认地址会在列表中置顶。</view>
-      </view>
-      <van-switch checked="{{ isDefault }}" bind:change="onDefaultChange" />
-    </view>
-
-    <view wx:if="{{ errorMessage }}" class="form-error">{{ errorMessage }}</view>
-
-    <van-button
-      type="primary"
-      block
-      loading="{{ saving }}"
-      loading-text="保存中"
-      bind:click="submitAddress"
-    >
-      保存地址
-    </van-button>
+    <view class="field-group"><text class="label">收件人</text><input value="{{receiverName}}" maxlength="30" placeholder="请输入收件人姓名" bindinput="onReceiverNameChange" /></view>
+    <view class="field-group"><text class="label">手机号</text><input value="{{receiverPhone}}" maxlength="11" type="number" placeholder="请输入11位手机号" bindinput="onReceiverPhoneChange" /></view>
+    <view class="region-row"><view class="field-group"><text class="label">省</text><input value="{{province}}" maxlength="30" placeholder="省份" bindinput="onProvinceChange" /></view><view class="field-group"><text class="label">市</text><input value="{{city}}" maxlength="30" placeholder="城市" bindinput="onCityChange" /></view><view class="field-group"><text class="label">区/县</text><input value="{{district}}" maxlength="30" placeholder="区县" bindinput="onDistrictChange" /></view></view>
+    <view class="field-group"><view class="label-row"><text class="label">详细地址</text><button bindtap="chooseLocation">地图选择 ›</button></view><textarea value="{{detailAddress}}" maxlength="120" placeholder="街道、楼栋、门牌号" auto-height bindinput="onDetailAddressChange" /></view>
+    <view class="default-row"><view><text class="default-title">设为默认地址</text><text class="default-caption">下单时优先使用此地址</text></view><switch checked="{{isDefault}}" color="#18B566" bindchange="onDefaultChange" /></view>
   </view>
+  <button class="save-button" loading="{{saving}}" disabled="{{saving}}" bindtap="submitAddress">{{saving ? '正在保存' : '保存地址'}}</button>
 </view>

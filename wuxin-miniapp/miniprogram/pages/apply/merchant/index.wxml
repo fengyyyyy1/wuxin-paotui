@@ -1,10 +1,11 @@
-<view class="page apply-page">
-  <view class="apply-card">
-    <view class="apply-kicker">五鑫跑腿</view>
-    <view class="apply-title">商家入驻</view>
-    <view class="apply-text">
-      商家入驻资料收集、资质上传和后台审核流程将在 V1.8 完整开发。本阶段仅提供正式入口，不提交申请。
-    </view>
-    <button class="apply-button" bindtap="goBack">返回</button>
-  </view>
+<view class="apply-page">
+  <view wx:if="{{result}}" class="result-card"><view class="result-icon">✓</view><text class="result-title">入驻申请已提交</text><text class="result-text">当前状态：{{result.auditStatusText}}</text><text class="result-meta">商家编号 {{result.merchantId}} · 店铺编号 {{result.storeId}}</text><button bindtap="backProfile">返回我的</button></view>
+  <block wx:else>
+    <text class="title">商家入驻</text><text class="subtitle">提交后由平台管理员审核，请确保资料真实有效</text>
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+    <view class="form-card"><text class="section-title">主体信息</text><view class="field"><text>商家主体名称 *</text><input value="{{merchantName}}" data-field="merchantName" maxlength="100" placeholder="营业执照上的主体名称" bindinput="updateField" /></view><view class="two-cols"><view class="field"><text>联系人 *</text><input value="{{contactName}}" data-field="contactName" maxlength="50" placeholder="姓名" bindinput="updateField" /></view><view class="field"><text>联系电话 *</text><input value="{{contactPhone}}" data-field="contactPhone" maxlength="11" type="number" placeholder="手机号" bindinput="updateField" /></view></view></view>
+    <view class="form-card"><text class="section-title">店铺信息</text><view class="field"><text>店铺名称 *</text><input value="{{storeName}}" data-field="storeName" maxlength="100" placeholder="对用户展示的名称" bindinput="updateField" /></view><view class="field"><text>店铺电话 *</text><input value="{{storePhone}}" data-field="storePhone" maxlength="11" type="number" placeholder="手机号" bindinput="updateField" /></view><view class="field"><text>店铺简介</text><textarea value="{{storeDescription}}" data-field="storeDescription" maxlength="500" placeholder="介绍主营商品与服务" bindinput="updateField" /></view><view class="three-cols"><view class="field"><text>省</text><input value="{{province}}" data-field="province" placeholder="省份" bindinput="updateField" /></view><view class="field"><text>市</text><input value="{{city}}" data-field="city" placeholder="城市" bindinput="updateField" /></view><view class="field"><text>区/县</text><input value="{{district}}" data-field="district" placeholder="区县" bindinput="updateField" /></view></view><view class="field"><view class="label-row"><text>详细地址 *</text><button bindtap="chooseLocation">地图选择 ›</button></view><input value="{{detailAddress}}" data-field="detailAddress" maxlength="255" placeholder="街道、楼栋、门牌号" bindinput="updateField" /></view><view class="two-cols"><view class="field"><text>营业开始</text><input value="{{openTime}}" data-field="openTime" placeholder="08:00:00" bindinput="updateField" /></view><view class="field"><text>营业结束</text><input value="{{closeTime}}" data-field="closeTime" placeholder="22:00:00" bindinput="updateField" /></view></view></view>
+    <view class="form-card"><text class="section-title">资质地址</text><text class="section-note">当前接口接收图片 URL，不在本页上传图片</text><view class="field"><text>营业执照 URL</text><input value="{{businessLicense}}" data-field="businessLicense" maxlength="255" placeholder="HTTPS 图片地址" bindinput="updateField" /></view><view class="field"><text>身份证正面 URL</text><input value="{{idCardFront}}" data-field="idCardFront" maxlength="255" placeholder="HTTPS 图片地址" bindinput="updateField" /></view><view class="field"><text>身份证反面 URL</text><input value="{{idCardBack}}" data-field="idCardBack" maxlength="255" placeholder="HTTPS 图片地址" bindinput="updateField" /></view><view class="field"><text>店铺 Logo URL</text><input value="{{storeLogo}}" data-field="storeLogo" maxlength="255" placeholder="HTTPS 图片地址" bindinput="updateField" /></view></view>
+    <button class="submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">提交入驻申请</button>
+  </block>
 </view>

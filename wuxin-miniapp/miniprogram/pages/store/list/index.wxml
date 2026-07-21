@@ -1,0 +1,15 @@
+<view class="wuxin-page store-page">
+  <text class="wuxin-page-title">附近门店</text>
+  <text class="wuxin-page-subtitle">营业状态与门店信息均来自平台实时数据</text>
+  <scroll-view class="filters" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="filter-row">
+      <button class="filter {{businessStatus === null ? 'active' : ''}}" data-value="all" bindtap="selectStatus">全部</button>
+      <button class="filter {{businessStatus === 1 ? 'active' : ''}}" data-value="1" bindtap="selectStatus">营业中</button>
+      <button class="filter {{businessStatus === 0 ? 'active' : ''}}" data-value="0" bindtap="selectStatus">休息中</button>
+    </view>
+  </scroll-view>
+  <view class="store-list"><store-card wx:for="{{stores}}" wx:key="storeId" store="{{item}}" bind:select="openStore" bind:imageerror="handleImageError" /></view>
+  <page-state loading="{{loading && stores.length === 0}}" error="{{errorMessage}}" empty="{{!loading && !errorMessage && stores.length === 0}}" empty-title="暂无门店" empty-description="当前筛选条件下没有可展示门店" bind:retry="retry" />
+  <view wx:if="{{loading && stores.length}}" class="load-more">正在加载更多</view>
+  <view wx:if="{{!loading && stores.length && !hasMore}}" class="load-more">已经到底了</view>
+</view>

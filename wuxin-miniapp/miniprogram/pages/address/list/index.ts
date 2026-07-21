@@ -16,7 +16,12 @@ Page({
     addresses: [] as AddressCard[],
     loading: false,
     errorMessage: '',
-    deletingId: null as number | null
+    deletingId: null as number | null,
+    selectMode: false
+  },
+
+  onLoad(options: { select?: string }) {
+    this.setData({ selectMode: options.select === '1' });
   },
 
   async onShow() {
@@ -63,6 +68,14 @@ Page({
 
     wx.setStorageSync(STORAGE_KEYS.editingAddress, address);
     wx.navigateTo({ url: `${ROUTES.addressEdit}?mode=edit&id=${address.id}` });
+  },
+
+  selectAddress(event: WechatMiniprogram.BaseEvent) {
+    if (!this.data.selectMode) return;
+    const address = this.findAddressFromEvent(event);
+    if (!address) return;
+    wx.setStorageSync(STORAGE_KEYS.checkoutAddressId, address.id);
+    wx.navigateBack();
   },
 
   async setDefaultAddress(event: WechatMiniprogram.BaseEvent) {

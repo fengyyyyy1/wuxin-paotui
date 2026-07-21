@@ -1,0 +1,73 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 360rpx;
+  padding: 56rpx 32rpx;
+  color: #999999;
+  text-align: center;
+}
+
+.state-loading {
+  min-height: 260rpx;
+}
+
+.spinner {
+  width: 48rpx;
+  height: 48rpx;
+  margin-bottom: 24rpx;
+  border: 5rpx solid #dff5e9;
+  border-top-color: #18b566;
+  border-radius: 50%;
+  animation: spin 760ms linear infinite;
+}
+
+.state-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96rpx;
+  height: 96rpx;
+  margin-bottom: 22rpx;
+  color: #18b566;
+  background: #eaf8f0;
+  border-radius: 32rpx;
+  font-size: 48rpx;
+}
+
+.state-error {
+  color: #ff4d4f;
+  background: #fff1f1;
+}
+
+.state-title {
+  color: #111111;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.state-caption {
+  max-width: 520rpx;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.state-action {
+  min-width: 200rpx;
+  margin-top: 28rpx;
+  padding: 20rpx 32rpx;
+  color: #ffffff;
+  background: #18b566;
+  border-radius: 24rpx;
+  font-size: 26rpx;
+}
+
+.state-action::after {
+  border: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

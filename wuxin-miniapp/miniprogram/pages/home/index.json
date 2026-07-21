@@ -1,7 +1,11 @@
 {
   "navigationBarTitleText": "五鑫跑腿",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
   "usingComponents": {
-    "empty-state": "/components/empty-state/index",
-    "van-button": "@vant/weapp/button/index"
+    "page-state": "/components/page-state/index",
+    "section-header": "/components/section-header/index",
+    "store-card": "/components/store-card/index",
+    "product-card": "/components/product-card/index"
   }
 }

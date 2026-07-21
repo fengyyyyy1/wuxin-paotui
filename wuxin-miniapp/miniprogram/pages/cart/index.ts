@@ -178,7 +178,7 @@ Page({
       wx.showToast({ title: '请先选择商品', icon: 'none' });
       return;
     }
-    wx.showToast({ title: '提交订单功能将在 V1.7-9 开放', icon: 'none' });
+    wx.navigateTo({ url: ROUTES.checkout });
   },
 
   handleImageError(event: WechatMiniprogram.BaseEvent) {

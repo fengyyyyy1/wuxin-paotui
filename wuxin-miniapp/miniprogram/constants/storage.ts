@@ -3,5 +3,8 @@ export const STORAGE_KEYS = {
   userInfo: 'WUXIN_MINIAPP_USER_INFO',
   newUser: 'WUXIN_MINIAPP_NEW_USER',
   editingAddress: 'WUXIN_MINIAPP_EDITING_ADDRESS',
-  cartCount: 'WUXIN_MINIAPP_CART_COUNT'
+  cartCount: 'WUXIN_MINIAPP_CART_COUNT',
+  searchHistory: 'WUXIN_MINIAPP_SEARCH_HISTORY',
+  recentStores: 'WUXIN_MINIAPP_RECENT_STORES',
+  checkoutAddressId: 'WUXIN_MINIAPP_CHECKOUT_ADDRESS_ID'
 } as const;

@@ -1,85 +1,80 @@
 import { getStoreList } from '../../api/index';
 import { ROUTES } from '../../constants/routes';
-import type { StoreListItem } from '../../types/store';
-import { DEFAULT_STORE_IMAGE, normalizeImageUrl } from '../../utils/image';
-
-interface SearchStoreCard extends StoreListItem {
-  imageUrl: string;
-  statusText: string;
-  addressText: string;
-}
+import { clearSearchHistory, getRecentStores, getSearchHistory, saveRecentStore, saveSearchKeyword } from '../../services/discovery';
+import { replaceStoreImage, toStoreCard, type StoreCardView } from '../../utils/catalog';
 
 Page({
   data: {
     keyword: '',
-    stores: [] as SearchStoreCard[],
+    stores: [] as StoreCardView[],
+    discoveryStores: [] as StoreCardView[],
+    recentStores: [] as StoreCardView[],
+    history: [] as string[],
+    suggestions: [] as string[],
     loading: false,
     errorMessage: '',
     searched: false
   },
 
+  onLoad() {
+    this.setData({ history: getSearchHistory(), recentStores: getRecentStores() });
+    void this.loadDiscovery();
+  },
+
+  async loadDiscovery() {
+    try {
+      const page = await getStoreList({ pageNum: 1, pageSize: 20 });
+      this.setData({ discoveryStores: page.records.map(toStoreCard) });
+    } catch {
+      this.setData({ discoveryStores: [] });
+    }
+  },
+
   onInput(event: WechatMiniprogram.Input) {
-    this.setData({ keyword: event.detail.value });
+    const keyword = event.detail.value;
+    const normalized = keyword.trim().toLowerCase();
+    const suggestions = normalized
+      ? this.data.discoveryStores.filter((store) => store.storeName.toLowerCase().includes(normalized)).slice(0, 5).map((store) => store.storeName)
+      : [];
+    this.setData({ keyword, suggestions });
+  },
+
+  useKeyword(event: WechatMiniprogram.BaseEvent) {
+    this.setData({ keyword: String(event.currentTarget.dataset.value || ''), suggestions: [] });
+    void this.submitSearch();
   },
 
   async submitSearch() {
     const keyword = this.data.keyword.trim();
     if (!keyword || this.data.loading) {
-      wx.showToast({ title: keyword ? '正在搜索' : '请输入搜索内容', icon: 'none' });
+      if (!keyword) wx.showToast({ title: '请输入搜索内容', icon: 'none' });
       return;
     }
-
-    this.setData({ loading: true, errorMessage: '', searched: true });
+    this.setData({ loading: true, errorMessage: '', searched: true, suggestions: [], history: saveSearchKeyword(keyword) });
     try {
-      const page = await getStoreList({ pageNum: 1, pageSize: 20, keyword });
-      this.setData({ stores: page.records.map(toSearchStoreCard) });
+      const page = await getStoreList({ pageNum: 1, pageSize: 30, keyword });
+      this.setData({ stores: page.records.map(toStoreCard) });
     } catch (error) {
-      const message = error instanceof Error ? error.message : '搜索失败';
-      this.setData({ errorMessage: message });
+      this.setData({ errorMessage: error instanceof Error ? error.message : '搜索失败' });
     } finally {
       this.setData({ loading: false });
     }
   },
 
-  clearSearch() {
-    this.setData({ keyword: '', stores: [], errorMessage: '', searched: false });
+  clearInput() { this.setData({ keyword: '', stores: [], suggestions: [], searched: false, errorMessage: '' }); },
+  clearHistory() { clearSearchHistory(); this.setData({ history: [] }); },
+  retry() { void this.submitSearch(); },
+
+  openStore(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
+    const allStores = [...this.data.stores, ...this.data.recentStores, ...this.data.discoveryStores];
+    const store = allStores.find((item) => item.storeId === Number(event.detail.id));
+    if (!store) return;
+    saveRecentStore(store);
+    wx.navigateTo({ url: `${ROUTES.storeDetail}?id=${store.storeId}` });
   },
 
-  retrySearch() {
-    void this.submitSearch();
-  },
-
-  goToStoreDetail(event: WechatMiniprogram.BaseEvent) {
-    const storeId = Number(event.currentTarget.dataset.id);
-    if (!Number.isFinite(storeId)) {
-      return;
-    }
-    wx.navigateTo({ url: `${ROUTES.storeDetail}?id=${storeId}` });
-  },
-
-  handleStoreImageError(event: WechatMiniprogram.BaseEvent) {
-    const storeId = Number(event.currentTarget.dataset.id);
-    if (!Number.isFinite(storeId)) {
-      return;
-    }
-    const failedStore = this.data.stores.find((store) => store.storeId === storeId);
-    if (!failedStore || failedStore.imageUrl === DEFAULT_STORE_IMAGE) {
-      return;
-    }
-    console.warn('[search] store image load failed:', failedStore.imageUrl);
-    this.setData({
-      stores: this.data.stores.map((store) =>
-        store.storeId === storeId ? { ...store, imageUrl: DEFAULT_STORE_IMAGE } : store
-      )
-    });
+  handleImageError(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
+    const id = Number(event.detail.id);
+    this.setData({ stores: replaceStoreImage(this.data.stores, id), recentStores: replaceStoreImage(this.data.recentStores, id) });
   }
 });
-
-function toSearchStoreCard(store: StoreListItem): SearchStoreCard {
-  return {
-    ...store,
-    imageUrl: normalizeImageUrl(store.storeLogo, DEFAULT_STORE_IMAGE),
-    statusText: store.businessStatusText || (store.businessStatus === 1 ? '营业中' : '休息中'),
-    addressText: [store.district, store.detailAddress].filter(Boolean).join('')
-  };
-}
