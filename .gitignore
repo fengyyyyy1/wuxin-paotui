@@ -1,6 +1,12 @@
 docs/CODEX_RULE.md
 wuxin-paotui-server/src/main/resources/application-local.yml
 wuxin-paotui-server/config/
+wuxin-miniapp/node_modules/
+wuxin-miniapp/miniprogram_npm/
+wuxin-miniapp/miniprogram/miniprogram_npm/
+wuxin-miniapp/dist/
+wuxin-miniapp/project.private.config.json
+wuxin-miniapp/private.*
 *.pem
 *.p12
 *.key

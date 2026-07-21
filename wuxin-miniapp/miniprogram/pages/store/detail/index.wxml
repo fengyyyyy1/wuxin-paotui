@@ -1,79 +1,85 @@
-<view class="store-page">
-  <view wx:if="{{ loadingStore && !store }}" class="state-card">门店详情加载中...</view>
+<view class="store-page wuxin-page">
+  <view wx:if="{{ loadingStore && !store }}" class="store-state wuxin-card">
+    <view class="wuxin-text-body">门店详情加载中...</view>
+  </view>
 
-  <view wx:elif="{{ errorMessage }}" class="state-card">
+  <view wx:elif="{{ errorMessage }}" class="store-state wuxin-card">
     <empty-state title="门店详情加载失败" description="{{ errorMessage }}" />
-    <view class="state-actions">
-      <van-button size="small" type="primary" bind:click="refreshAll">重新加载</van-button>
-    </view>
+    <button class="store-state-action wuxin-reset-button wuxin-primary-button" bindtap="refreshAll">重新加载</button>
   </view>
 
   <block wx:elif="{{ store }}">
-    <view class="store-info-card">
-      <image class="store-logo" src="{{ store.imageUrl }}" mode="aspectFill" bind:error="handleStoreImageError" />
-      <view class="store-info-main">
-        <view class="store-title">{{ store.storeName }}</view>
-        <view class="store-meta-row">
-          <text class="store-status {{ store.statusClass }}">{{ store.statusText }}</text>
-          <text class="store-time">{{ store.timeText }}</text>
+    <view class="store-hero wuxin-card">
+      <view class="store-hero-top">
+        <image class="store-avatar" src="{{ store.imageUrl }}" mode="aspectFill" bind:error="handleStoreImageError" />
+        <view class="store-info">
+          <view class="store-name wuxin-text-title">{{ store.storeName }}</view>
+          <view class="store-status-row">
+            <text class="store-status-badge {{ store.statusClass }}">{{ store.statusText }}</text>
+            <text class="store-meta wuxin-text-caption">{{ store.timeText }}</text>
+          </view>
+          <view class="store-meta wuxin-text-caption">{{ store.addressText || '地址待补充' }}</view>
         </view>
-        <view class="store-address">{{ store.addressText || '地址待补充' }}</view>
+      </view>
+      <view class="store-notice wuxin-text-body">
+        {{ store.storeDescription || '门店介绍待补充' }}
+      </view>
+      <view class="store-contact wuxin-text-caption">联系电话：{{ store.storePhone || '待补充' }}</view>
+      <view wx:if="{{ !store.canSell }}" class="store-closed-message wuxin-text-caption">
+        门店当前休息中，仅可浏览商品。
       </view>
     </view>
 
-    <view class="store-intro-card">
-      <view class="intro-title">门店简介</view>
-      <view class="intro-text">{{ store.storeDescription || '门店介绍待补充' }}</view>
-      <view class="intro-phone">联系电话：{{ store.storePhone || '待补充' }}</view>
-      <view wx:if="{{ !store.canSell }}" class="store-closed-tip">门店当前休息中，仅可浏览商品。</view>
-    </view>
-
-    <view class="store-filter-card">
-      <view class="search-box">
+    <view class="store-toolbar">
+      <view class="store-search wuxin-search">
+        <image class="wuxin-search-icon" src="/assets/images/icons/search-line.svg" mode="aspectFit" />
         <input
-          class="search-input"
+          class="wuxin-search-input"
           value="{{ keyword }}"
           placeholder="搜索本店商品"
+          placeholder-class="wuxin-search-placeholder"
           confirm-type="search"
           bindinput="onKeywordInput"
           bindconfirm="searchProducts"
         />
+        <button
+          class="store-search-clear wuxin-search-clear wuxin-reset-button"
+          disabled="{{ !keyword }}"
+          bindtap="clearKeyword"
+        >清除
+        </button>
       </view>
-      <view class="search-actions">
-        <button class="filter-button filter-button-primary" disabled="{{ loadingProducts }}" bindtap="searchProducts">搜索</button>
-        <button class="filter-button" disabled="{{ !keyword }}" bindtap="clearKeyword">清空</button>
-      </view>
+
+      <scroll-view class="store-categories" scroll-x enhanced show-scrollbar="{{ false }}">
+        <view class="store-category-track">
+          <view
+            wx:for="{{ categories }}"
+            wx:key="categoryId"
+            class="category-chip wuxin-tag {{ item.categoryId === activeCategoryId ? 'wuxin-tag-active' : '' }}"
+            data-id="{{ item.categoryId === null ? 'all' : item.categoryId }}"
+            bindtap="selectCategory"
+          >
+            {{ item.categoryName }}
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
-    <scroll-view class="category-scroll" scroll-x enhanced show-scrollbar="{{ false }}">
-      <view class="category-list">
-        <view
-          wx:for="{{ categories }}"
-          wx:key="categoryId"
-          class="category-chip {{ item.categoryId === activeCategoryId ? 'category-chip-active' : '' }}"
-          data-id="{{ item.categoryId === null ? 'all' : item.categoryId }}"
-          bindtap="selectCategory"
-        >
-          {{ item.categoryName }}
-        </view>
-      </view>
-    </scroll-view>
-
-    <view class="product-list">
-      <view wx:if="{{ productErrorMessage }}" class="state-card">
+    <view class="store-products">
+      <view wx:if="{{ productErrorMessage }}" class="store-state wuxin-card">
         <empty-state title="商品加载失败" description="{{ productErrorMessage }}" />
-        <view class="state-actions">
-          <van-button size="small" type="primary" bind:click="refreshProducts">重新加载</van-button>
-        </view>
+        <button class="store-state-action wuxin-reset-button wuxin-primary-button" bindtap="refreshProducts">重新加载</button>
       </view>
 
-      <view wx:elif="{{ loadingProducts && !products.length }}" class="state-card">商品加载中...</view>
+      <view wx:elif="{{ loadingProducts && !products.length }}" class="store-state wuxin-card">
+        <view class="wuxin-text-body">商品加载中...</view>
+      </view>
 
       <block wx:elif="{{ products.length }}">
         <view wx:for="{{ products }}" wx:key="productId" class="product-card" data-id="{{ item.productId }}" bindtap="goToProductDetail">
           <view class="product-image-wrap">
             <image
-              class="product-image"
+              class="wuxin-product-image"
               src="{{ item.imageUrl }}"
               mode="aspectFill"
               data-id="{{ item.productId }}"
@@ -83,128 +89,165 @@
           <view class="product-main">
             <view class="product-name">{{ item.productName }}</view>
             <view class="product-description">{{ item.productDescription || item.categoryName || '商品说明待补充' }}</view>
-            <view class="product-meta">
-              <text class="product-stock">{{ item.stockText }}</text>
-            </view>
+            <view class="product-stock">{{ item.stockText }}</view>
             <view class="product-bottom">
-              <view class="product-price">
-                <text class="price-mark">¥</text>{{ item.priceText }}
-              </view>
-              <view class="cart-stepper {{ !item.cartQuantity ? 'cart-stepper-single' : '' }}" catchtap="preventPanelMove">
+              <view class="product-price wuxin-text-price">¥{{ item.priceText }}</view>
+              <view class="product-cart-action" catchtap="preventPanelMove">
                 <button
                   wx:if="{{ !item.cartQuantity }}"
-                  class="stepper-plus stepper-plus-single"
+                  class="wuxin-add-button wuxin-reset-button"
                   data-id="{{ item.productId }}"
                   disabled="{{ !item.canQuickAdd || item.cartOperating || cartOperationKey }}"
                   catchtap="quickAddCart"
                 >
                   +
                 </button>
-                <block wx:else>
+                <view wx:else class="wuxin-stepper">
                   <button
-                    class="stepper-minus"
+                    class="wuxin-stepper-button wuxin-reset-button"
                     data-id="{{ item.productId }}"
                     disabled="{{ item.cartOperating || cartOperationKey }}"
                     catchtap="decreaseCartItem"
                   >
                     -
                   </button>
-                  <view class="stepper-value">{{ item.cartQuantity }}</view>
+                  <view class="wuxin-stepper-value">{{ item.cartQuantity }}</view>
                   <button
-                    class="stepper-plus"
+                    class="wuxin-stepper-button wuxin-reset-button"
                     data-id="{{ item.productId }}"
                     disabled="{{ item.cartOperating || cartOperationKey || item.cartQuantity >= item.stock }}"
                     catchtap="increaseCartItem"
                   >
                     +
                   </button>
-                </block>
-              </view>
-            </view>
-          </view>
-        </view>
-        <view wx:if="{{ loadingProducts }}" class="list-more">继续加载中...</view>
-        <view wx:elif="{{ !hasMore }}" class="list-more">已展示全部可售商品</view>
-      </block>
-
-      <view wx:else class="state-card">
-        <empty-state title="{{ productEmptyText }}" description="可切换分类或调整关键词后重试。" />
-      </view>
-    </view>
-
-    <view wx:if="{{ cartPanelVisible }}" class="cart-sheet-mask" catchtap="closeCartPanel" catchtouchmove="preventPanelMove"></view>
-    <view wx:if="{{ cartPanelVisible }}" class="cart-sheet" catchtap="preventPanelMove">
-      <view class="sheet-handle"></view>
-      <view class="sheet-header">
-        <view class="sheet-store-name">{{ cartStoreName || store.storeName }}</view>
-        <view class="sheet-actions">
-          <button class="sheet-clear" disabled="{{ cartEmpty || cartOperationKey }}" catchtap="clearCurrentCart">清空</button>
-          <button class="sheet-close" catchtap="closeCartPanel">×</button>
-        </view>
-      </view>
-
-      <scroll-view class="sheet-scroll" scroll-y enhanced show-scrollbar="{{ false }}">
-        <view wx:if="{{ cartEmpty }}" class="sheet-empty">购物车还是空的</view>
-        <block wx:else>
-          <view wx:for="{{ cartValidItems }}" wx:key="productId" class="sheet-item">
-            <view class="sheet-image-wrap">
-              <image class="sheet-image" src="{{ item.imageUrl }}" mode="aspectFill" data-id="{{ item.productId }}" bind:error="handleProductImageError" />
-            </view>
-            <view class="sheet-main">
-              <view class="sheet-title-row">
-                <view class="sheet-name">{{ item.productName }}</view>
-                <button class="sheet-delete" data-id="{{ item.productId }}" disabled="{{ item.cartOperating || cartOperationKey }}" catchtap="deleteCartProduct">删</button>
-              </view>
-              <view class="sheet-stock">{{ item.stockText }}</view>
-              <view class="sheet-bottom">
-                <view class="sheet-price"><text class="price-mark">¥</text>{{ item.priceText }}</view>
-                <view class="cart-stepper">
-                  <button class="stepper-minus" data-id="{{ item.productId }}" disabled="{{ item.cartOperating || cartOperationKey }}" catchtap="decreaseCartItem">-</button>
-                  <view class="stepper-value">{{ item.cartQuantity }}</view>
-                  <button class="stepper-plus" data-id="{{ item.productId }}" disabled="{{ item.cartOperating || cartOperationKey || item.cartQuantity >= item.stock }}" catchtap="increaseCartItem">+</button>
                 </view>
               </view>
             </view>
           </view>
+        </view>
+        <view wx:if="{{ loadingProducts }}" class="store-list-note wuxin-text-caption">继续加载中...</view>
+        <view wx:elif="{{ !hasMore }}" class="store-list-note wuxin-text-caption">已展示全部可售商品</view>
+      </block>
 
-          <view wx:if="{{ cartInvalidItems.length }}" class="sheet-section-title">失效商品</view>
-          <view wx:for="{{ cartInvalidItems }}" wx:key="productId" class="sheet-item sheet-item-disabled">
-            <view class="sheet-image-wrap">
-              <image class="sheet-image" src="{{ item.imageUrl }}" mode="aspectFill" data-id="{{ item.productId }}" bind:error="handleProductImageError" />
-            </view>
-            <view class="sheet-main">
-              <view class="sheet-title-row">
-                <view class="sheet-name">{{ item.productName }}</view>
-                <button class="sheet-delete" data-id="{{ item.productId }}" disabled="{{ item.cartOperating || cartOperationKey }}" catchtap="deleteCartProduct">删</button>
-              </view>
-              <view class="sheet-invalid">{{ item.cartInvalidReason }}</view>
-              <view class="sheet-stock">数量 {{ item.cartQuantity }}</view>
+      <view wx:else class="store-state wuxin-card">
+        <empty-state title="{{ productEmptyText }}" description="可切换分类或调整关键词后重试。" />
+      </view>
+    </view>
+
+    <view class="store-bottom-placeholder"></view>
+  </block>
+</view>
+
+<view wx:if="{{ store }}" class="store-cart-bar">
+  <view class="cart-bar-main" catchtap="openCartPanel">
+    <view class="cart-icon-area">
+      <view class="cart-icon">
+        <image class="cart-icon-image" src="/assets/images/icons/cart-line.svg" mode="aspectFit" />
+      </view>
+      <view wx:if="{{ cartCount > 0 }}" class="cart-badge">{{ cartCount }}</view>
+    </view>
+    <view class="cart-summary">
+      <view class="cart-total">{{ cartEmpty ? '购物车为空' : '¥' + cartSelectedTotalAmountText }}</view>
+      <view class="cart-count">{{ cartEmpty ? '选择商品后可结算' : '已选 ' + cartSelectedProductCount + ' 件' }}</view>
+    </view>
+  </view>
+  <button
+    class="cart-checkout wuxin-reset-button {{ !cartSelectedProductCount || cartOperationKey ? 'cart-checkout-disabled' : '' }}"
+    disabled="{{ !cartSelectedProductCount || cartOperationKey }}"
+    catchtap="checkout"
+  >
+    去结算
+  </button>
+</view>
+
+<view wx:if="{{ cartPanelVisible }}" class="cart-sheet-mask" catchtap="closeCartPanel" catchtouchmove="preventPanelMove"></view>
+
+<view wx:if="{{ cartPanelVisible }}" class="cart-sheet" catchtap="preventPanelMove">
+  <view class="sheet-handle"></view>
+  <view class="sheet-header">
+    <view class="sheet-title">{{ cartStoreName || store.storeName }}</view>
+    <view class="sheet-actions">
+      <button class="sheet-action-button wuxin-reset-button" disabled="{{ cartEmpty || cartOperationKey }}" catchtap="clearCurrentCart">
+        清空
+      </button>
+      <button class="sheet-dismiss-control wuxin-reset-button" catchtap="closeCartPanel">×</button>
+    </view>
+  </view>
+
+  <scroll-view class="sheet-list" scroll-y enhanced show-scrollbar="{{ false }}">
+    <view wx:if="{{ cartEmpty }}" class="sheet-empty wuxin-text-body">购物车还是空的</view>
+    <block wx:else>
+      <view wx:for="{{ cartValidItems }}" wx:key="productId" class="sheet-item">
+        <image
+          class="sheet-product-image"
+          src="{{ item.imageUrl }}"
+          mode="aspectFill"
+          data-id="{{ item.productId }}"
+          bind:error="handleProductImageError"
+        />
+        <view class="sheet-item-main">
+          <view class="sheet-item-top">
+            <view class="sheet-product-name">{{ item.productName }}</view>
+            <button
+              class="sheet-remove-control wuxin-reset-button"
+              data-id="{{ item.productId }}"
+              disabled="{{ item.cartOperating || cartOperationKey }}"
+              catchtap="deleteCartProduct"
+            >
+              删除
+            </button>
+          </view>
+          <view class="sheet-product-stock">{{ item.stockText }}</view>
+          <view class="sheet-item-bottom">
+            <view class="sheet-product-price">¥{{ item.priceText }}</view>
+            <view class="wuxin-stepper">
+              <button class="wuxin-stepper-button wuxin-reset-button" data-id="{{ item.productId }}" disabled="{{ item.cartOperating || cartOperationKey }}" catchtap="decreaseCartItem">-</button>
+              <view class="wuxin-stepper-value">{{ item.cartQuantity }}</view>
+              <button class="wuxin-stepper-button wuxin-reset-button" data-id="{{ item.productId }}" disabled="{{ item.cartOperating || cartOperationKey || item.cartQuantity >= item.stock }}" catchtap="increaseCartItem">+</button>
             </view>
           </view>
-        </block>
-      </scroll-view>
-
-      <view class="sheet-footer">
-        <view class="footer-summary">
-          <view class="footer-amount">合计 <text>¥{{ cartSelectedTotalAmountText }}</text></view>
-          <view class="footer-count">已选 {{ cartSelectedProductCount }} 件</view>
-        </view>
-        <button class="checkout-button" disabled="{{ !cartSelectedProductCount || cartOperationKey }}" catchtap="checkout">去结算</button>
-      </view>
-    </view>
-
-    <view class="store-cart-bar">
-      <view class="cart-summary" catchtap="openCartPanel">
-        <view class="cart-icon-wrap">
-          <view class="cart-icon">购</view>
-          <view wx:if="{{ cartCount > 0 }}" class="cart-badge">{{ cartCount }}</view>
-        </view>
-        <view class="cart-amount-wrap">
-          <view class="cart-amount">{{ cartEmpty ? '购物车为空' : '¥' + cartSelectedTotalAmountText }}</view>
-          <view class="cart-count">{{ cartEmpty ? '快去选购商品吧' : '已选 ' + cartSelectedProductCount + ' 件' }}</view>
         </view>
       </view>
-      <button class="checkout-button store-checkout-button" disabled="{{ !cartSelectedProductCount || cartOperationKey }}" catchtap="checkout">去结算</button>
+
+      <view wx:if="{{ cartInvalidItems.length }}" class="sheet-section-label">失效商品</view>
+      <view wx:for="{{ cartInvalidItems }}" wx:key="productId" class="sheet-item sheet-item-disabled">
+        <image
+          class="sheet-product-image"
+          src="{{ item.imageUrl }}"
+          mode="aspectFill"
+          data-id="{{ item.productId }}"
+          bind:error="handleProductImageError"
+        />
+        <view class="sheet-item-main">
+          <view class="sheet-item-top">
+            <view class="sheet-product-name">{{ item.productName }}</view>
+            <button
+              class="sheet-remove-control wuxin-reset-button"
+              data-id="{{ item.productId }}"
+              disabled="{{ item.cartOperating || cartOperationKey }}"
+              catchtap="deleteCartProduct"
+            >
+              删除
+            </button>
+          </view>
+          <view class="sheet-product-invalid">{{ item.cartInvalidReason }}</view>
+          <view class="sheet-product-stock">数量 {{ item.cartQuantity }}</view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+
+  <view class="sheet-footer">
+    <view class="sheet-total">
+      <view class="sheet-total-label">合计</view>
+      <view class="sheet-total-price">¥{{ cartSelectedTotalAmountText }}</view>
     </view>
-  </block>
+    <button
+      class="sheet-checkout wuxin-reset-button {{ !cartSelectedProductCount || cartOperationKey ? 'sheet-checkout-disabled' : '' }}"
+      disabled="{{ !cartSelectedProductCount || cartOperationKey }}"
+      catchtap="checkout"
+    >
+      去结算
+    </button>
+  </view>
 </view>

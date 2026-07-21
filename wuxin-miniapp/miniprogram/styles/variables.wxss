@@ -1,0 +1,40 @@
+/*
+ * Wuxin Design System V1.0
+ *
+ * WXSS does not reliably support CSS custom properties in every Mini Program
+ * runtime, so shared values are documented here and applied explicitly.
+ *
+ * Colors:
+ * brand green: #16A76A
+ * brand green pressed: #128858
+ * brand light green: #EAF8F1
+ * price orange: #FF7A21
+ * page background: #F5F6F8
+ * card background: #FFFFFF
+ * text primary: #171A1D
+ * text secondary: #5E6369
+ * text muted: #969BA1
+ * divider: #ECEEF1
+ * error: #E5484D
+ * mask: rgba(0, 0, 0, 0.42)
+ *
+ * Radius:
+ * small: 16rpx
+ * control: 24rpx
+ * card: 28rpx
+ * large card: 32rpx
+ * capsule: 999rpx
+ * bottom sheet top: 40rpx
+ *
+ * Spacing:
+ * page horizontal: 32rpx
+ * section: 24rpx
+ * card padding: 28rpx
+ * compact: 12rpx
+ * regular: 16rpx
+ * large: 32rpx
+ *
+ * Shadow:
+ * card: 0 8rpx 28rpx rgba(23, 26, 29, 0.06)
+ * floating bar: 0 12rpx 40rpx rgba(23, 26, 29, 0.12)
+ */

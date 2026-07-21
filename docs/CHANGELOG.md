@@ -259,6 +259,19 @@
 - 保持购物车接口、后端、数据库、业务规则、状态同步、订单和支付逻辑不变
 - 当前断点更新为V1.7-8C人工复测
 
+### V1.7-8D Design System V1.0 与门店详情页 UI 全量重建
+
+- 建立五鑫小程序 Design System V1.0，新增设计变量、基础布局、文字层级和公共视觉组件样式
+- `app.wxss`引入Design System，原`.page`、`.card`、`.title`和`.subtitle`保留为legacy全局样式
+- 门店详情页`index.wxml`和`index.wxss`废弃旧结构后从空文件重新创建
+- 新门店详情页结构拆分为`store-hero`、`store-toolbar`、`store-products`、底部购物车栏和BottomSheet
+- 新搜索框使用Design System搜索样式，不依赖`van-button`
+- 分类栏、商品卡、数量控制器、底部购物车栏和BottomSheet按新Design System重建
+- 新增自绘SVG线性搜索图标和购物车图标，未使用第三方图标资源
+- 保留原有TypeScript业务逻辑、接口、购物车规则、搜索、分类筛选和图片兜底处理
+- 本阶段未重建首页UI，未重建独立购物车页
+- 当前断点更新为V1.7-8D门店详情页人工视觉验收
+
 ## V1.6 总控管理后台
 
 日期：2026-07-18

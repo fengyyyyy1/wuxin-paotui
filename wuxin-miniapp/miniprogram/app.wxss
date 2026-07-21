@@ -1,3 +1,8 @@
+@import "./styles/variables.wxss";
+@import "./styles/foundation.wxss";
+@import "./styles/typography.wxss";
+@import "./styles/components.wxss";
+
 page {
   box-sizing: border-box;
   min-height: 100vh;
@@ -11,6 +16,7 @@ text {
   box-sizing: border-box;
 }
 
+/* Legacy global helpers. Existing pages still depend on these names. New pages must use wuxin-* classes. */
 .page {
   min-height: 100vh;
   padding: 32rpx;

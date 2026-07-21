@@ -1,0 +1,126 @@
+.wuxin-search {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-width: 0;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: #f1f3f5;
+  border-radius: 40rpx;
+}
+
+.wuxin-search-icon {
+  flex-shrink: 0;
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.wuxin-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 80rpx;
+  color: #171a1d;
+  font-size: 26rpx;
+  line-height: 80rpx;
+}
+
+.wuxin-search-placeholder {
+  color: #969ba1;
+}
+
+.wuxin-search-clear {
+  flex-shrink: 0;
+  width: 16rpx;
+  height: 56rpx;
+  color: #969ba1;
+  font-size: 28rpx;
+  line-height: 56rpx;
+  text-align: center;
+}
+
+.wuxin-tag {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 60rpx;
+  padding: 0 24rpx;
+  color: #5e6369;
+  background: #f1f3f5;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  line-height: 60rpx;
+  white-space: nowrap;
+}
+
+.wuxin-tag-active {
+  color: #16a76a;
+  background: #eaf8f1;
+}
+
+.wuxin-tag-disabled {
+  color: #969ba1;
+  background: #eceef1;
+}
+
+.wuxin-stepper {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 64rpx;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1rpx solid #eceef1;
+  border-radius: 999rpx;
+  white-space: nowrap;
+}
+
+.wuxin-stepper-button {
+  width: 64rpx;
+  height: 64rpx;
+  color: #16a76a;
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 64rpx;
+  text-align: center;
+}
+
+.wuxin-stepper-value {
+  min-width: 56rpx;
+  height: 64rpx;
+  color: #171a1d;
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 64rpx;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.wuxin-add-button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  color: #ffffff;
+  background: #16a76a;
+  border-radius: 50%;
+  font-size: 36rpx;
+  font-weight: 600;
+  line-height: 64rpx;
+}
+
+.wuxin-product-image {
+  display: block;
+  width: 144rpx;
+  height: 144rpx;
+  background: #f1f3f5;
+  border-radius: 20rpx;
+}
+
+.wuxin-empty-wrap {
+  padding: 56rpx 24rpx;
+  color: #969ba1;
+  text-align: center;
+}
