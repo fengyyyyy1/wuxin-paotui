@@ -2,6 +2,7 @@ package com.wuxin.controller;
 
 import com.wuxin.common.Result;
 import com.wuxin.dto.cart.AddCartDTO;
+import com.wuxin.dto.cart.UpdateCartAllSelectedDTO;
 import com.wuxin.dto.cart.UpdateCartDTO;
 import com.wuxin.dto.cart.UpdateCartSelectedDTO;
 import com.wuxin.service.ShoppingCartService;
@@ -50,10 +51,24 @@ public class ShoppingCartController {
                 shoppingCartService.updateSelected(updateCartSelectedDTO));
     }
 
+    @PutMapping("/selected/all")
+    public Result<CartListVO> updateAllSelected(
+            @Valid @RequestBody UpdateCartAllSelectedDTO updateCartAllSelectedDTO) {
+        return Result.success(
+                "购物车全选状态更新成功",
+                shoppingCartService.updateAllSelected(updateCartAllSelectedDTO));
+    }
+
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         shoppingCartService.deleteCart(id);
         return Result.success("删除购物车商品成功", null);
+    }
+
+    @DeleteMapping("/invalid")
+    public Result<Void> clearInvalid() {
+        shoppingCartService.clearInvalidCart();
+        return Result.success("失效商品清理成功", null);
     }
 
     @DeleteMapping("/clear")

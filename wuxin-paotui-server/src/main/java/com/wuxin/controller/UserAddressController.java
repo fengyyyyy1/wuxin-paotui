@@ -4,6 +4,7 @@ import com.wuxin.common.Result;
 import com.wuxin.common.ResultCode;
 import com.wuxin.dto.UserAddressDTO;
 import com.wuxin.entity.UserAddressEntity;
+import com.wuxin.exception.BusinessException;
 import com.wuxin.service.UserAddressService;
 import com.wuxin.utils.UserContext;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,67 +31,38 @@ public class UserAddressController {
 
     @PostMapping
     public Result<String> add(@Valid @RequestBody UserAddressDTO userAddressDTO) {
-        Long userId = UserContext.getUserId();
-        if (userId == null) {
-            return Result.fail(ResultCode.UNAUTHORIZED);
-        }
-
-        if (Integer.valueOf(1).equals(userAddressDTO.getIsDefault())) {
-            userAddressService.lambdaUpdate()
-                    .eq(UserAddressEntity::getUserId, userId)
-                    .eq(UserAddressEntity::getIsDeleted, 0)
-                    .set(UserAddressEntity::getIsDefault, 0)
-                    .update();
-        }
-
-        UserAddressEntity userAddressEntity = new UserAddressEntity();
-        userAddressEntity.setUserId(userId);
-        userAddressEntity.setReceiverName(userAddressDTO.getReceiverName());
-        userAddressEntity.setReceiverPhone(userAddressDTO.getReceiverPhone());
-        userAddressEntity.setProvince(userAddressDTO.getProvince());
-        userAddressEntity.setCity(userAddressDTO.getCity());
-        userAddressEntity.setDistrict(userAddressDTO.getDistrict());
-        userAddressEntity.setDetailAddress(userAddressDTO.getDetailAddress());
-        userAddressEntity.setLatitude(userAddressDTO.getLatitude());
-        userAddressEntity.setLongitude(userAddressDTO.getLongitude());
-        userAddressEntity.setIsDefault(Integer.valueOf(1).equals(userAddressDTO.getIsDefault()) ? 1 : 0);
-        userAddressService.save(userAddressEntity);
+        userAddressService.addAddress(getRequiredUserId(), userAddressDTO);
         return Result.success("新增地址成功");
     }
 
     @GetMapping("/list")
     public Result<List<UserAddressEntity>> list() {
-        Long userId = UserContext.getUserId();
-        if (userId == null) {
-            return Result.fail(ResultCode.UNAUTHORIZED);
-        }
+        return Result.success(userAddressService.listAddress(getRequiredUserId()));
+    }
 
-        List<UserAddressEntity> addressList = userAddressService.lambdaQuery()
-                .eq(UserAddressEntity::getUserId, userId)
-                .eq(UserAddressEntity::getIsDeleted, 0)
-                .orderByDesc(UserAddressEntity::getIsDefault)
-                .orderByDesc(UserAddressEntity::getCreateTime)
-                .list();
-        return Result.success(addressList);
+    @PutMapping("/{id}")
+    public Result<String> update(@PathVariable Long id, @Valid @RequestBody UserAddressDTO userAddressDTO) {
+        userAddressService.updateAddress(getRequiredUserId(), id, userAddressDTO);
+        return Result.success("修改地址成功");
+    }
+
+    @PutMapping("/{id}/default")
+    public Result<String> setDefault(@PathVariable Long id) {
+        userAddressService.setDefaultAddress(getRequiredUserId(), id);
+        return Result.success("设置默认地址成功");
     }
 
     @DeleteMapping("/{id}")
     public Result<String> delete(@PathVariable Long id) {
+        userAddressService.deleteAddress(getRequiredUserId(), id);
+        return Result.success("删除地址成功");
+    }
+
+    private Long getRequiredUserId() {
         Long userId = UserContext.getUserId();
         if (userId == null) {
-            return Result.fail(ResultCode.UNAUTHORIZED);
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
         }
-
-        boolean updated = userAddressService.lambdaUpdate()
-                .eq(UserAddressEntity::getId, id)
-                .eq(UserAddressEntity::getUserId, userId)
-                .eq(UserAddressEntity::getIsDeleted, 0)
-                .set(UserAddressEntity::getIsDeleted, 1)
-                .update();
-        if (!updated) {
-            return Result.fail(ResultCode.PARAM_ERROR, "地址不存在或无权操作");
-        }
-
-        return Result.success("删除地址成功");
+        return userId;
     }
 }

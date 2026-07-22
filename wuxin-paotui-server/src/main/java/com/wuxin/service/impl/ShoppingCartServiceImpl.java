@@ -3,6 +3,7 @@ package com.wuxin.service.impl;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.wuxin.common.ResultCode;
 import com.wuxin.dto.cart.AddCartDTO;
+import com.wuxin.dto.cart.UpdateCartAllSelectedDTO;
 import com.wuxin.dto.cart.UpdateCartDTO;
 import com.wuxin.dto.cart.UpdateCartSelectedDTO;
 import com.wuxin.entity.ShoppingCartEntity;
@@ -165,6 +166,24 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public CartListVO updateAllSelected(UpdateCartAllSelectedDTO updateCartAllSelectedDTO) {
+        Long userId = getCurrentUserId();
+        lockUser(userId);
+        List<CartItemQueryVO> queryItems = shoppingCartMapper.selectCartItems(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        for (CartItemQueryVO queryItem : queryItems) {
+            if (resolveInvalidReason(queryItem) != null) {
+                continue;
+            }
+            updateSelectedValue(queryItem.getCartId(), userId, updateCartAllSelectedDTO.getSelected(), now);
+        }
+
+        return getCartList();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteCart(Long id) {
         validateId(id);
         Long userId = getCurrentUserId();
@@ -179,6 +198,21 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 .set(ShoppingCartEntity::getUpdateTime, LocalDateTime.now());
         if (shoppingCartMapper.update(null, updateWrapper) != 1) {
             throw new BusinessException(ResultCode.CART_NOT_EXIST);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void clearInvalidCart() {
+        Long userId = getCurrentUserId();
+        lockUser(userId);
+        List<CartItemQueryVO> queryItems = shoppingCartMapper.selectCartItems(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        for (CartItemQueryVO queryItem : queryItems) {
+            if (resolveInvalidReason(queryItem) != null) {
+                logicalDeleteCartItem(queryItem.getCartId(), userId, now);
+            }
         }
     }
 
@@ -216,6 +250,30 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 .eq(ShoppingCartEntity::getUserId, userId)
                 .eq(ShoppingCartEntity::getIsDeleted, NOT_DELETED)
                 .set(ShoppingCartEntity::getQuantity, quantity)
+                .set(ShoppingCartEntity::getUpdateTime, now);
+        if (shoppingCartMapper.update(null, updateWrapper) != 1) {
+            throw new BusinessException(ResultCode.CART_NOT_EXIST);
+        }
+    }
+
+    private void updateSelectedValue(Long cartId, Long userId, Integer selected, LocalDateTime now) {
+        LambdaUpdateWrapper<ShoppingCartEntity> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(ShoppingCartEntity::getId, cartId)
+                .eq(ShoppingCartEntity::getUserId, userId)
+                .eq(ShoppingCartEntity::getIsDeleted, NOT_DELETED)
+                .set(ShoppingCartEntity::getSelected, selected)
+                .set(ShoppingCartEntity::getUpdateTime, now);
+        if (shoppingCartMapper.update(null, updateWrapper) != 1) {
+            throw new BusinessException(ResultCode.CART_NOT_EXIST);
+        }
+    }
+
+    private void logicalDeleteCartItem(Long cartId, Long userId, LocalDateTime now) {
+        LambdaUpdateWrapper<ShoppingCartEntity> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(ShoppingCartEntity::getId, cartId)
+                .eq(ShoppingCartEntity::getUserId, userId)
+                .eq(ShoppingCartEntity::getIsDeleted, NOT_DELETED)
+                .set(ShoppingCartEntity::getIsDeleted, DELETED)
                 .set(ShoppingCartEntity::getUpdateTime, now);
         if (shoppingCartMapper.update(null, updateWrapper) != 1) {
             throw new BusinessException(ResultCode.CART_NOT_EXIST);
