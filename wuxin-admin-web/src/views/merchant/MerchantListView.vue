@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { Refresh, Search } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 
 import { getMerchantPage } from '@/api/adminMerchant'
@@ -158,10 +157,6 @@ function goDetail(merchantId: number): void {
   })
 }
 
-function showNextStageNotice(label: string): void {
-  ElMessage.info(`${label}功能将在下一阶段完成`)
-}
-
 onMounted(() => {
   void loadMerchants()
 })
@@ -290,11 +285,11 @@ onUnmounted(() => {
                 v-if="isPendingAuditStatus(row.auditStatus)"
                 link
                 type="warning"
-                @click="showNextStageNotice('审核')"
+                @click="goDetail(row.merchantId)"
               >
                 审核
               </el-button>
-              <el-button v-else link type="info" @click="showNextStageNotice('查看审核信息')">
+              <el-button v-else link type="info" @click="goDetail(row.merchantId)">
                 查看审核信息
               </el-button>
             </div>

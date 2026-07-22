@@ -175,6 +175,14 @@ function goBack(): void {
   void router.push({ name: 'merchant-list' })
 }
 
+function goOrders(): void {
+  if (detail.value) void router.push({ path: '/orders', query: { merchantId: detail.value.merchantId } })
+}
+
+function goProducts(): void {
+  if (detail.value?.storeId) void router.push({ path: '/products', query: { storeId: detail.value.storeId } })
+}
+
 function refreshDetail(): void {
   void loadDetail()
 }
@@ -409,6 +417,21 @@ onUnmounted(() => {
             <el-descriptions-item label="拒绝原因" :span="3">
               {{ displayValue(detail.rejectReason) }}
             </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div class="section-block">
+          <div class="section-heading">
+            <h2>经营概览</h2>
+            <div class="operation-actions">
+              <el-button link type="primary" @click="goOrders">查看商家订单</el-button>
+              <el-button link type="primary" :disabled="!detail.storeId" @click="goProducts">查看门店商品</el-button>
+            </div>
+          </div>
+          <el-descriptions :column="3" border>
+            <el-descriptions-item label="订单数量">{{ detail.orderCount }}</el-descriptions-item>
+            <el-descriptions-item label="商品数量">{{ detail.productCount }}</el-descriptions-item>
+            <el-descriptions-item label="已支付营业额">¥{{ Number(detail.revenueAmount || 0).toFixed(2) }}</el-descriptions-item>
           </el-descriptions>
         </div>
 

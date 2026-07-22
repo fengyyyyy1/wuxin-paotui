@@ -55,6 +55,9 @@ export interface AdminMerchantDetailVO extends AdminMerchantBaseVO {
   longitude: number | null
   openTime: string | null
   closeTime: string | null
+  orderCount: number
+  productCount: number
+  revenueAmount: number
   updateTime: string
 }
 

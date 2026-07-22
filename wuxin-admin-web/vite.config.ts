@@ -23,6 +23,17 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('/node_modules/zrender/')) return 'zrender'
+          if (id.includes('/node_modules/echarts/')) return 'echarts'
+          return undefined
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

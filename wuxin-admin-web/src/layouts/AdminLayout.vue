@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Fold, House, Menu as MenuIcon, SwitchButton } from '@element-plus/icons-vue'
+import {
+  Document, Fold, Goods, House, Lock, Money, OfficeBuilding, Promotion,
+  Setting, SwitchButton, Tickets, User,
+} from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
@@ -15,6 +18,20 @@ const sidebarWidth = computed(() => (isCollapsed.value ? '72px' : '224px'))
 const displayName = computed(
   () => authStore.userInfo?.nickname || authStore.userInfo?.username || '管理员',
 )
+
+const menuItems = computed(() => [
+  { path: '/dashboard', label: 'Dashboard', icon: House, permission: 'dashboard:view' },
+  { path: '/orders', label: '订单中心', icon: Tickets, permission: 'order:view' },
+  { path: '/users', label: '用户中心', icon: User, permission: 'user:view' },
+  { path: '/riders', label: '骑手中心', icon: User, permission: 'rider:view' },
+  { path: '/merchants', label: '商家中心', icon: OfficeBuilding, permission: 'merchant:view' },
+  { path: '/products', label: '商品中心', icon: Goods, permission: 'product:view' },
+  { path: '/operations', label: '运营中心', icon: Promotion, permission: 'operation:view' },
+  { path: '/finance', label: '财务中心', icon: Money, permission: 'finance:view' },
+  { path: '/configs', label: '系统配置', icon: Setting, permission: 'config:view' },
+  { path: '/permissions', label: '权限管理', icon: Lock, permission: 'rbac:view' },
+  { path: '/logs', label: '日志中心', icon: Document, permission: 'log:view' },
+].filter((item) => authStore.hasPermission(item.permission)))
 
 function logout(): void {
   authStore.logout()
@@ -40,13 +57,9 @@ function logout(): void {
         router
         class="admin-menu"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><House /></el-icon>
-          <template #title>后台首页</template>
-        </el-menu-item>
-        <el-menu-item index="/merchants">
-          <el-icon><MenuIcon /></el-icon>
-          <template #title>商家管理</template>
+        <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
+          <el-icon><component :is="item.icon" /></el-icon>
+          <template #title>{{ item.label }}</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -135,6 +148,8 @@ function logout(): void {
 }
 
 .admin-menu {
+  height: calc(100vh - 72px);
+  overflow-y: auto;
   border-right: 0;
 }
 

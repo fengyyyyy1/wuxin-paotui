@@ -1,10 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { verifyAdminMerchantPermission } from '@/api/adminMerchant'
+import { getAdminSession } from '@/api/adminConsole'
 import { login as loginRequest } from '@/api/auth'
 import { ApiError } from '@/utils/http'
 import type { LoginRequest, UserInfo } from '@/types/auth'
+import type { AdminSession } from '@/types/admin'
 import {
   clearAuthStorage,
   getStoredUserInfo,
@@ -19,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = ref(false)
   const adminVerified = ref(false)
   const loading = ref(false)
+  const session = ref<AdminSession | null>(null)
 
   const isAuthenticated = computed(() => Boolean(token.value))
 
@@ -34,17 +36,18 @@ export const useAuthStore = defineStore('auth', () => {
     userInfo.value = null
     isAdmin.value = false
     adminVerified.value = false
+    session.value = null
     clearAuthStorage()
   }
 
-  async function verifyAdminPermission(skipErrorMessage = false): Promise<boolean> {
+  async function verifyAdminPermission(): Promise<boolean> {
     if (!token.value) {
       clearSession()
       return false
     }
 
     try {
-      await verifyAdminMerchantPermission(skipErrorMessage)
+      session.value = await getAdminSession()
       isAdmin.value = true
       adminVerified.value = true
       return true
@@ -69,7 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
       const result = await loginRequest(payload)
       saveSession(result.token, result.userInfo)
 
-      const verified = await verifyAdminPermission(true)
+      const verified = await verifyAdminPermission()
       if (!verified) {
         clearSession()
         throw new ApiError(403, '当前账号无管理员权限')
@@ -87,6 +90,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout(): void {
     clearSession()
+  }
+
+  function hasPermission(permission?: string): boolean {
+    if (!permission) return true
+    if (session.value?.roles.some((role) => role === 'ADMIN' || role === 'SUPER_ADMIN')) return true
+    return Boolean(session.value?.permissions.includes(permission))
   }
 
   async function restoreSession(): Promise<boolean> {
@@ -110,6 +119,8 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     adminVerified,
     loading,
+    session,
+    hasPermission,
     login,
     logout,
     restoreSession,
