@@ -195,3 +195,13 @@
 6. `DATABASE.md`
 7. `TEST_ACCOUNT.md`
 8. `TEST_ENVIRONMENT.md`
+
+## V1.9 总控后台规则
+
+1. 所有 Admin Controller 使用 `@AdminPermission` 权限点，不再只判断单一 ADMIN 角色。
+2. 运营金额、比例、距离、超时、首页内容必须落库，禁止新增前端硬编码业务配置。
+3. 敏感配置不得通过公共接口下发，后台查询必须掩码，日志不得记录明文密钥。
+4. 管理员写操作必须写入 `admin_operation_log`；订单状态变化同时写入既有 `order_log`。
+5. 数据库只新增编号递增的增量SQL，禁止编辑历史脚本，禁止应用自动执行生产迁移。
+6. Admin 页面必须同时校验路由权限和操作按钮权限，后端权限校验始终是最终边界。
+7. 新接口至少通过 Java 21 Compile、Mapper 上下文解析和真实数据库 Postman 回归后才能标记验收通过。

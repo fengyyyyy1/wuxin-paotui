@@ -224,3 +224,9 @@ POST /api/user/wechat/login
 | 骑手申请回归 | 本地Mock微信身份 | `userId=3`、`riderId=2` | 申请、拒绝、重申、通过、禁用和启用已验证，最终正常启用 |
 
 Token继续通过`POST /api/user/login`或本地Mock微信登录动态获取，不写入代码或文档。两个新小程序当前共用同一测试AppID，生产发布前必须分别配置独立正式AppID。
+
+## V1.9 RBAC 测试账号
+
+16号SQL执行后继续使用 `admin / 123456` 验证兼容的 `ADMIN` 超级权限。`SUPER_ADMIN`、`OPERATIONS`、`CUSTOMER_SERVICE`、`AUDITOR`、`FINANCE` 仅初始化角色，不自动创建或猜测测试账号。
+
+分角色验收必须由超级管理员在权限管理页为真实测试用户分配角色。禁止复用生产账号，禁止在文档保存 Token，禁止移除当前登录管理员自己的角色。

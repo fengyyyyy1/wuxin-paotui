@@ -752,3 +752,13 @@ sql/04_update_rider_accept_order.sql
 - 不修改 `rider_info`。
 - 不修改 `order_log`。
 - 不修改已有数据。
+
+## V1.9 增量脚本 16
+
+文件：`wuxin-paotui-server/src/main/resources/sql/16_create_admin_console.sql`。
+
+新增表：`sys_permission`、`sys_role_permission`、`system_config`、`banner`、`notice`、`home_recommendation`、`admin_operation_log`。
+
+复用既有 `sys_user`、`sys_role`、`sys_user_role`，不重复创建管理员用户表。增量补充 `sys_user.last_login_time/last_login_ip` 和 `sys_role.role_description/status/update_time`。初始化角色包括 `SUPER_ADMIN`、`OPERATIONS`、`CUSTOMER_SERVICE`、`AUDITOR`、`FINANCE`，旧 `ADMIN` 继续兼容。
+
+`system_config.config_key` 唯一，配置按 `ERRAND`、`PLATFORM`、`USER`、`HOME`、`SYSTEM` 分组。敏感项使用 `is_sensitive=1`，公共接口禁止下发。脚本尚未由 Codex 自动执行；必须先备份数据库，再由用户人工执行和核验。

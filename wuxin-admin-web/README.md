@@ -156,3 +156,16 @@ npm run dev
 9. 确认审核拒绝状态不展示启用操作。
 10. 确认重复提交期间按钮为loading状态且不可重复提交。
 11. 不要在文档、环境文件或代码中记录真实密码和Token。
+
+## V1.9 总控台
+
+当前包含 11 个一级模块、14 个路由页面：登录、Dashboard、订单、用户、骑手、商家列表、商家详情、商品、运营、财务、系统配置、权限、日志和404。
+
+```bash
+npm install
+npm run type-check
+npm run lint
+npm run build
+```
+
+启动前必须先由用户人工执行后端 `16_create_admin_console.sql`，并在后端运行环境注入 `DB_PASSWORD`。后台使用 `/api/admin/session` 恢复角色和权限；运营配置通过 `/api/platform/home` 实时下发三端。真实退款、Excel导出、实时位置与收入结算当前仅保留入口，不得作为已完成功能验收。

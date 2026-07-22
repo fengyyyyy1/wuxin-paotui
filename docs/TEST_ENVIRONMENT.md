@@ -579,3 +579,18 @@ HTTP回归通过骑手申请、重复申请、Profile、我的配送、订单详
 2. 地址、订单、商品、店铺、分类或购物车 ID 变化时立即更新本文件。
 3. 每次完整测试后更新测试时间、范围和结论。
 4. 所有数据以真实数据库、Postman 返回和 Navicat 查询结果为准。
+
+## V1.9 总控后台测试环境
+
+| 项 | 当前状态 |
+| --- | --- |
+| 增量脚本 | `16_create_admin_console.sql`，已生成，尚未由 Codex 执行 |
+| Java | JDK 21.0.4，Compile通过 |
+| 后端测试 | 43项非数据库单元测试通过；完整44项中1项因当前Shell缺少`DB_PASSWORD`无法连接MySQL |
+| Admin | TypeScript、Lint、Build通过 |
+| 用户端 | Build、Lint、TypeScript通过 |
+| 骑手端 | Build、Lint、TypeScript通过 |
+| 商家端 | Build、Lint、TypeScript通过 |
+| HTTP回归 | 等待人工执行16号SQL并注入数据库密码 |
+
+迁移执行后需验证 7 张新表、5 个新角色、21 个权限点、配置初始值和 `/api/platform/home` 非敏感输出。

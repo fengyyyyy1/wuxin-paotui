@@ -481,3 +481,12 @@ wuxin-admin-web:     npm install && npm run dev
 ## License
 
 仅用于学习与企业项目实践。
+
+## V1.9 总控后台第一阶段（2026-07-22）
+
+- `wuxin-admin-web` 已升级为 Vue 3 + TypeScript + Vite + Element Plus + Pinia + Axios + Vue Router + ECharts 的运营总控台。
+- 已完成 Dashboard、订单、用户、骑手、商家、商品、运营、财务、系统配置、权限与日志 11 个一级模块。
+- 后端新增细粒度 RBAC、管理员审计日志、数据库动态配置与公共平台配置接口。
+- 用户端、骑手端和商家端均接入 `GET /api/platform/home`；读取失败不阻断原有业务。
+- 数据库升级文件为 `16_create_admin_console.sql`，只允许人工审核后执行，禁止应用启动时自动迁移。
+- 当前代码检查通过；16号SQL和新接口真实HTTP回归仍需在注入本地 `DB_PASSWORD` 后执行。
