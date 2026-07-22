@@ -19,10 +19,12 @@
 
 ## 当前状态
 
-- 当前阶段：V1.9 总控后台第一阶段四端闭环联调。
-- 已完成：Admin后台11个一级模块、用户端、商家端、骑手端与Spring Boot接口代码侧闭环。
-- 本轮修复：用户端跑腿下单页接入真实`POST /api/order/create`；跑腿订单支持JSAPI/Mock支付；Mock支付页自动调用`POST /api/payment/mock/{paymentNo}/success`完成支付回写。
-- 待继续：当前Shell未注入`DB_PASSWORD`，真实MySQL HTTP联调和16号SQL落库回查需在本地数据库凭证可用后继续。
+- 当前阶段：V2.0 上线冲刺审计。
+- 当前目标：停止扩展大型后台、RBAC、BI和非上线必需模块，优先补齐微信小程序真实上线条件。
+- 当前上线完成率：62%。
+- 已完成：用户端、商家端、骑手端、Admin后台和Spring Boot核心业务代码侧闭环。
+- P0阻塞：真实微信支付网关、支付回调、退款、真实手机号、对象存储上传、生产API域名、HTTPS/Nginx部署、首次部署SQL验收和生产日志配置。
+- 新增上线文档：`ONLINE_CHECKLIST.md`和`DEPLOY_GUIDE.md`。
 
 ## 项目特点
 
