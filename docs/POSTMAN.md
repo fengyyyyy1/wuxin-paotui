@@ -2506,3 +2506,28 @@ Mock模式说明：
 - 不得在文档保存真实Token、完整openid、session_key或AppSecret。
 
 本阶段不测试完整地址、订单、购物车或支付链路。
+
+## 五、V1.8骑手端与商家端回归
+
+测试时间：2026-07-22。临时使用当前工作树后端的`8081`端口，正常开发配置仍为`8080`。
+
+使用`test001 / 123456`登录并携带Bearer Token后，以下真实请求通过：
+
+- `GET /api/merchant/me`
+- `GET /api/merchant/order/page`
+- `GET /api/merchant/order/7`
+- `GET /api/merchant/category/list`
+- `GET /api/merchant/product/list`
+- `GET /api/rider/order/hall`
+- `GET /api/rider/ranking`
+- `GET /api/rider/1/statistics`
+- 不携带Token访问商家接口返回HTTP 401
+
+以下请求因`15_update_rider_application.sql`尚未人工执行而受阻：
+
+- `GET /api/rider/profile`
+- `GET /api/rider/order/my`
+
+服务端日志明确为`Unknown column 'reject_reason' in 'field list'`。人工执行脚本后需要重新验证以上两个接口，并继续验证骑手申请、管理员审核、骑手接单/完成/放弃以及商家接单/拒单/出餐写流程。
+
+本轮为避免改变共享测试订单状态，没有重放历史写操作闭环。订单7的商家接单、出餐、骑手接单以及订单8的商家拒单继续以已有Postman和数据库验收记录为依据；两个新小程序仍需微信开发者工具人工验收。

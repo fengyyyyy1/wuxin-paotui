@@ -213,3 +213,13 @@ POST /api/user/wechat/login
 3. 测试数据 ID 和最近一次测试时间统一维护在 `TEST_ENVIRONMENT.md`。
 4. 文档记录必须以真实数据库和实际登录结果为准，不得依赖记忆。
 5. 管理员授权变化时必须同步本文档和`TEST_ENVIRONMENT.md`，不得记录固定Token。
+
+## 八、V1.8双端联调身份
+
+| 端 | 登录账号 | 真实身份与ID | 说明 |
+| --- | --- | --- | --- |
+| 骑手端 | `test001 / 123456` | `userId=2`、`riderId=1` | 当前数据库唯一骑手，已审核启用 |
+| 商家端 | `test001 / 123456` | `merchantId=1`、`storeId=1` | 当前测试账号同时拥有商家与骑手身份 |
+| 总控端 | `admin / 123456` | 管理员角色 | 用于`/api/admin/rider/**`权限回归 |
+
+Token继续通过`POST /api/user/login`动态获取，不写入代码或文档。正式微信端身份需在配置正式AppID后验证，当前`touristappid`不能用于发布。
