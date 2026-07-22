@@ -1,0 +1,19 @@
+{
+  "description": "五鑫跑腿骑手端",
+  "compileType": "miniprogram",
+  "libVersion": "latest",
+  "appid": "touristappid",
+  "projectname": "wuxin-rider-app",
+  "miniprogramRoot": "miniprogram/",
+  "setting": {
+    "useCompilerPlugins": ["typescript"],
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "enhance": true,
+    "packNpmManually": true,
+    "packNpmRelationList": []
+  },
+  "condition": {}
+}

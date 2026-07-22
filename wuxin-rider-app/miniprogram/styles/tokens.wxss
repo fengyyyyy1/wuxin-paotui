@@ -1,0 +1,15 @@
+page {
+  --brand: #18a660;
+  --brand-dark: #0f7e48;
+  --brand-soft: #eaf8f1;
+  --accent: #ff8a00;
+  --danger: #e5484d;
+  --text: #111714;
+  --text-secondary: #5f6964;
+  --text-muted: #929b96;
+  --line: #e8ecea;
+  --surface: #ffffff;
+  --page: #f5f7f6;
+  --radius: 28rpx;
+  --shadow: 0 10rpx 32rpx rgba(24, 62, 43, 0.07);
+}

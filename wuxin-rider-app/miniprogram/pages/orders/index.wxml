@@ -1,0 +1,17 @@
+<view class="orders-page">
+  <scroll-view class="tabs" scroll-x enhanced show-scrollbar="{{false}}"><view class="tabs__inner"><view wx:for="{{tabs}}" wx:key="label" class="tab {{active === index ? 'tab--active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item.label}}</view></view></scroll-view>
+  <view class="page content">
+    <page-state wx:if="{{loading && !items.length}}" type="loading" title="正在加载配送订单" />
+    <page-state wx:elif="{{error && !items.length}}" type="error" title="加载失败" description="{{error}}" action-text="重试" bind:action="reload" />
+    <page-state wx:elif="{{!items.length}}" title="该分类暂无订单" />
+    <view wx:else>
+      <view wx:for="{{items}}" wx:key="id" class="card order" data-id="{{item.id}}" bindtap="toDetail">
+        <view class="row row--between"><text class="order__no">{{item.orderNo}}</text><text class="badge {{item.status === 5 ? 'badge--red' : ''}}">{{item.statusText}}</text></view>
+        <view class="order__goods">{{item.goodsSummary || item.goodsName || '配送订单'}}</view>
+        <view class="order__address">送至 {{item.deliveryAddress || '地址待确认'}}</view>
+        <view class="row row--between order__footer"><text class="muted">{{item.createText}}</text><text class="order__amount">¥{{item.amountText}}</text></view>
+      </view>
+      <view class="list-note">{{loadingMore ? '正在加载更多...' : pageNum >= pages ? '已展示全部订单' : ''}}</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,4 @@
+{
+  "desc": "五鑫跑腿骑手端页面索引",
+  "rules": [{ "action": "disallow", "page": "*" }]
+}

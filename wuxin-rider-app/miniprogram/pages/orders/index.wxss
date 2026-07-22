@@ -1,0 +1,12 @@
+.orders-page { min-height: 100vh; background: var(--page); }
+.tabs { position: sticky; top: 0; z-index: 5; width: 100%; background: rgba(255,255,255,.96); }
+.tabs__inner { display: flex; width: max-content; padding: 18rpx 24rpx; }
+.tab { flex-shrink: 0; margin-right: 14rpx; padding: 16rpx 24rpx; border-radius: 999rpx; color: var(--text-secondary); white-space: nowrap; }
+.tab--active { background: var(--brand); color: #fff; }
+.content { padding-top: 20rpx; }
+.order__no { flex: 1; min-width: 0; overflow: hidden; color: var(--text-muted); font-size: 23rpx; text-overflow: ellipsis; white-space: nowrap; }
+.order__goods { margin-top: 20rpx; font-size: 31rpx; font-weight: 650; line-height: 1.45; }
+.order__address { margin-top: 14rpx; overflow: hidden; color: var(--text-secondary); text-overflow: ellipsis; white-space: nowrap; }
+.order__footer { margin-top: 22rpx; padding-top: 20rpx; border-top: 1rpx solid var(--line); font-size: 23rpx; }
+.order__amount { color: var(--danger); font-size: 30rpx; font-weight: 700; white-space: nowrap; }
+.list-note { padding: 30rpx; color: var(--text-muted); text-align: center; }

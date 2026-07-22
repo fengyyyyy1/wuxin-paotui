@@ -1,0 +1,14 @@
+<view class="login-page">
+  <view class="brand">
+    <view class="brand__mark">五鑫</view>
+    <view class="title">骑手工作端</view>
+    <view class="subtitle">接单、配送与服务记录统一管理</view>
+  </view>
+  <view class="card login-card">
+    <view class="field"><text class="field__label">账号</text><input class="field__input" value="{{username}}" placeholder="请输入测试或运营账号" bindinput="onUsername" /></view>
+    <view class="field"><text class="field__label">密码</text><input class="field__input" value="{{password}}" password placeholder="请输入密码" bindinput="onPassword" /></view>
+    <button class="button submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onPasswordLogin">账号登录</button>
+    <button class="button button--secondary wechat" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onWechatLogin">微信授权登录</button>
+  </view>
+  <view class="login-note">登录后将校验骑手申请与审核状态</view>
+</view>

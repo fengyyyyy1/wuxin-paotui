@@ -1,0 +1,11 @@
+.review-page { padding-top: 56rpx; }
+.status-card { padding: 52rpx 36rpx; border-radius: 34rpx; background: #fff; box-shadow: var(--shadow); text-align: center; }
+.status-card__dot { width: 80rpx; height: 80rpx; margin: 0 auto 26rpx; border: 20rpx solid #d9f4e7; border-radius: 50%; background: var(--brand); }
+.status-card--2 .status-card__dot { border-color: #ffe1e1; background: var(--danger); }
+.detail-card { margin-top: 22rpx; }
+.detail-row { display: flex; justify-content: space-between; gap: 20rpx; padding: 20rpx 0; border-bottom: 1rpx solid var(--line); }
+.detail-row text:last-child { color: var(--text-secondary); text-align: right; }
+.reason { margin-top: 24rpx; padding: 22rpx; border-radius: 18rpx; background: #fff3f3; color: var(--danger); line-height: 1.6; }
+.reason__label { display: block; margin-bottom: 6rpx; font-weight: 650; }
+.action { margin-top: 22rpx; }
+.logout { margin-top: 28rpx; border: 0; background: transparent; color: var(--text-muted); font-size: 26rpx; }

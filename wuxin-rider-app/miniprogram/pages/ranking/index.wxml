@@ -1,0 +1,10 @@
+<view class="ranking-page">
+  <view class="tabs"><view wx:for="{{tabs}}" wx:key="type" class="tab {{active === index ? 'tab--active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item.label}}</view></view>
+  <view class="page ranking-content">
+    <view class="my-rank"><text>我的当前名次</text><text class="my-rank__value">{{currentRank ? '#' + currentRank : '未上榜'}}</text></view>
+    <page-state wx:if="{{loading}}" type="loading" title="正在加载排行榜" />
+    <page-state wx:elif="{{error}}" type="error" title="排行榜加载失败" description="{{error}}" action-text="重试" bind:action="load" />
+    <page-state wx:elif="{{!items.length}}" title="当前周期暂无完成订单" />
+    <view wx:else class="rank-list"><view wx:for="{{items}}" wx:key="riderId" class="rank {{item.riderId === currentRiderId ? 'rank--mine' : ''}}"><view class="rank__number">{{item.rank}}</view><view class="rank__avatar">{{item.riderName.slice(0, 1)}}</view><view class="rank__body"><view class="rank__name">{{item.riderName}}{{item.riderId === currentRiderId ? '（我）' : ''}}</view><view class="muted">完成配送</view></view><view class="rank__count">{{item.completedOrderCount}}<text> 单</text></view></view></view>
+  </view>
+</view>

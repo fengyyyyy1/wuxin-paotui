@@ -1,0 +1,7 @@
+.apply-page { padding-bottom: calc(140rpx + env(safe-area-inset-bottom)); }
+.intro { background: linear-gradient(145deg, #0f7e48, #18a660); color: #fff; }
+.intro .subtitle { color: rgba(255,255,255,.78); }
+.form-card { margin-top: 22rpx; }
+.phone-row { display: flex; align-items: center; justify-content: space-between; min-height: 88rpx; padding: 0 20rpx; border: 1rpx solid var(--line); border-radius: 20rpx; }
+.phone-button { flex-shrink: 0; margin: 0; padding: 12rpx 20rpx; border: 0; border-radius: 16rpx; background: var(--brand-soft); color: var(--brand-dark); font-size: 24rpx; line-height: 1.4; }
+.apply-submit { position: fixed; left: 24rpx; right: 24rpx; bottom: calc(20rpx + env(safe-area-inset-bottom)); z-index: 5; }

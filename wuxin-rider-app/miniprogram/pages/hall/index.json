@@ -1,0 +1,1 @@
+{ "navigationBarTitleText": "接单大厅", "enablePullDownRefresh": true, "onReachBottomDistance": 120, "usingComponents": { "page-state": "/components/page-state/index" } }

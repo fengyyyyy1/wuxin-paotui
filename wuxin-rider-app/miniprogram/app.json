@@ -1,0 +1,35 @@
+{
+  "pages": [
+    "pages/dashboard/index",
+    "pages/hall/index",
+    "pages/profile/index",
+    "pages/login/index",
+    "pages/apply/index",
+    "pages/review/index",
+    "pages/orders/index",
+    "pages/order-detail/index",
+    "pages/statistics/index",
+    "pages/ranking/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "五鑫骑手",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f7f6",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8a918e",
+    "selectedColor": "#18a660",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/dashboard/index", "text": "工作台", "iconPath": "assets/tabbar/home.png", "selectedIconPath": "assets/tabbar/home-active.png" },
+      { "pagePath": "pages/hall/index", "text": "接单大厅", "iconPath": "assets/tabbar/order.png", "selectedIconPath": "assets/tabbar/order-active.png" },
+      { "pagePath": "pages/profile/index", "text": "我的", "iconPath": "assets/tabbar/profile.png", "selectedIconPath": "assets/tabbar/profile-active.png" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

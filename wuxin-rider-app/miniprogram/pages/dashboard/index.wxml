@@ -1,0 +1,19 @@
+<view class="page page--tab dashboard">
+  <view class="hero">
+    <view class="row row--between"><view class="row__body"><view class="hero__eyebrow">骑手工作台</view><view class="hero__title">{{name}}，辛苦了</view></view><view class="availability"><text>{{available ? '接单界面开启' : '接单界面暂停'}}</text><switch checked="{{available}}" color="#ffffff" bindchange="onAvailability" /></view></view>
+    <view class="hero__note">当前开关只控制本机接单界面，不写入后端在线状态。</view>
+  </view>
+  <view class="metric-grid metrics">
+    <view class="metric"><view class="metric__value">{{today}}</view><view class="metric__label">今日完成</view></view>
+    <view class="metric"><view class="metric__value">{{active}}</view><view class="metric__label">配送任务</view></view>
+    <view class="metric"><view class="metric__value">{{waitingConfirm}}</view><view class="metric__label">待用户确认</view></view>
+    <view class="metric"><view class="metric__value">--</view><view class="metric__label">预计收入（暂无接口）</view></view>
+  </view>
+  <view class="section-title">常用功能</view>
+  <view class="menu">
+    <view class="menu__item" bindtap="toHall"><view class="menu__body"><view class="menu__title">接单大厅</view><view class="menu__desc">查看已支付且可接取订单</view></view><text class="menu__arrow">›</text></view>
+    <view class="menu__item" bindtap="toOrders"><view class="menu__body"><view class="menu__title">我的配送</view><view class="menu__desc">处理已接单和待确认任务</view></view><text class="menu__arrow">›</text></view>
+    <view class="menu__item" bindtap="toStatistics"><view class="menu__body"><view class="menu__title">跑单统计</view><view class="menu__desc">今日 {{today}} 单，本月 {{month}} 单</view></view><text class="menu__arrow">›</text></view>
+    <view class="menu__item" bindtap="toRanking"><view class="menu__body"><view class="menu__title">骑手排行榜</view><view class="menu__desc">查看今日、周、月及累计榜单</view></view><text class="menu__arrow">›</text></view>
+  </view>
+</view>

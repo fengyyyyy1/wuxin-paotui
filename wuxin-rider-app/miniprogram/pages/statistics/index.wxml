@@ -1,0 +1,9 @@
+<view class="page stats-page">
+  <page-state wx:if="{{loading}}" type="loading" title="正在统计跑单数据" />
+  <page-state wx:elif="{{error}}" type="error" title="统计加载失败" description="{{error}}" action-text="重试" bind:action="load" />
+  <block wx:else>
+    <view class="stats-hero"><view class="stats-hero__label">累计完成配送</view><view class="stats-hero__value">{{total}}<text> 单</text></view></view>
+    <view class="metric-grid stats-grid"><view class="metric"><view class="metric__value">{{today}}</view><view class="metric__label">今日完成</view></view><view class="metric"><view class="metric__value">{{week}}</view><view class="metric__label">本周完成</view></view><view class="metric"><view class="metric__value">{{month}}</view><view class="metric__label">本月完成</view></view><view class="metric"><view class="metric__value">--</view><view class="metric__label">今日预计收益</view></view></view>
+    <view class="card notice"><view class="notice__title">收益数据说明</view><view class="subtitle">当前后端只提供真实完成单量统计，尚未提供佣金、预计收益和结算流水接口，因此本页不进行前端估算。</view></view>
+  </block>
+</view>

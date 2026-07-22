@@ -1,0 +1,6 @@
+<view class="page page--tab profile-page">
+  <view class="profile-card"><view class="profile-card__avatar">{{name.slice(0, 1)}}</view><view class="profile-card__body"><view class="profile-card__name">{{name}}</view><view class="profile-card__phone">{{phone}}</view></view><view class="profile-card__status"><text>{{auditText}}</text><text>{{riderText}}</text></view></view>
+  <view class="section-title">工作管理</view><view class="menu"><view class="menu__item" bindtap="toOrders"><view class="menu__body"><view class="menu__title">我的配送</view><view class="menu__desc">查看全部配送任务</view></view><text class="menu__arrow">›</text></view><view class="menu__item" bindtap="toStatistics"><view class="menu__body"><view class="menu__title">跑单统计</view><view class="menu__desc">真实完成单量统计</view></view><text class="menu__arrow">›</text></view><view class="menu__item" bindtap="toRanking"><view class="menu__body"><view class="menu__title">骑手排行榜</view><view class="menu__desc">查看周期跑单排名</view></view><text class="menu__arrow">›</text></view></view>
+  <view class="section-title">平台服务</view><view class="menu"><view class="menu__item" bindtap="about"><view class="menu__body"><view class="menu__title">关于平台</view><view class="menu__desc">五鑫跑腿骑手服务说明</view></view><text class="menu__arrow">›</text></view></view>
+  <button class="logout" bindtap="onLogout">退出登录</button>
+</view>

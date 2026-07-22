@@ -1,0 +1,16 @@
+<view class="page page--tab hall-page">
+  <view wx:if="{{!available}}" class="paused">接单界面已暂停，可在工作台重新开启</view>
+  <page-state wx:if="{{loading && !items.length}}" type="loading" title="正在加载可接订单" />
+  <page-state wx:elif="{{error && !items.length}}" type="error" title="加载失败" description="{{error}}" action-text="重新加载" bind:action="reload" />
+  <page-state wx:elif="{{!items.length}}" title="暂时没有可接订单" description="已支付订单或已出餐商品订单会显示在这里" />
+  <view wx:else class="order-list">
+    <view wx:for="{{items}}" wx:key="id" class="card order-card">
+      <view class="row row--between"><text class="badge {{item.orderType === 1 ? 'badge--orange' : ''}}">{{item.orderTypeText}}</text><text class="order-card__time">{{item.createText}}</text></view>
+      <view class="order-card__goods">{{item.goodsSummary || item.goodsName || '配送订单'}}</view>
+      <view class="route"><view class="route__point route__point--pickup">取</view><view class="route__text">{{item.pickupAddress || item.storeName || '取货地址待确认'}}</view></view>
+      <view class="route"><view class="route__point route__point--delivery">送</view><view class="route__text">{{item.deliveryAddress || '送达地址待确认'}}</view></view>
+      <view class="order-card__footer"><view class="row__body"><text class="price">¥{{item.amountText}}</text><text class="meta">{{item.distanceText}}{{item.weight ? ' · ' + item.weight + 'kg' : ''}}</text></view><button class="accept" loading="{{item.accepting}}" disabled="{{item.accepting || !available}}" data-id="{{item.id}}" bindtap="onAccept">立即接单</button></view>
+    </view>
+    <view wx:if="{{loadingMore}}" class="list-note">正在加载更多...</view><view wx:elif="{{pageNum >= pages}}" class="list-note">已展示全部可接订单</view>
+  </view>
+</view>
