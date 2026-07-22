@@ -116,6 +116,22 @@ class RiderOrderServiceImplTest {
     }
 
     @Test
+    void disabledRiderShouldNotReadHall() {
+        RiderInfoEntity disabled = activeRider();
+        disabled.setRiderStatus(2);
+        when(riderInfoMapper.selectOne(any(LambdaQueryWrapper.class)))
+                .thenReturn(disabled);
+
+        assertThatThrownBy(() -> service.getHallOrders(1, 10))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getResultCode())
+                                .isEqualTo(ResultCode.NOT_RIDER));
+        verify(orderMapper, never()).selectPage(
+                any(Page.class), any(LambdaQueryWrapper.class));
+    }
+
+    @Test
     void productOrderBeforeReadyShouldNotBeAcceptedByRider() {
         when(orderMapper.selectById(6L))
                 .thenReturn(productOrder(OrderStatusEnum.WAITING_ACCEPT));

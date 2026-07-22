@@ -81,6 +81,7 @@ public class RiderOrderServiceImpl implements RiderOrderService {
         if (userId == null) {
             throw new BusinessException(ResultCode.UNAUTHORIZED);
         }
+        getCurrentRider(userId);
 
         long safePageNum = normalizePageNum(pageNum);
         long safePageSize = normalizePageSize(pageSize);
