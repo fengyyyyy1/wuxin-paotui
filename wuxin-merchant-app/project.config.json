@@ -2,7 +2,7 @@
   "description": "五鑫跑腿商家端",
   "compileType": "miniprogram",
   "libVersion": "latest",
-  "appid": "touristappid",
+  "appid": "wx781c0689b7f3fb70",
   "projectname": "wuxin-merchant-app",
   "miniprogramRoot": "miniprogram/",
   "setting": { "useCompilerPlugins": ["typescript"], "urlCheck": false, "es6": true, "postcss": true, "minified": true, "enhance": true, "packNpmManually": true, "packNpmRelationList": [] },

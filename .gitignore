@@ -1,4 +1,16 @@
 docs/CODEX_RULE.md
+.idea/
+.vscode/
+node_modules/
+dist/
+target/
+miniprogram_npm/
+*.log
+.env
+.env.*
+tmp/
+temp/
+test-output/
 wuxin-paotui-server/src/main/resources/application-local.yml
 wuxin-paotui-server/config/
 wuxin-miniapp/node_modules/
