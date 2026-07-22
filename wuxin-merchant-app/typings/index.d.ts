@@ -3,5 +3,6 @@ interface IAppOption {
     token: string | null;
     userInfo: import('../miniprogram/types/auth').UserInfo | null;
     merchantProfile: import('../miniprogram/types/merchant').MerchantProfile | null;
+    platformHome: import('../miniprogram/types/platform').PlatformHome | null;
   };
 }

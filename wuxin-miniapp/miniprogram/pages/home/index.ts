@@ -2,10 +2,12 @@ import {
   addCart,
   clearCart,
   getAddressList,
+  getPlatformHome,
   getStoreList,
   getStoreProducts
 } from '../../api/index';
 import { HOME_BANNERS, PUBLIC_ENTRIES, SERVICE_ENTRIES } from '../../constants/home';
+import type { HomeBanner } from '../../constants/home';
 import { HOME_ERRAND_SERVICES } from '../../constants/errand';
 import { ROUTES } from '../../constants/routes';
 import { saveRecentStore } from '../../services/discovery';
@@ -70,6 +72,8 @@ Page({
       getStoreList({ pageNum: 1, pageSize: 8 })
     ]);
 
+    void this.loadPlatformContent();
+
     if (profileResult.status === 'fulfilled') this.applyUser(profileResult.value);
     if (addressResult.status === 'fulfilled')
       this.applyAddress(findDefaultAddress(addressResult.value));
@@ -85,6 +89,19 @@ Page({
       });
     }
     this.setData({ loading: false });
+  },
+
+  async loadPlatformContent() {
+    try {
+      const platform = await getPlatformHome();
+      const app = getApp<IAppOption>();
+      if (app?.globalData) app.globalData.platformHome = platform;
+      if (platform.banners.length) {
+        this.setData({ banners: platform.banners.map(toHomeBanner) });
+      }
+    } catch {
+      // Keep the packaged fallback content when the dynamic configuration is unavailable.
+    }
   },
 
   async loadHomeProducts(stores: StoreCardView[]) {
@@ -245,3 +262,21 @@ Page({
     ].find((item) => item.productId === productId);
   }
 });
+
+function toHomeBanner(banner: import('../../types/platform').PlatformBanner): HomeBanner {
+  let target: string | undefined;
+  if (banner.targetType === 'STORE' && banner.targetValue) {
+    target = `${ROUTES.storeDetail}?id=${banner.targetValue}`;
+  } else if (banner.targetType === 'PRODUCT' && banner.targetValue) {
+    target = `${ROUTES.productDetail}?id=${banner.targetValue}`;
+  } else if (banner.targetType === 'PAGE' && banner.targetValue?.startsWith('/pages/')) {
+    target = banner.targetValue;
+  }
+  return {
+    id: String(banner.id),
+    title: banner.title,
+    subtitle: banner.subtitle || '',
+    imageUrl: banner.imageUrl,
+    target
+  };
+}
