@@ -33,7 +33,7 @@
     <view class="address-row" data-target="delivery" hover-class="address-row--pressed" bindtap="chooseAddress"><text class="address-dot address-dot--delivery">送</text><view class="address-copy"><text class="address-label">送达地址</text><text class="address-main">{{deliveryAddress ? deliveryAddress.summary : '请选择送达地址'}}</text><text wx:if="{{deliveryAddress}}" class="address-contact">{{deliveryAddress.contact}}</text></view><text class="address-arrow">›</text></view>
   </view>
 
-  <view class="fee-card"><view><text class="fee-label">预计费用</text><text class="fee-note">以平台计价结果为准</text></view><text class="fee-value">待计价</text></view>
+  <view class="fee-card"><view><text class="fee-label">预计费用</text><text class="fee-note">以平台计价结果为准</text></view><text class="fee-value">¥{{estimatedFeeText}}</text></view>
 
-  <view class="submit-bar"><button class="submit-button" bindtap="submitOrder">立即下单</button></view>
+  <view class="submit-bar"><button class="submit-button" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submitOrder">立即下单</button></view>
 </view>

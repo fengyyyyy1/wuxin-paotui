@@ -1,6 +1,6 @@
 # 五鑫跑腿总控管理后台
 
-V1.6 总控管理后台已开发完成，并通过人工验收。技术栈为 Vue 3、TypeScript、Vite、Vue Router、
+V1.9 总控后台第一阶段已完成代码侧开发。技术栈为 Vue 3、TypeScript、Vite、Vue Router、
 Pinia、Axios 和 Element Plus。
 
 Element Plus 通过`unplugin-auto-import`和`unplugin-vue-components`自动按需导入，
@@ -40,6 +40,12 @@ VITE_API_BASE_URL=/api
 环境文件不得写入真实账号、密码、Token或密钥。
 
 ## 当前范围
+
+V1.9 已覆盖 Dashboard、订单中心、用户中心、骑手中心、商家中心、商品中心、运营中心、财务中心、系统配置、权限管理和日志中心。后台接口全部走真实`/api/admin/*`，公共配置通过`/api/platform/home`同步给用户端、骑手端和商家端。
+
+当前联调断点：需注入本地`DB_PASSWORD`，确认执行`16_create_admin_console.sql`，再完成真实HTTP、数据库回查和浏览器人工验收。
+
+## 历史范围
 
 - Axios 统一请求与后端`Result<T>`处理
 - Bearer Token 注入和本地恢复

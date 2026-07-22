@@ -34,11 +34,13 @@ TabBar：
 - 地址管理：`/api/user/address/*`
 - 公开门店与商品：`/api/store/*`
 - 购物车：`/api/cart/*`
-- 结算、商品订单和订单查询：`/api/order/*`
-- 微信JSAPI支付：`/api/payment/*`
+- 结算、商品订单、跑腿订单和订单查询：`/api/order/*`
+- 微信JSAPI支付与本地Mock支付确认：`/api/payment/*`
 - 商家入驻：`POST /api/merchant/apply`
 
 首页热门商品、推荐商品和猜你喜欢由真实公开门店商品接口组合，不使用虚构业务数据。后端没有评分、月售、优惠券和配送时长字段，页面不伪造这些信息。
+
+V1.9四端闭环联调修复后，跑腿下单页已调用真实`POST /api/order/create`，并在每次进入页面时读取`GET /api/platform/home`中的跑腿计价配置。开发环境Mock支付会自动确认`POST /api/payment/mock/{paymentNo}/success`，生产微信支付仍需正式商户配置。
 
 ## 本地开发
 
@@ -62,7 +64,6 @@ npm run build
 
 ## 上线前边界
 
-- 骑手线上申请暂无后端提交接口，当前页面只展示申请条件与真实边界。
 - 真实微信支付需要生产AppID、商户号、API证书、回调地址和真机联调。
 - 图片生产地址应使用稳定的腾讯云COS HTTPS域名。
 - 提交审核前必须在微信开发者工具和真机完成所有页面、路由、支付及授权流程验收。

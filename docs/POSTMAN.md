@@ -38,12 +38,46 @@
 | `adminToken` | 管理员登录后返回 | V1.5总控端JWT |
 | `pendingMerchantId` | 待审核商家申请返回 | 审核通过测试 |
 | `rejectAuditMerchantId` | 另一笔待审核商家申请 | 审核拒绝测试 |
+| `errandOrderId` | 跑腿订单创建后返回 | V1.9跑腿订单闭环 |
+| `errandPaymentNo` | 跑腿订单JSAPI支付单号 | V1.9跑腿Mock支付确认 |
 
 登录后接口统一使用：
 
 ```http
 Authorization: Bearer {{token}}
 ```
+
+## V1.9 四端闭环联调用例
+
+执行前置条件：
+
+- 本地后端已注入`DB_PASSWORD`并正常连接`wuxin_paotui`。
+- 已人工执行`16_create_admin_console.sql`并确认`system_config`、`banner`、`notice`、`home_recommendation`和`admin_operation_log`存在。
+- 开发环境`wuxin.mock-payment.enabled=true`。
+
+商品订单闭环顺序：
+
+1. 用户登录，浏览`GET /api/platform/home`、`GET /api/store/list`、`GET /api/store/{id}`。
+2. 用户加入购物车、结算预览、创建商品订单。
+3. 调用`POST /api/payment/wechat/jsapi`创建支付单，再调用`POST /api/payment/mock/{paymentNo}/success`确认Mock支付。
+4. 商家端查询订单，依次调用接单、出餐。
+5. 骑手端大厅查询订单，接单并完成配送。
+6. 用户端确认收货，查询订单详情和轨迹。
+7. Admin查询Dashboard、订单中心、用户中心、商家中心、骑手中心、财务中心和日志中心，确认状态、金额、单量、日志一致。
+
+跑腿订单闭环顺序：
+
+1. 用户端调用`POST /api/order/create`创建跑腿订单，保存`{{errandOrderId}}`。
+2. 调用`POST /api/payment/wechat/jsapi`创建跑腿支付单，保存`{{errandPaymentNo}}`。
+3. 调用`POST /api/payment/mock/{{errandPaymentNo}}/success`确认Mock支付。
+4. 骑手端大厅应出现该跑腿订单，骑手接单、完成配送。
+5. 用户确认收货后，Admin Dashboard、订单中心、用户中心、骑手中心、财务中心和订单日志应同步变化。
+
+后台配置实时生效用例：
+
+1. Admin修改`errand.base_delivery_fee`、`errand.per_km_fee`、`errand.night_surcharge`、客服电话、公告和Banner。
+2. 不重启后端、不重新编译小程序，直接请求`GET /api/platform/home`。
+3. 用户端首页和跑腿下单页重新进入时应读取最新Banner、公告、客服电话和跑腿计价配置。
 
 ## 二、完整测试流程
 

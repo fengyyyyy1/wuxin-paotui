@@ -8,3 +8,7 @@ export function createJsapiPayment(data: CreatePaymentRequest): Promise<JsapiPay
 export function getPaymentStatus(orderId: number): Promise<PaymentStatus> {
   return request({ url: `/api/payment/order/${orderId}/status` });
 }
+
+export function confirmMockPayment(paymentNo: string): Promise<PaymentStatus> {
+  return request({ url: `/api/payment/mock/${paymentNo}/success`, method: 'POST' });
+}

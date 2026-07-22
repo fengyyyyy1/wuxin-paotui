@@ -1,4 +1,4 @@
-import { createJsapiPayment } from '../../../api/index';
+import { confirmMockPayment, createJsapiPayment } from '../../../api/index';
 import { ROUTES } from '../../../constants/routes';
 import { requireLogin } from '../../../utils/route-guard';
 
@@ -16,6 +16,11 @@ Page({
     this.setData({ loading: true, errorMessage: '' });
     try {
       const payment = await createJsapiPayment({ orderId: this.data.orderId });
+      if (isMockPayment(payment.paySign, payment.packageValue)) {
+        await confirmMockPayment(payment.paymentNo);
+        wx.redirectTo({ url: `${ROUTES.paymentSuccess}?orderId=${this.data.orderId}` });
+        return;
+      }
       await new Promise<void>((resolve, reject) => {
         wx.requestPayment({
           timeStamp: payment.timeStamp,
@@ -36,3 +41,7 @@ Page({
     }
   }
 });
+
+function isMockPayment(paySign: string, packageValue: string): boolean {
+  return paySign.startsWith('MOCK_SIGN_') || packageValue.includes('mock_prepay_');
+}

@@ -1,7 +1,7 @@
 # 测试环境
 
-> 当前版本：V1.8 骑手端与商家端
-> 最近一次完整测试时间：2026-07-22 17:12
+> 当前版本：V1.9 总控后台第一阶段
+> 最近一次代码侧检查时间：2026-07-22 19:20
 
 本文件是项目测试环境、测试数据和验收断点的统一记录。以后所有测试环境变化必须维护本文件。
 
@@ -28,6 +28,8 @@
 | V1.7数据库状态 | 复用现有用户、微信登录、Profile、地址和门店表结构 |
 | V1.8升级脚本 | `15_update_rider_application.sql` |
 | V1.8数据库状态 | 用户已人工执行，字段、唯一索引和接口回归通过 |
+| V1.9升级脚本 | `16_create_admin_console.sql` |
+| V1.9数据库状态 | 当前Shell缺少`DB_PASSWORD`，Codex无法连接本地MySQL确认是否已执行；需用户注入密码后继续真实HTTP与数据库回查 |
 
 ## 二、本地环境配置
 
@@ -44,6 +46,21 @@ DB_PASSWORD=<本地环境变量>
 ```
 
 开发环境使用 IDEA 环境变量注入，生产环境通过服务器环境变量配置，避免数据库密码进入代码仓库。
+
+当前命令行联调状态：
+
+- MySQL客户端存在。
+- `mysql -uroot`无密码登录失败，返回`Access denied for user 'root'@'localhost' (using password: NO)`。
+- Java 21下`./mvnw.cmd -q compile`通过。
+- Java 21下排除数据库上下文用例的后端测试通过；完整测试仍需`DB_PASSWORD`。
+- 用户端、商家端、骑手端、Admin前端Build/Lint/TypeScript代码侧检查通过。
+
+V1.9四端闭环修复状态：
+
+- 用户端跑腿下单页已接入真实`POST /api/order/create`。
+- 跑腿下单页每次显示时读取`GET /api/platform/home`并使用数据库化跑腿配置计算预计费用。
+- JSAPI/Mock支付服务已支持跑腿订单金额。
+- Mock支付页已调用`POST /api/payment/mock/{paymentNo}/success`确认成功并回写订单支付状态。
 
 ## 三、当前测试账号
 

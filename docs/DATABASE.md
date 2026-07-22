@@ -1,7 +1,7 @@
 # 数据库文档
 
 > 数据库：`wuxin_paotui`  
-> 当前版本：V1.8 骑手端与商家端
+> 当前版本：V1.9 总控后台第一阶段
 
 ## 一、sys_user
 
@@ -157,7 +157,9 @@ V1.7-5A地址模块后端补全未修改数据库结构，继续复用现有`use
 - 数据库字段`merchant_ready_time`对应商家接口返回字段`readyTime`。
 - 跑腿订单 `order_type = 0`，继续使用原有取件、收件和物品字段。
 - 商品订单 `order_type = 1`，金额拆分写入 `product_amount`、`delivery_fee`、`total_amount`。
-- 为兼容现有支付逻辑，商品订单同时将 `total_amount` 写入 `price`。
+- 支付与后台统计金额口径：商品订单使用`COALESCE(total_amount, price)`，跑腿订单使用`price`。
+- 用户端跑腿下单页使用`system_config`中的`errand.base_delivery_fee`、`errand.per_km_fee`、`errand.per_kg_fee`、`errand.night_surcharge`和`errand.minimum_order_amount`生成预计费用后写入`price`。
+- 为兼容历史逻辑，商品订单同时将 `total_amount` 写入 `price`。
 - 骑手排行榜只统计 `status = 4`、`rider_id IS NOT NULL`、`deleted = 0` 的订单。
 - 今日、本周和本月榜以 `finish_time` 为统计时间，使用 `>= startTime`、`< endTime`，不对字段使用日期函数。
 - 累计榜统计全部已完成订单，不限制 `finish_time` 时间范围。
@@ -221,7 +223,7 @@ V1.7-5A地址模块后端补全未修改数据库结构，继续复用现有`use
 - 用户取消订单成功后写入 `0 → 5` 状态日志，`operator_type = USER`。
 - 骑手放弃订单成功后写入 `1 → 0` 状态日志，`operator_type = RIDER`。
 - 用户评价订单成功后写入 `4 → 4` 状态日志，`operator_type = USER`。
-- 用户模拟支付成功后写入 `0 → 0` 状态日志，`operator_type = USER`。
+- Mock支付成功后写入 `0 → 0` 状态日志，`operator_type = USER`；商品订单和跑腿订单均走`payment_order`确认事务。
 
 ## 五、order_comment
 

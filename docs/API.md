@@ -653,7 +653,7 @@ Authorization: Bearer <token>
 }
 ```
 
-订单创建后默认 `status = 0`（待接单）、`payStatus = 0`（未支付）。未支付订单不会进入骑手大厅。
+订单创建后默认 `orderType = 0`（跑腿订单）、`status = 0`（待接单）、`payStatus = 0`（未支付）。未支付订单不会进入骑手大厅。用户端跑腿下单页使用后台公共配置接口返回的`errand.base_delivery_fee`、`errand.per_km_fee`、`errand.per_kg_fee`、`errand.night_surcharge`和`errand.minimum_order_amount`计算预计费用后提交到该接口。
 
 异常返回：
 
@@ -774,7 +774,7 @@ Authorization: Bearer <token>
 | 409 | 商品信息已变化，请重新结算 |
 | 409 | 商品订单创建失败 |
 
-### 模拟支付
+### 旧版订单模拟支付
 
 | 项 | 内容 |
 | --- | --- |
@@ -811,6 +811,8 @@ Authorization: Bearer <token>
 | 409 | 订单已支付 |
 | 409 | 当前订单状态不可支付 |
 | 1004 | 参数错误 |
+
+说明：该接口继续保留用于旧开发测试。用户端支付页当前统一走`POST /api/payment/wechat/jsapi`创建支付单；本地Mock支付环境会调用`POST /api/payment/mock/{paymentNo}/success`确认成功并回写订单与支付单状态。商品订单金额使用`total_amount`，跑腿订单金额使用`price`。
 
 ### 我的订单
 

@@ -33,6 +33,17 @@ export interface CreateCartOrderRequest {
   remark?: string;
 }
 
+export interface CreateErrandOrderRequest {
+  pickupAddressId: number;
+  deliveryAddressId: number;
+  goodsName: string;
+  goodsDescription?: string;
+  weight: number;
+  distance: number;
+  price: number;
+  remark?: string;
+}
+
 export interface CreateCartOrderResponse {
   orderId: number;
   orderNo: string;

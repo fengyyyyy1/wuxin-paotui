@@ -17,6 +17,13 @@
 
 最终目标是完成一套具备实际运营能力的跑腿服务平台，并支持部署上线。
 
+## 当前状态
+
+- 当前阶段：V1.9 总控后台第一阶段四端闭环联调。
+- 已完成：Admin后台11个一级模块、用户端、商家端、骑手端与Spring Boot接口代码侧闭环。
+- 本轮修复：用户端跑腿下单页接入真实`POST /api/order/create`；跑腿订单支持JSAPI/Mock支付；Mock支付页自动调用`POST /api/payment/mock/{paymentNo}/success`完成支付回写。
+- 待继续：当前Shell未注入`DB_PASSWORD`，真实MySQL HTTP联调和16号SQL落库回查需在本地数据库凭证可用后继续。
+
 ## 项目特点
 
 - 企业级项目架构

@@ -223,7 +223,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void validateOrderForPayment(OrderEntity order) {
-        if (!OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())) {
+        if (!isPayableOrderType(order)) {
             throw new BusinessException(ResultCode.PAYMENT_NOT_SUPPORTED);
         }
         if (!OrderStatusEnum.WAITING_ACCEPT.getCode().equals(order.getStatus())) {
@@ -239,7 +239,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private Integer toAmountTotal(OrderEntity order) {
         try {
-            return PaymentAmountUtils.yuanToFen(order.getTotalAmount());
+            return PaymentAmountUtils.yuanToFen(getPayableAmount(order));
         } catch (ArithmeticException exception) {
             throw new BusinessException(ResultCode.PAYMENT_AMOUNT_INVALID);
         }
@@ -274,10 +274,13 @@ public class PaymentServiceImpl implements PaymentService {
 
     private PaymentGatewayCreateRequest buildGatewayRequest(
             OrderEntity order, PaymentOrderEntity payment, String openId) {
+        String orderTypeText = OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())
+                ? "商品订单"
+                : "跑腿订单";
         return PaymentGatewayCreateRequest.builder()
                 .paymentNo(payment.getPaymentNo())
                 .orderNo(order.getOrderNo())
-                .description("五鑫跑腿商品订单-" + order.getOrderNo())
+                .description("五鑫跑腿" + orderTypeText + "-" + order.getOrderNo())
                 .amountTotal(payment.getAmountTotal())
                 .currency(payment.getCurrency())
                 .appId(payment.getAppId())
@@ -379,6 +382,19 @@ public class PaymentServiceImpl implements PaymentService {
         result.setSignType(gatewayResult.getSignType());
         result.setPaySign(gatewayResult.getPaySign());
         return result;
+    }
+
+    private boolean isPayableOrderType(OrderEntity order) {
+        return OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())
+                || OrderTypeEnum.ERRAND.getCode().equals(order.getOrderType())
+                || order.getOrderType() == null;
+    }
+
+    private java.math.BigDecimal getPayableAmount(OrderEntity order) {
+        if (OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())) {
+            return order.getTotalAmount();
+        }
+        return order.getPrice();
     }
 
     private PaymentStatusVO toPaymentStatusVO(

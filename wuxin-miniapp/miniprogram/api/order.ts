@@ -1,6 +1,7 @@
 import type {
   CreateCartOrderRequest,
   CreateCartOrderResponse,
+  CreateErrandOrderRequest,
   OrderDetail,
   OrderPage,
   OrderPageQuery,
@@ -16,6 +17,10 @@ export function previewSettlement(data: SettlementPreviewRequest): Promise<Settl
 
 export function createOrderFromCart(data: CreateCartOrderRequest): Promise<CreateCartOrderResponse> {
   return request({ url: '/api/order/create-from-cart', method: 'POST', data });
+}
+
+export function createErrandOrder(data: CreateErrandOrderRequest): Promise<number> {
+  return request({ url: '/api/order/create', method: 'POST', data });
 }
 
 export function getMyOrders(data: OrderPageQuery): Promise<OrderPage> {

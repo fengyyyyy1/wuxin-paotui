@@ -180,14 +180,14 @@ public class PaymentConfirmationServiceImpl implements PaymentConfirmationServic
             PaymentSuccessCommand command) {
         Integer orderAmount;
         try {
-            orderAmount = PaymentAmountUtils.yuanToFen(order.getTotalAmount());
+            orderAmount = PaymentAmountUtils.yuanToFen(getPayableAmount(order));
         } catch (ArithmeticException exception) {
             throw new BusinessException(ResultCode.PAYMENT_AMOUNT_INVALID);
         }
         if (!payment.getOrderId().equals(order.getId())
                 || !payment.getOrderNo().equals(order.getOrderNo())
                 || !payment.getUserId().equals(order.getUserId())
-                || !OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())
+                || !isPayableOrderType(order)
                 || !payment.getAmountTotal().equals(orderAmount)
                 || !payment.getAmountTotal().equals(command.getPayerTotal())) {
             throw new BusinessException(ResultCode.PAYMENT_AMOUNT_INVALID);
@@ -219,5 +219,18 @@ public class PaymentConfirmationServiceImpl implements PaymentConfirmationServic
         result.setAmountTotal(payment.getAmountTotal());
         result.setSuccessTime(payment.getSuccessTime());
         return result;
+    }
+
+    private boolean isPayableOrderType(OrderEntity order) {
+        return OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())
+                || OrderTypeEnum.ERRAND.getCode().equals(order.getOrderType())
+                || order.getOrderType() == null;
+    }
+
+    private java.math.BigDecimal getPayableAmount(OrderEntity order) {
+        if (OrderTypeEnum.PRODUCT.getCode().equals(order.getOrderType())) {
+            return order.getTotalAmount();
+        }
+        return order.getPrice();
     }
 }
