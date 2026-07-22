@@ -26,6 +26,20 @@ public class HallOrderVO {
 
     private Long deliveryAddressId;
 
+    private Integer orderType;
+
+    private String orderTypeText;
+
+    private Long storeId;
+
+    private String storeName;
+
+    private String pickupAddress;
+
+    private String deliveryAddress;
+
+    private String goodsSummary;
+
     private Integer status;
 
     private String statusText;

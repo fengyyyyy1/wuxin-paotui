@@ -14,8 +14,11 @@ import com.wuxin.enums.OrderTypeEnum;
 import com.wuxin.enums.PaymentStatusEnum;
 import com.wuxin.exception.BusinessException;
 import com.wuxin.mapper.OrderLogMapper;
+import com.wuxin.mapper.OrderItemMapper;
 import com.wuxin.mapper.OrderMapper;
+import com.wuxin.mapper.MerchantStoreMapper;
 import com.wuxin.mapper.RiderInfoMapper;
+import com.wuxin.mapper.UserAddressMapper;
 import com.wuxin.utils.UserContext;
 import com.wuxin.vo.AcceptOrderVO;
 import com.wuxin.vo.GiveUpOrderVO;
@@ -46,6 +49,12 @@ class RiderOrderServiceImplTest {
 
     private OrderLogMapper orderLogMapper;
 
+    private UserAddressMapper userAddressMapper;
+
+    private MerchantStoreMapper merchantStoreMapper;
+
+    private OrderItemMapper orderItemMapper;
+
     private RiderOrderServiceImpl service;
 
     @BeforeAll
@@ -60,8 +69,16 @@ class RiderOrderServiceImplTest {
         orderMapper = mock(OrderMapper.class);
         riderInfoMapper = mock(RiderInfoMapper.class);
         orderLogMapper = mock(OrderLogMapper.class);
+        userAddressMapper = mock(UserAddressMapper.class);
+        merchantStoreMapper = mock(MerchantStoreMapper.class);
+        orderItemMapper = mock(OrderItemMapper.class);
         service = new RiderOrderServiceImpl(
-                orderMapper, riderInfoMapper, orderLogMapper);
+                orderMapper,
+                riderInfoMapper,
+                orderLogMapper,
+                userAddressMapper,
+                merchantStoreMapper,
+                orderItemMapper);
         UserContext.setUserId(2L);
         when(riderInfoMapper.selectOne(any(LambdaQueryWrapper.class)))
                 .thenReturn(activeRider());

@@ -6,6 +6,7 @@ import com.wuxin.vo.AcceptOrderVO;
 import com.wuxin.vo.FinishOrderVO;
 import com.wuxin.vo.GiveUpOrderVO;
 import com.wuxin.vo.RiderOrderVO;
+import com.wuxin.vo.RiderOrderDetailVO;
 
 public interface RiderOrderService {
 
@@ -14,6 +15,8 @@ public interface RiderOrderService {
     AcceptOrderVO acceptOrder(Long id);
 
     PageResultVO<RiderOrderVO> getMyOrders(Integer pageNum, Integer pageSize, Integer status);
+
+    RiderOrderDetailVO getOrderDetail(Long id);
 
     FinishOrderVO finishOrder(Long id);
 

@@ -36,6 +36,9 @@ public class RiderInfoEntity {
     @TableField("rider_status")
     private Integer riderStatus;
 
+    @TableField("reject_reason")
+    private String rejectReason;
+
     @TableField("create_time")
     private LocalDateTime createTime;
 

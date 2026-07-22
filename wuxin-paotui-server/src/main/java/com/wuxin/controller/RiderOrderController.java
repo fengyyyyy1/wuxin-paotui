@@ -8,6 +8,7 @@ import com.wuxin.vo.GiveUpOrderVO;
 import com.wuxin.vo.HallOrderVO;
 import com.wuxin.vo.PageResultVO;
 import com.wuxin.vo.RiderOrderVO;
+import com.wuxin.vo.RiderOrderDetailVO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,6 +39,11 @@ public class RiderOrderController {
             @RequestParam(value = "pageSize", required = false) Integer pageSize,
             @RequestParam(value = "status", required = false) Integer status) {
         return Result.success(riderOrderService.getMyOrders(pageNum, pageSize, status));
+    }
+
+    @GetMapping("/{id}")
+    public Result<RiderOrderDetailVO> detail(@PathVariable Long id) {
+        return Result.success(riderOrderService.getOrderDetail(id));
     }
 
     @PostMapping("/accept/{id}")
