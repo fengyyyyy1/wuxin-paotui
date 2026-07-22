@@ -35,4 +35,7 @@ public class AdminMerchantDetailVO extends AdminMerchantPageVO {
     private LocalTime openTime;
     private LocalTime closeTime;
     private LocalDateTime updateTime;
+    private Long orderCount;
+    private Long productCount;
+    private BigDecimal revenueAmount;
 }

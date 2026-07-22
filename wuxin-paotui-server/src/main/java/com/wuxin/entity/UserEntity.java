@@ -49,6 +49,12 @@ public class UserEntity {
     @TableField("update_time")
     private LocalDateTime updateTime;
 
+    @TableField("last_login_time")
+    private LocalDateTime lastLoginTime;
+
+    @TableField("last_login_ip")
+    private String lastLoginIp;
+
     @TableLogic
     @TableField("is_deleted")
     private Integer isDeleted;

@@ -35,6 +35,7 @@ import com.wuxin.mapper.ShoppingCartMapper;
 import com.wuxin.mapper.UserAddressMapper;
 import com.wuxin.mapper.UserMapper;
 import com.wuxin.service.OrderService;
+import com.wuxin.service.AdminOperationsService;
 import com.wuxin.utils.UserContext;
 import com.wuxin.vo.CancelOrderVO;
 import com.wuxin.vo.ConfirmOrderVO;
@@ -100,12 +101,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
 
     private final MockPaymentProperties mockPaymentProperties;
 
+    private final AdminOperationsService adminOperationsService;
+
     public OrderServiceImpl(UserMapper userMapper, UserAddressMapper userAddressMapper,
                             OrderLogMapper orderLogMapper, OrderCommentMapper orderCommentMapper,
                             OrderItemMapper orderItemMapper, ShoppingCartMapper shoppingCartMapper,
                             MerchantProductMapper merchantProductMapper,
                             MerchantStoreMapper merchantStoreMapper,
-                            MockPaymentProperties mockPaymentProperties) {
+                            MockPaymentProperties mockPaymentProperties,
+                            AdminOperationsService adminOperationsService) {
         this.userMapper = userMapper;
         this.userAddressMapper = userAddressMapper;
         this.orderLogMapper = orderLogMapper;
@@ -115,6 +119,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         this.merchantProductMapper = merchantProductMapper;
         this.merchantStoreMapper = merchantStoreMapper;
         this.mockPaymentProperties = mockPaymentProperties;
+        this.adminOperationsService = adminOperationsService;
     }
 
     @Override
@@ -545,10 +550,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderEntity> impl
         }
 
         BigDecimal normalizedProductAmount = money(productAmount);
-        BigDecimal totalAmount = money(normalizedProductAmount.add(ZERO_AMOUNT));
+        BigDecimal deliveryFee = money(adminOperationsService.getDecimal(
+                "errand.base_delivery_fee", ZERO_AMOUNT));
+        BigDecimal totalAmount = money(normalizedProductAmount.add(deliveryFee));
         return new SettlementContext(
                 storeId, storeName, deliveryAddressId, cartItems, settlementItems,
-                normalizedProductAmount, ZERO_AMOUNT, totalAmount, selectedProductCount);
+                normalizedProductAmount, deliveryFee, totalAmount, selectedProductCount);
     }
 
     private void validateSettlementAddress(Long deliveryAddressId, Long userId) {

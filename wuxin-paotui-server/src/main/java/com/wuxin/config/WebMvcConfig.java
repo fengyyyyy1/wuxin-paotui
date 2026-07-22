@@ -29,6 +29,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/user/login",
                         "/api/user/wechat/login",
                         "/api/user/register",
+                        "/api/platform/home",
                         "/error"
                 );
         registry.addInterceptor(adminPermissionInterceptor)

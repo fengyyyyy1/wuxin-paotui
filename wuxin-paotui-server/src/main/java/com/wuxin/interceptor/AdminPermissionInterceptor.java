@@ -1,6 +1,7 @@
 package com.wuxin.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wuxin.annotation.AdminPermission;
 import com.wuxin.common.Result;
 import com.wuxin.common.ResultCode;
 import com.wuxin.service.AdminPermissionService;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.method.HandlerMethod;
 
 @Component
 public class AdminPermissionInterceptor implements HandlerInterceptor {
@@ -37,6 +39,17 @@ public class AdminPermissionInterceptor implements HandlerInterceptor {
         if (!adminPermissionService.isAdmin(userId)) {
             writeError(response, ResultCode.ADMIN_FORBIDDEN);
             return false;
+        }
+        if (handler instanceof HandlerMethod handlerMethod) {
+            AdminPermission permission = handlerMethod.getMethodAnnotation(AdminPermission.class);
+            if (permission == null) {
+                permission = handlerMethod.getBeanType().getAnnotation(AdminPermission.class);
+            }
+            if (permission != null
+                    && !adminPermissionService.hasPermission(userId, permission.value())) {
+                writeError(response, ResultCode.ADMIN_FORBIDDEN);
+                return false;
+            }
         }
         return true;
     }

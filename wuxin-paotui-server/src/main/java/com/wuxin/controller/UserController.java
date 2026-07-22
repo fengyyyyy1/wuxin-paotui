@@ -9,6 +9,8 @@ import com.wuxin.dto.wechat.BindWechatPhoneDTO;
 import com.wuxin.dto.wechat.WeChatLoginDTO;
 import com.wuxin.entity.UserEntity;
 import com.wuxin.service.UserService;
+import com.wuxin.service.AdminAuditLogService;
+import com.wuxin.service.AdminPermissionService;
 import com.wuxin.utils.JwtUtils;
 import com.wuxin.utils.PasswordUtils;
 import com.wuxin.utils.UserContext;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
@@ -30,9 +33,16 @@ import java.util.List;
 public class    UserController {
 
     private final UserService userService;
+    private final AdminPermissionService adminPermissionService;
+    private final AdminAuditLogService adminAuditLogService;
 
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService,
+            AdminPermissionService adminPermissionService,
+            AdminAuditLogService adminAuditLogService) {
         this.userService = userService;
+        this.adminPermissionService = adminPermissionService;
+        this.adminAuditLogService = adminAuditLogService;
     }
 
     @GetMapping("/list")
@@ -58,7 +68,9 @@ public class    UserController {
     }
 
     @PostMapping("/login")
-    public Result<LoginVO> login(@Valid @RequestBody UserLoginDTO userLoginDTO) {
+    public Result<LoginVO> login(
+            @Valid @RequestBody UserLoginDTO userLoginDTO,
+            HttpServletRequest request) {
         UserEntity user = userService.lambdaQuery()
                 .eq(UserEntity::getUsername, userLoginDTO.getUsername())
                 .one();
@@ -68,12 +80,24 @@ public class    UserController {
         if (!PasswordUtils.matches(userLoginDTO.getPassword(), user.getPassword())) {
             return Result.fail(ResultCode.PASSWORD_ERROR);
         }
+        if (!Integer.valueOf(1).equals(user.getStatus())) {
+            return Result.fail(ResultCode.WECHAT_ACCOUNT_DISABLED);
+        }
+
+        user.setLastLoginTime(java.time.LocalDateTime.now());
+        user.setLastLoginIp(resolveIp(request));
+        userService.updateById(user);
 
         UserInfoVO userInfoVO = buildUserInfoVO(user);
 
         LoginVO loginVO = new LoginVO();
         loginVO.setToken(JwtUtils.generateToken(user.getId(), user.getUsername()));
         loginVO.setUserInfo(userInfoVO);
+        if (adminPermissionService.isAdmin(user.getId())) {
+            adminAuditLogService.recordForUser(
+                    user.getId(), "auth", "admin:login", "管理员登录",
+                    "USER", user.getId(), null, java.util.Map.of("username", user.getUsername()));
+        }
         return Result.success(loginVO);
     }
 
@@ -129,5 +153,13 @@ public class    UserController {
         userInfoVO.setPhone(user.getPhone());
         userInfoVO.setGender(user.getGender());
         return userInfoVO;
+    }
+
+    private String resolveIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
