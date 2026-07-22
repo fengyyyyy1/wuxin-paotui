@@ -1,18 +1,82 @@
 <view class="cart-page">
-  <view class="cart-header"><view><text class="title">购物车</text><text class="subtitle">{{storeName || '选好商品，一起结算'}}</text></view><view class="header-actions"><button wx:if="{{hasInvalidItems}}" bindtap="clearInvalid">清理失效</button><button wx:if="{{hasItems}}" class="danger" bindtap="clearAll">清空</button></view></view>
-  <view wx:if="{{hasItems}}" class="store-card"><text class="store-dot"></text><text>{{storeName}}</text><text class="store-arrow">›</text></view>
+  <view class="cart-header">
+    <view class="cart-header__copy">
+      <text class="cart-title">购物车</text>
+      <text class="cart-subtitle">{{storeName || '选好商品，一起结算'}}</text>
+    </view>
+    <view class="cart-header__actions">
+      <button wx:if="{{hasInvalidItems}}" class="cart-header__action" bindtap="clearInvalid">清理失效</button>
+      <button wx:if="{{hasItems}}" class="cart-header__action cart-header__action--danger" bindtap="clearAll">清空</button>
+    </view>
+  </view>
+
+  <view wx:if="{{hasItems}}" class="cart-store">
+    <text class="cart-store__dot"></text>
+    <text class="cart-store__name">{{storeName}}</text>
+    <text class="cart-store__arrow">›</text>
+  </view>
+
   <view class="cart-list">
-    <view class="cart-item {{item.invalidReason ? 'invalid-item' : ''}}" wx:for="{{items}}" wx:key="cartId">
-      <button class="select-button {{item.selectedChecked ? 'selected' : ''}}" disabled="{{item.invalidReason}}" data-id="{{item.cartId}}" bindtap="toggleSelected">{{item.selectedChecked ? '✓' : ''}}</button>
-      <image class="product-image" src="{{item.imageUrl}}" mode="aspectFill" data-id="{{item.cartId}}" binderror="handleImageError" />
-      <view class="item-content">
-        <view class="item-top"><text class="product-name">{{item.productName}}</text><button class="delete" data-id="{{item.cartId}}" bindtap="deleteItem">×</button></view>
-        <text wx:if="{{item.invalidReason}}" class="invalid-reason">{{item.invalidReason}}</text><text wx:else class="stock">{{item.stockText}}</text>
-        <view class="item-bottom"><view class="price"><text>¥</text><text>{{item.priceText}}</text></view><view class="stepper"><button data-id="{{item.cartId}}" data-delta="-1" disabled="{{item.invalidReason || operationKey}}" bindtap="changeQuantity">−</button><text>{{item.quantity}}</text><button class="plus" data-id="{{item.cartId}}" data-delta="1" disabled="{{item.invalidReason || operationKey}}" bindtap="changeQuantity">＋</button></view></view>
+    <view class="cart-item {{item.invalidReason ? 'cart-item--invalid' : ''}}" wx:for="{{items}}" wx:key="cartId">
+      <button
+        class="cart-item__select {{item.selectedChecked ? 'cart-item__select--checked' : ''}}"
+        disabled="{{item.invalidReason}}"
+        data-id="{{item.cartId}}"
+        bindtap="toggleSelected"
+      >{{item.selectedChecked ? '✓' : ''}}</button>
+
+      <image
+        class="cart-item__image"
+        src="{{item.imageUrl}}"
+        mode="aspectFill"
+        data-id="{{item.cartId}}"
+        binderror="handleImageError"
+      />
+
+      <view class="cart-item__info">
+        <button class="cart-item__delete" data-id="{{item.cartId}}" bindtap="deleteItem">×</button>
+        <text class="cart-item__name">{{item.productName}}</text>
+        <text wx:if="{{item.invalidReason}}" class="cart-item__meta cart-item__meta--invalid">{{item.invalidReason}}</text>
+        <text wx:else class="cart-item__meta">{{item.stockText}}</text>
+        <view class="cart-item__bottom">
+          <view class="cart-item__price"><text class="cart-item__currency">¥</text><text>{{item.priceText}}</text></view>
+          <view class="cart-stepper">
+            <button class="cart-stepper__button" data-id="{{item.cartId}}" data-delta="-1" disabled="{{item.invalidReason || operationKey}}" bindtap="changeQuantity">−</button>
+            <text class="cart-stepper__value">{{item.quantity}}</text>
+            <button class="cart-stepper__button cart-stepper__button--plus" data-id="{{item.cartId}}" data-delta="1" disabled="{{item.invalidReason || operationKey}}" bindtap="changeQuantity">＋</button>
+          </view>
+        </view>
       </view>
     </view>
   </view>
-  <page-state loading="{{loading && !hasItems}}" error="{{errorMessage}}" empty="{{!loading && !errorMessage && !hasItems}}" empty-title="购物车还是空的" empty-description="去附近门店挑选喜欢的商品吧" action-text="去逛逛" bind:retry="refresh" bind:action="goShopping" />
-  <view wx:if="{{hasItems}}" class="bottom-space"></view>
-  <view wx:if="{{hasItems}}" class="settlement-bar"><button class="select-all" bindtap="toggleAllSelected"><text class="select-button {{allSelected ? 'selected' : ''}}">{{allSelected ? '✓' : ''}}</text><text>全选</text></button><view class="total"><text class="total-label">合计</text><text class="total-price">¥{{selectedTotalAmountText}}</text><text class="total-caption">已选 {{selectedProductCount}} 件</text></view><button class="checkout" disabled="{{!selectedProductCount || operationKey}}" bindtap="checkout">去结算</button></view>
+
+  <page-state
+    loading="{{loading && !hasItems}}"
+    error="{{errorMessage}}"
+    empty="{{!loading && !errorMessage && !hasItems}}"
+    empty-title="购物车还是空的"
+    empty-description="去附近门店挑选喜欢的商品吧"
+    action-text="去逛逛"
+    bind:retry="refresh"
+    bind:action="goShopping"
+  />
+
+  <view wx:if="{{hasItems}}" class="cart-settlement">
+    <button class="cart-settlement__select" bindtap="toggleAllSelected">
+      <text class="cart-settlement__check {{allSelected ? 'cart-settlement__check--checked' : ''}}">{{allSelected ? '✓' : ''}}</text>
+      <text class="cart-settlement__select-text">全选</text>
+    </button>
+    <view class="cart-settlement__summary">
+      <view class="cart-settlement__amount">
+        <text class="cart-settlement__label">合计：</text>
+        <text class="cart-settlement__price">¥{{selectedTotalAmountText}}</text>
+      </view>
+      <text class="cart-settlement__caption">已选 {{selectedProductCount}} 件</text>
+    </view>
+    <button
+      class="cart-settlement__button {{!selectedProductCount || operationKey ? 'cart-settlement__button--disabled' : ''}}"
+      disabled="{{!selectedProductCount || operationKey}}"
+      bindtap="checkout"
+    >去结算</button>
+  </view>
 </view>

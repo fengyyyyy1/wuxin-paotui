@@ -1,1 +1,174 @@
-.address-page{min-height:100vh;padding:24rpx 32rpx 0;background:#f6f7f9}.page-heading{margin:12rpx 0 28rpx}.title,.subtitle{display:block}.title{font-size:44rpx;font-weight:800}.subtitle{margin-top:8rpx;color:#999;font-size:23rpx}.address-list{display:flex;flex-direction:column;gap:20rpx}.address-card{padding:28rpx;background:#fff;border-radius:32rpx;box-shadow:0 8rpx 30rpx rgba(0,0,0,.04);transition:transform 160ms ease}.address-card:active{transform:scale(.99)}.address-top{display:flex;align-items:center;justify-content:space-between}.contact{display:flex;align-items:center;gap:14rpx}.name{font-size:29rpx;font-weight:700}.phone{color:#666;font-size:24rpx}.default-tag{padding:6rpx 12rpx;color:#18b566;background:#eaf8f0;border-radius:10rpx;font-size:19rpx}.select-arrow{color:#aaa;font-size:34rpx}.full-address{display:block;margin-top:18rpx;color:#333;font-size:26rpx;line-height:1.55}.address-actions{display:flex;align-items:center;justify-content:space-between;margin-top:24rpx;padding-top:20rpx;border-top:1rpx solid #eee}.address-actions button{padding:8rpx;color:#666;font-size:22rpx}.address-actions button::after{border:0}.action-right{display:flex;gap:22rpx}.address-actions .delete{color:#ff4d4f}.bottom-space{height:140rpx}.add-bar{position:fixed;right:0;bottom:0;left:0;padding:16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);border-top:1rpx solid #eee}.add-address{display:flex;align-items:center;justify-content:center;height:96rpx;color:#fff;background:#18b566;border-radius:28rpx;font-size:29rpx;font-weight:700}.add-address::after{border:0}
+.address-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 24rpx 32rpx calc(152rpx + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  background: #f6f7f9;
+}
+
+.page-heading {
+  width: 100%;
+  margin: 12rpx 0 28rpx;
+}
+.page-title,
+.page-subtitle {
+  display: block;
+  width: 100%;
+}
+.page-title {
+  font-size: 44rpx;
+  font-weight: 800;
+}
+.page-subtitle {
+  margin-top: 8rpx;
+  color: #999999;
+  font-size: 23rpx;
+}
+.address-list {
+  width: 100%;
+}
+
+.address-card {
+  width: 100%;
+  min-width: 0;
+  padding: 28rpx;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.04);
+}
+
+.address-card + .address-card {
+  margin-top: 20rpx;
+}
+.address-main {
+  width: 100%;
+  min-width: 0;
+}
+.address-top {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.contact-line {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  overflow: hidden;
+}
+
+.receiver-name {
+  min-width: 0;
+  max-width: 240rpx;
+  overflow: hidden;
+  color: #111111;
+  font-size: 29rpx;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receiver-phone {
+  flex-shrink: 0;
+  margin-left: 14rpx;
+  color: #666666;
+  font-size: 24rpx;
+  white-space: nowrap;
+}
+.default-tag {
+  flex-shrink: 0;
+  margin-left: 14rpx;
+  padding: 6rpx 12rpx;
+  color: #18b566;
+  background: #eaf8f0;
+  border-radius: 10rpx;
+  font-size: 19rpx;
+  white-space: nowrap;
+}
+.select-arrow {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  color: #aaaaaa;
+  font-size: 34rpx;
+  white-space: nowrap;
+}
+
+.full-address {
+  display: block;
+  width: 100%;
+  margin-top: 18rpx;
+  color: #333333;
+  font-size: 26rpx;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+  word-break: break-all;
+}
+
+.address-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #eeeeee;
+}
+.address-action-spacer {
+  flex: 1;
+  min-width: 0;
+}
+.address-action-group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+.address-action {
+  flex-shrink: 0;
+  min-width: 72rpx;
+  padding: 12rpx 8rpx;
+  color: #666666;
+  font-size: 22rpx;
+  text-align: center;
+  white-space: nowrap;
+}
+.address-action + .address-action {
+  margin-left: 14rpx;
+}
+.address-action--default {
+  color: #18b566;
+}
+.address-action--delete {
+  color: #ff4d4f;
+}
+
+.add-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  width: 100%;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1rpx solid #eeeeee;
+}
+.add-address {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 96rpx;
+  padding: 0 28rpx;
+  color: #ffffff;
+  background: #18b566;
+  border-radius: 28rpx;
+  font-size: 29rpx;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.add-address::after {
+  border: 0;
+}

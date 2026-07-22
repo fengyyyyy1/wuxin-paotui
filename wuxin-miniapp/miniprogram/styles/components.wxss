@@ -113,6 +113,7 @@
 
 .wuxin-product-image {
   display: block;
+  flex-shrink: 0;
   width: 144rpx;
   height: 144rpx;
   background: #f0f2f4;
@@ -179,6 +180,7 @@
   bottom: 0;
   left: 0;
   z-index: 20;
+  box-sizing: border-box;
   padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
   background: rgba(255, 255, 255, 0.96);
   border-top: 1rpx solid #eeeeee;

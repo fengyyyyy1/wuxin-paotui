@@ -13,7 +13,7 @@
     <view class="service-card"><view><text class="service-icon">✓</text><text>商品信息来自商家实时维护</text></view><view><text class="service-icon">✓</text><text>库存与价格以下单结算为准</text></view></view>
     <view class="bottom-space"></view>
     <view class="action-bar">
-      <button class="cart-entry" bindtap="goToCart"><view class="cart-icon"><image src="/assets/images/icons/cart-line.svg" /><text wx:if="{{cartCount}}">{{cartCount}}</text></view><text>购物车</text></button>
+      <view class="cart-entry" hover-class="cart-entry--pressed" bindtap="goToCart"><view class="cart-icon"><image src="/assets/images/icons/cart-line.svg" /><text wx:if="{{cartCount}}">{{cartCount}}</text></view><text class="cart-entry__label">购物车</text></view>
       <button class="add-cart" loading="{{addingCart}}" disabled="{{addingCart || !product.canAddToCart}}" bindtap="handleCartClick">{{product.cartButtonText}}</button>
     </view>
   </block>

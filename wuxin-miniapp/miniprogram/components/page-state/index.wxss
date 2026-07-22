@@ -64,10 +64,12 @@
   font-size: 26rpx;
 }
 
-.state-action::after {
-  border: 0;
+.state-action-pressed {
+  opacity: 0.72;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

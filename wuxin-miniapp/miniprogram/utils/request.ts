@@ -75,8 +75,12 @@ export function request<TResponse, TRequest extends RequestPayload = WechatMinip
 
         resolve(result.data);
       },
-      fail() {
-        reject(new RequestError(0, '网络异常，请稍后重试'));
+      fail(error) {
+        const detail = error.errMsg || '';
+        const message = detail.toLowerCase().includes('timeout')
+          ? '请求超时，请检查网络后重试'
+          : '网络异常，请稍后重试';
+        reject(new RequestError(0, message));
       }
     });
   });

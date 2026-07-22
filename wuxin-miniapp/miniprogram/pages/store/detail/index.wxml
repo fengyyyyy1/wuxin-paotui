@@ -13,12 +13,12 @@
     </view>
 
     <view class="search-card">
-      <view class="search-field"><image src="/assets/images/icons/search-line.svg" /><input value="{{keyword}}" placeholder="搜索店内商品" confirm-type="search" bindinput="onKeywordInput" bindconfirm="searchProducts" /><button wx:if="{{keyword}}" bindtap="clearKeyword">×</button></view>
-      <button class="search-action" bindtap="searchProducts">搜索</button>
+      <view class="search-field"><image src="/assets/images/icons/search-line.svg" /><input value="{{keyword}}" placeholder="搜索店内商品" confirm-type="search" bindinput="onKeywordInput" bindconfirm="searchProducts" /><view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword">×</view></view>
+      <view class="search-action" hover-class="search-action--pressed" bindtap="searchProducts">搜索</view>
     </view>
 
     <scroll-view class="category-scroll" scroll-x enhanced show-scrollbar="{{false}}">
-      <view class="category-row"><button wx:for="{{categories}}" wx:key="categoryId" class="category {{activeCategoryId === item.categoryId ? 'active' : ''}}" data-id="{{item.categoryId === null ? 'all' : item.categoryId}}" bindtap="selectCategory">{{item.categoryName}}</button></view>
+      <view class="category-row"><view wx:for="{{categories}}" wx:key="categoryId" class="category {{activeCategoryId === item.categoryId ? 'active' : ''}}" data-id="{{item.categoryId === null ? 'all' : item.categoryId}}" bindtap="selectCategory">{{item.categoryName}}</view></view>
     </scroll-view>
 
     <view class="product-list">
@@ -30,8 +30,8 @@
           <view class="product-meta"><text wx:if="{{item.sales !== null && item.sales !== undefined}}">已售 {{item.sales}}</text><text>{{item.stockText}}</text></view>
           <view class="product-bottom">
             <view class="price"><text>¥</text><text class="price-number">{{item.priceText}}</text></view>
-            <button wx:if="{{item.cartQuantity === 0}}" class="add-button" disabled="{{!item.canQuickAdd || item.cartOperating}}" data-id="{{item.productId}}" catchtap="quickAddCart">＋</button>
-            <view wx:else class="stepper" catchtap="preventPanelMove"><button data-id="{{item.productId}}" catchtap="decreaseCartItem">−</button><text>{{item.cartQuantity}}</text><button class="plus" data-id="{{item.productId}}" catchtap="increaseCartItem">＋</button></view>
+            <view wx:if="{{item.cartQuantity === 0}}" class="add-button {{!item.canQuickAdd || item.cartOperating ? 'add-button--disabled' : ''}}" data-id="{{item.productId}}" catchtap="quickAddCart">＋</view>
+            <view wx:else class="stepper" catchtap="preventPanelMove"><view class="stepper-button" data-id="{{item.productId}}" catchtap="decreaseCartItem">−</view><text class="stepper-value">{{item.cartQuantity}}</text><view class="stepper-button stepper-plus" data-id="{{item.productId}}" catchtap="increaseCartItem">＋</view></view>
           </view>
         </view>
       </view>
@@ -49,11 +49,11 @@
   <view wx:if="{{cartPanelVisible}}" class="sheet-layer" catchtouchmove="preventPanelMove">
     <view class="sheet-mask" bindtap="closeCartPanel"></view>
     <view class="sheet">
-      <view class="sheet-header"><view><text class="sheet-title">{{cartStoreName || store.storeName}}</text><text class="sheet-subtitle">已选 {{cartSelectedProductCount}} 件</text></view><view class="sheet-actions"><button bindtap="clearCurrentCart">清空</button><button class="close" bindtap="closeCartPanel">×</button></view></view>
+      <view class="sheet-header"><view class="sheet-heading"><text class="sheet-title">{{cartStoreName || store.storeName}}</text><text class="sheet-subtitle">已选 {{cartSelectedProductCount}} 件</text></view><view class="sheet-actions"><view class="sheet-clear" bindtap="clearCurrentCart">清空</view><view class="sheet-close" bindtap="closeCartPanel">×</view></view></view>
       <scroll-view class="sheet-list" scroll-y>
-        <view class="sheet-item" wx:for="{{cartItems}}" wx:key="productId"><image src="{{item.imageUrl}}" mode="aspectFill" data-id="{{item.productId}}" binderror="handleProductImageError" /><view class="sheet-copy"><text class="sheet-name">{{item.productName}}</text><text wx:if="{{item.cartInvalidReason}}" class="invalid">{{item.cartInvalidReason}}</text><view class="sheet-bottom"><text class="sheet-price">¥{{item.priceText}}</text><view class="stepper"><button data-id="{{item.productId}}" bindtap="decreaseCartItem">−</button><text>{{item.cartQuantity}}</text><button class="plus" data-id="{{item.productId}}" bindtap="increaseCartItem">＋</button></view></view></view></view>
+        <view class="sheet-item" wx:for="{{cartItems}}" wx:key="productId"><image src="{{item.imageUrl}}" mode="aspectFill" data-id="{{item.productId}}" binderror="handleProductImageError" /><view class="sheet-copy"><text class="sheet-name">{{item.productName}}</text><text wx:if="{{item.cartInvalidReason}}" class="invalid">{{item.cartInvalidReason}}</text><view class="sheet-bottom"><text class="sheet-price">¥{{item.priceText}}</text><view class="stepper"><view class="stepper-button" data-id="{{item.productId}}" bindtap="decreaseCartItem">−</view><text class="stepper-value">{{item.cartQuantity}}</text><view class="stepper-button stepper-plus" data-id="{{item.productId}}" bindtap="increaseCartItem">＋</view></view></view></view></view>
       </scroll-view>
-      <view class="sheet-footer"><view><text class="sheet-total-label">合计</text><text class="sheet-total">¥{{cartSelectedTotalAmountText}}</text></view><button class="checkout" disabled="{{!cartSelectedProductCount}}" bindtap="checkout">去结算</button></view>
+      <view class="sheet-footer"><view class="sheet-summary"><text class="sheet-total-label">合计</text><text class="sheet-total">¥{{cartSelectedTotalAmountText}}</text></view><button class="checkout" disabled="{{!cartSelectedProductCount}}" bindtap="checkout">去结算</button></view>
     </view>
   </view>
 </view>

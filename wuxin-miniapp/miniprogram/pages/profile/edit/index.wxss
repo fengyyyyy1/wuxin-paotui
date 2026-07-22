@@ -1,1 +1,105 @@
-.edit-page{min-height:100vh;padding:30rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));background:#f6f7f9}.title,.subtitle{display:block}.title{font-size:44rpx;font-weight:800}.subtitle{margin-top:8rpx;color:#999;font-size:23rpx}.error{margin-top:24rpx;padding:20rpx 24rpx;color:#c73335;background:#fff1f1;border-radius:20rpx;font-size:23rpx}.form-card{margin-top:28rpx;padding:30rpx;background:#fff;border-radius:32rpx}.field{margin-bottom:30rpx}.field:last-child{margin-bottom:0}.label{display:block;margin-bottom:12rpx;color:#666;font-size:23rpx;font-weight:600}.field input{height:92rpx;padding:0 22rpx;background:#f6f7f9;border-radius:22rpx;font-size:26rpx}.hint{display:block;margin-top:10rpx;color:#aaa;font-size:20rpx}.gender-row{display:flex;gap:14rpx}.gender{display:flex;flex:1;align-items:center;justify-content:center;height:82rpx;color:#666;background:#f6f7f9;border-radius:22rpx;font-size:24rpx}.gender radio{transform:scale(.72)}.gender.active{color:#18b566;background:#eaf8f0}.save{display:flex;align-items:center;justify-content:center;height:98rpx;margin-top:28rpx;color:#fff;background:#18b566;border-radius:28rpx;font-size:29rpx;font-weight:700}.save::after{border:0}.save[disabled]{opacity:.65}
+.edit-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 30rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  background: #f6f7f9;
+}
+.title,
+.subtitle {
+  display: block;
+}
+.title {
+  font-size: 44rpx;
+  font-weight: 800;
+}
+.subtitle {
+  margin-top: 8rpx;
+  color: #999;
+  font-size: 23rpx;
+}
+.error {
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  color: #c73335;
+  background: #fff1f1;
+  border-radius: 20rpx;
+  font-size: 23rpx;
+}
+.form-card {
+  margin-top: 28rpx;
+  padding: 30rpx;
+  background: #fff;
+  border-radius: 32rpx;
+}
+.field {
+  margin-bottom: 30rpx;
+}
+.field:last-child {
+  margin-bottom: 0;
+}
+.label {
+  display: block;
+  margin-bottom: 12rpx;
+  color: #666;
+  font-size: 23rpx;
+  font-weight: 600;
+}
+.field input {
+  width: 100%;
+  height: 92rpx;
+  padding: 0 22rpx;
+  background: #f6f7f9;
+  border-radius: 22rpx;
+  font-size: 26rpx;
+}
+.hint {
+  display: block;
+  margin-top: 10rpx;
+  color: #aaa;
+  font-size: 20rpx;
+}
+.gender-row {
+  display: flex;
+}
+.gender {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: 82rpx;
+  color: #666;
+  background: #f6f7f9;
+  border-radius: 22rpx;
+  font-size: 24rpx;
+}
+.gender + .gender {
+  margin-left: 14rpx;
+}
+.gender radio {
+  flex-shrink: 0;
+  margin-right: 4rpx;
+}
+.gender.active {
+  color: #18b566;
+  background: #eaf8f0;
+}
+.save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 98rpx;
+  margin-top: 28rpx;
+  color: #fff;
+  background: #18b566;
+  border-radius: 28rpx;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.save::after {
+  border: 0;
+}
+.save[disabled] {
+  opacity: 0.65;
+}

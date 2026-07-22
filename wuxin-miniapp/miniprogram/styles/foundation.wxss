@@ -29,8 +29,10 @@ button::after {
 }
 
 .wuxin-page {
+  width: 100%;
   min-height: 100vh;
   padding: 24rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  overflow-x: hidden;
   background: #f6f7f9;
 }
 
@@ -94,12 +96,11 @@ button::after {
   font-size: 30rpx;
   font-weight: 600;
   text-align: center;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition: opacity 160ms ease;
 }
 
 .wuxin-primary-button:active {
   background: #119653;
-  transform: scale(0.98);
 }
 
 .wuxin-disabled-button {
@@ -126,7 +127,7 @@ button::after {
 }
 
 .wuxin-page-subtitle {
-  margin-top: -16rpx;
+  margin-top: 8rpx;
   margin-bottom: 28rpx;
   color: #999999;
   font-size: 24rpx;
@@ -156,10 +157,9 @@ button::after {
 }
 
 .wuxin-pressable {
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition: opacity 160ms ease;
 }
 
 .wuxin-pressable:active {
   opacity: 0.78;
-  transform: scale(0.985);
 }

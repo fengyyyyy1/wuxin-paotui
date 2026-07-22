@@ -10,7 +10,10 @@ Component({
       this.triggerEvent('select', { id: product.productId });
     },
     handleAdd() {
-      const product = this.data.product as { productId?: number };
+      const product = this.data.product as { productId?: number; canAdd?: boolean };
+      if (!product.productId || product.canAdd === false) {
+        return;
+      }
       this.triggerEvent('add', { id: product.productId });
     },
     handleImageError() {

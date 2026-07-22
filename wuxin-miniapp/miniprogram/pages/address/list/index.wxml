@@ -1,13 +1,35 @@
 <view class="address-page">
-  <view class="page-heading"><text class="title">{{selectMode ? '选择收货地址' : '收货地址'}}</text><text class="subtitle">默认地址优先用于订单配送</text></view>
+  <view class="page-heading">
+    <text class="page-title">{{selectMode ? '选择收货地址' : '收货地址'}}</text>
+    <text class="page-subtitle">默认地址优先用于订单配送</text>
+  </view>
+
   <view class="address-list">
     <view class="address-card" wx:for="{{addresses}}" wx:key="id" data-id="{{item.id}}" bindtap="selectAddress">
-      <view class="address-top"><view class="contact"><text class="name">{{item.receiverName}}</text><text class="phone">{{item.maskedPhone}}</text><text wx:if="{{item.isDefault === 1}}" class="default-tag">默认</text></view><text wx:if="{{selectMode}}" class="select-arrow">›</text></view>
-      <text class="full-address">{{item.fullAddress}}</text>
-      <view wx:if="{{!selectMode}}" class="address-actions"><button wx:if="{{item.isDefault !== 1}}" data-id="{{item.id}}" catchtap="setDefaultAddress">设为默认</button><view class="action-right"><button data-id="{{item.id}}" catchtap="editAddress">编辑</button><button class="delete" data-id="{{item.id}}" catchtap="confirmDeleteAddress">删除</button></view></view>
+      <view class="address-main">
+        <view class="address-top">
+          <view class="contact-line">
+            <text class="receiver-name">{{item.receiverName}}</text>
+            <text class="receiver-phone">{{item.maskedPhone}}</text>
+            <text wx:if="{{item.isDefault === 1}}" class="default-tag">默认</text>
+          </view>
+          <text wx:if="{{selectMode}}" class="select-arrow">›</text>
+        </view>
+        <text class="full-address">{{item.fullAddress}}</text>
+      </view>
+
+      <view wx:if="{{!selectMode}}" class="address-actions">
+        <view class="address-action address-action--default" wx:if="{{item.isDefault !== 1}}" data-id="{{item.id}}" catchtap="setDefaultAddress">设为默认</view>
+        <view wx:else class="address-action-spacer"></view>
+        <view class="address-action-group">
+          <view class="address-action" data-id="{{item.id}}" catchtap="editAddress">编辑</view>
+          <view class="address-action address-action--delete" data-id="{{item.id}}" catchtap="confirmDeleteAddress">删除</view>
+        </view>
+      </view>
     </view>
   </view>
+
   <page-state loading="{{loading && addresses.length === 0}}" error="{{errorMessage}}" empty="{{!loading && !errorMessage && addresses.length === 0}}" empty-title="还没有收货地址" empty-description="新增地址后即可用于订单配送" action-text="新增地址" bind:retry="loadAddresses" bind:action="goToCreateAddress" />
-  <view class="bottom-space"></view>
+
   <view class="add-bar"><button class="add-address" bindtap="goToCreateAddress">＋ 新增收货地址</button></view>
 </view>

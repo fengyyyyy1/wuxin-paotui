@@ -1,1 +1,45 @@
-.store-page{padding-top:18rpx}.filters{width:calc(100% + 32rpx);margin-bottom:26rpx}.filter-row{display:flex;gap:16rpx;padding-right:32rpx}.filter{flex-shrink:0;padding:18rpx 30rpx;color:#666666;background:#ffffff;border-radius:28rpx;font-size:25rpx}.filter::after{border:0}.filter.active{color:#ffffff;background:#18b566}.store-list{display:flex;flex-direction:column;gap:20rpx}.load-more{padding:32rpx;color:#aaaaaa;font-size:22rpx;text-align:center}
+.store-page {
+  width: 100%;
+  padding-top: 18rpx;
+  overflow-x: hidden;
+}
+.filters {
+  width: 100%;
+  margin-bottom: 26rpx;
+  overflow: hidden;
+}
+.filter-row {
+  display: inline-flex;
+  min-width: 100%;
+  padding-right: 4rpx;
+  white-space: nowrap;
+}
+.filter {
+  flex-shrink: 0;
+  padding: 18rpx 30rpx;
+  color: #666666;
+  background: #ffffff;
+  border-radius: 28rpx;
+  font-size: 25rpx;
+  white-space: nowrap;
+}
+.filter + .filter {
+  margin-left: 16rpx;
+}
+.filter.active {
+  color: #ffffff;
+  background: #18b566;
+}
+.store-list {
+  width: 100%;
+}
+.store-list store-card + store-card {
+  display: block;
+  margin-top: 20rpx;
+}
+.load-more {
+  padding: 32rpx;
+  color: #aaaaaa;
+  font-size: 22rpx;
+  text-align: center;
+}

@@ -3,9 +3,9 @@
   <text class="wuxin-page-subtitle">营业状态与门店信息均来自平台实时数据</text>
   <scroll-view class="filters" scroll-x enhanced show-scrollbar="{{false}}">
     <view class="filter-row">
-      <button class="filter {{businessStatus === null ? 'active' : ''}}" data-value="all" bindtap="selectStatus">全部</button>
-      <button class="filter {{businessStatus === 1 ? 'active' : ''}}" data-value="1" bindtap="selectStatus">营业中</button>
-      <button class="filter {{businessStatus === 0 ? 'active' : ''}}" data-value="0" bindtap="selectStatus">休息中</button>
+      <view class="filter {{businessStatus === null ? 'active' : ''}}" data-value="all" bindtap="selectStatus">全部</view>
+      <view class="filter {{businessStatus === 1 ? 'active' : ''}}" data-value="1" bindtap="selectStatus">营业中</view>
+      <view class="filter {{businessStatus === 0 ? 'active' : ''}}" data-value="0" bindtap="selectStatus">休息中</view>
     </view>
   </scroll-view>
   <view class="store-list"><store-card wx:for="{{stores}}" wx:key="storeId" store="{{item}}" bind:select="openStore" bind:imageerror="handleImageError" /></view>

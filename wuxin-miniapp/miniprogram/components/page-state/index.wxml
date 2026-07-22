@@ -6,11 +6,11 @@
   <view class="state-symbol state-error">!</view>
   <text class="state-title">加载失败</text>
   <text class="state-caption">{{error}}</text>
-  <button class="state-action" bindtap="handleRetry">重新加载</button>
+  <view class="state-action" hover-class="state-action-pressed" bindtap="handleRetry">重新加载</view>
 </view>
 <view wx:elif="{{empty}}" class="state">
   <view class="state-symbol">○</view>
   <text class="state-title">{{emptyTitle}}</text>
   <text class="state-caption">{{emptyDescription}}</text>
-  <button wx:if="{{actionText}}" class="state-action" bindtap="handleAction">{{actionText}}</button>
+  <view wx:if="{{actionText}}" class="state-action" hover-class="state-action-pressed" bindtap="handleAction">{{actionText}}</view>
 </view>

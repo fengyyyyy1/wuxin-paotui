@@ -1,5 +1,5 @@
 <view class="stepper {{disabled ? 'is-disabled' : ''}}">
-  <button class="stepper-button" disabled="{{disabled || loading || value <= min}}" bindtap="decrease">−</button>
+  <view class="stepper-button {{disabled || loading || value <= min ? 'stepper-button-disabled' : ''}}" bindtap="decrease">−</view>
   <text class="stepper-value">{{loading ? '·' : value}}</text>
-  <button class="stepper-button stepper-plus" disabled="{{disabled || loading || value >= max}}" bindtap="increase">＋</button>
+  <view class="stepper-button stepper-plus {{disabled || loading || value >= max ? 'stepper-plus-disabled' : ''}}" bindtap="increase">＋</view>
 </view>

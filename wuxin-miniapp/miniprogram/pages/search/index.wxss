@@ -1,1 +1,149 @@
-.search-page{min-height:100vh;padding:24rpx 32rpx 48rpx;background:#f6f7f9}.search-bar{display:flex;align-items:center;gap:14rpx;height:88rpx;padding-left:24rpx;background:#ffffff;border-radius:28rpx;box-shadow:0 8rpx 28rpx rgba(0,0,0,.04)}.search-bar image{flex-shrink:0;width:30rpx;height:30rpx}.search-bar input{flex:1;min-width:0;height:88rpx;color:#111111;font-size:27rpx}.clear{flex-shrink:0;width:56rpx;color:#999999;background:transparent;font-size:32rpx}.submit{flex-shrink:0;height:64rpx;margin-right:12rpx;padding:0 24rpx;color:#ffffff;background:#18b566;border-radius:22rpx;font-size:25rpx}.clear::after,.submit::after{border:0}.suggestions{margin-top:12rpx;padding:8rpx 24rpx;background:#ffffff;border-radius:24rpx;box-shadow:0 8rpx 28rpx rgba(0,0,0,.05)}.suggestions button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:22rpx 0;color:#666666;background:transparent;border-bottom:1rpx solid #eeeeee;font-size:25rpx;text-align:left}.suggestions button:last-child{border-bottom:0}.suggestions button::after{border:0}.search-section,.result-section{margin-top:42rpx}.section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20rpx;color:#111111;font-size:31rpx;font-weight:700}.section-title-row button{padding:8rpx;color:#999999;background:transparent;font-size:22rpx}.section-title-row button::after{border:0}.keyword-list{display:flex;flex-wrap:wrap;gap:16rpx}.keyword-list button{padding:16rpx 24rpx;color:#666666;background:#ffffff;border-radius:24rpx;font-size:23rpx}.keyword-list button::after{border:0}.store-list{display:flex;flex-direction:column;gap:20rpx}.result-title{display:block;margin-bottom:20rpx;color:#111111;font-size:31rpx;font-weight:700}
+.search-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 24rpx 32rpx 48rpx;
+  overflow-x: hidden;
+  background: #f6f7f9;
+}
+.search-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 88rpx;
+  padding-left: 24rpx;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.04);
+}
+.search-bar image {
+  flex: 0 0 30rpx;
+  width: 30rpx;
+  height: 30rpx;
+  margin-right: 14rpx;
+}
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  color: #111111;
+  font-size: 27rpx;
+}
+.clear {
+  display: flex;
+  flex: 0 0 56rpx;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 88rpx;
+  color: #999999;
+  font-size: 32rpx;
+}
+.submit {
+  display: flex;
+  flex: 0 0 116rpx;
+  align-items: center;
+  justify-content: center;
+  width: 116rpx;
+  height: 64rpx;
+  margin-right: 12rpx;
+  color: #ffffff;
+  background: #18b566;
+  border-radius: 22rpx;
+  font-size: 25rpx;
+  white-space: nowrap;
+}
+.suggestions {
+  width: 100%;
+  margin-top: 12rpx;
+  padding: 8rpx 24rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.05);
+}
+.suggestions button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  padding: 22rpx 0;
+  color: #666666;
+  background: transparent;
+  border-bottom: 1rpx solid #eeeeee;
+  font-size: 25rpx;
+  text-align: left;
+}
+.suggestions button:last-child {
+  border-bottom: 0;
+}
+.suggestions button::after,
+.section-title-row button::after,
+.keyword-list button::after {
+  border: 0;
+}
+.suggestions button text:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.suggestions button text:last-child {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+.search-section,
+.result-section {
+  width: 100%;
+  margin-top: 42rpx;
+}
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 20rpx;
+  color: #111111;
+  font-size: 31rpx;
+  font-weight: 700;
+}
+.section-title-row button {
+  flex-shrink: 0;
+  padding: 8rpx;
+  color: #999999;
+  background: transparent;
+  font-size: 22rpx;
+  white-space: nowrap;
+}
+.keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.keyword-list button {
+  flex-shrink: 0;
+  margin: 0 16rpx 16rpx 0;
+  padding: 16rpx 24rpx;
+  color: #666666;
+  background: #ffffff;
+  border-radius: 24rpx;
+  font-size: 23rpx;
+  white-space: nowrap;
+}
+.store-list {
+  width: 100%;
+}
+.store-list store-card + store-card {
+  display: block;
+  margin-top: 20rpx;
+}
+.result-title {
+  display: block;
+  margin-bottom: 20rpx;
+  color: #111111;
+  font-size: 31rpx;
+  font-weight: 700;
+}

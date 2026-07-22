@@ -1,5 +1,5 @@
 <view class="search-page">
-  <view class="search-bar"><image src="/assets/images/icons/search-line.svg" /><input value="{{keyword}}" placeholder="搜索门店名称" confirm-type="search" focus bindinput="onInput" bindconfirm="submitSearch" /><button wx:if="{{keyword}}" class="clear" bindtap="clearInput">×</button><button class="submit" bindtap="submitSearch">搜索</button></view>
+  <view class="search-bar"><image src="/assets/images/icons/search-line.svg" /><input value="{{keyword}}" placeholder="搜索门店名称" confirm-type="search" focus bindinput="onInput" bindconfirm="submitSearch" /><view wx:if="{{keyword}}" class="clear" bindtap="clearInput">×</view><view class="submit" bindtap="submitSearch">搜索</view></view>
   <view wx:if="{{suggestions.length}}" class="suggestions"><button wx:for="{{suggestions}}" wx:key="*this" data-value="{{item}}" bindtap="useKeyword"><text>{{item}}</text><text>›</text></button></view>
 
   <block wx:if="{{!searched}}">

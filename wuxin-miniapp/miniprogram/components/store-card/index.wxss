@@ -1,12 +1,85 @@
-.store-card { display:flex; gap:24rpx; padding:24rpx; background:#ffffff; border-radius:32rpx; box-shadow:0 8rpx 32rpx rgba(0,0,0,.05); transition:transform 160ms ease; }
-.store-card:active { transform:scale(.985); }
-.store-image { flex-shrink:0; width:176rpx; height:176rpx; background:#f0f2f4; border-radius:24rpx; }
-.store-content { flex:1; min-width:0; padding:4rpx 0; }
-.store-title-row { display:flex; align-items:center; gap:16rpx; }
-.store-name { flex:1; min-width:0; overflow:hidden; color:#111111; font-size:30rpx; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
-.store-status { flex-shrink:0; padding:6rpx 12rpx; color:#999999; background:#f0f2f4; border-radius:10rpx; font-size:20rpx; }
-.store-status.is-open { color:#119653; background:#eaf8f0; }
-.store-description { display:-webkit-box; margin-top:14rpx; overflow:hidden; color:#666666; font-size:24rpx; line-height:34rpx; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
-.store-meta { display:flex; align-items:center; min-width:0; margin-top:16rpx; color:#999999; font-size:21rpx; }
-.dot { margin:0 8rpx; }
-.address { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.store-card {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 24rpx;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.05);
+  transition: opacity 160ms ease;
+}
+.store-card-pressed {
+  opacity: 0.78;
+}
+.store-image {
+  flex-shrink: 0;
+  width: 176rpx;
+  height: 176rpx;
+  margin-right: 24rpx;
+  background: #f0f2f4;
+  border-radius: 24rpx;
+}
+.store-content {
+  flex: 1;
+  min-width: 0;
+  padding: 4rpx 0;
+}
+.store-title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+.store-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #111111;
+  font-size: 30rpx;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.store-status {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  padding: 6rpx 12rpx;
+  color: #999999;
+  background: #f0f2f4;
+  border-radius: 10rpx;
+  font-size: 20rpx;
+  white-space: nowrap;
+}
+.store-status.is-open {
+  color: #119653;
+  background: #eaf8f0;
+}
+.store-description {
+  display: -webkit-box;
+  margin-top: 14rpx;
+  overflow: hidden;
+  color: #666666;
+  font-size: 24rpx;
+  line-height: 34rpx;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.store-meta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-top: 16rpx;
+  color: #999999;
+  font-size: 21rpx;
+}
+.dot {
+  margin: 0 8rpx;
+}
+.address {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

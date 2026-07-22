@@ -1,1 +1,153 @@
-.apply-page{min-height:100vh;padding:30rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));background:#f6f7f9}.title,.subtitle{display:block}.title{font-size:44rpx;font-weight:800}.subtitle{margin-top:8rpx;color:#999;font-size:23rpx;line-height:1.55}.error{margin-top:24rpx;padding:20rpx 24rpx;color:#c73335;background:#fff1f1;border-radius:20rpx;font-size:23rpx}.form-card{margin-top:22rpx;padding:30rpx;background:#fff;border-radius:32rpx}.section-title{display:block;margin-bottom:24rpx;font-size:29rpx;font-weight:750}.section-note{display:block;margin:-14rpx 0 24rpx;color:#999;font-size:21rpx}.field{flex:1;min-width:0;margin-bottom:24rpx}.field:last-child{margin-bottom:0}.field>text,.label-row>text{display:block;margin-bottom:10rpx;color:#666;font-size:22rpx;font-weight:600}.field input,.field textarea{width:100%;height:86rpx;padding:0 20rpx;background:#f6f7f9;border-radius:20rpx;font-size:24rpx}.field textarea{height:140rpx;padding:20rpx;line-height:1.5}.two-cols,.three-cols{display:flex;gap:14rpx}.label-row{display:flex;align-items:center;justify-content:space-between}.label-row button{margin-bottom:8rpx;color:#18b566;font-size:21rpx}.label-row button::after,.submit::after,.result-card button::after{border:0}.submit,.result-card button{display:flex;align-items:center;justify-content:center;height:98rpx;margin-top:28rpx;color:#fff;background:#18b566;border-radius:28rpx;font-size:29rpx;font-weight:700}.result-card{margin-top:120rpx;padding:48rpx 34rpx;background:#fff;border-radius:36rpx;text-align:center}.result-icon{display:flex;align-items:center;justify-content:center;width:104rpx;height:104rpx;margin:auto;color:#fff;background:#18b566;border-radius:34rpx;font-size:48rpx}.result-title,.result-text,.result-meta{display:block}.result-title{margin-top:30rpx;font-size:34rpx;font-weight:800}.result-text{margin-top:14rpx;color:#18b566;font-size:25rpx}.result-meta{margin-top:12rpx;color:#999;font-size:21rpx}
+.apply-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 30rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  background: #f6f7f9;
+}
+.title,
+.subtitle {
+  display: block;
+}
+.title {
+  font-size: 44rpx;
+  font-weight: 800;
+}
+.subtitle {
+  margin-top: 8rpx;
+  color: #999;
+  font-size: 23rpx;
+  line-height: 1.55;
+}
+.error {
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  color: #c73335;
+  background: #fff1f1;
+  border-radius: 20rpx;
+  font-size: 23rpx;
+}
+.form-card {
+  margin-top: 22rpx;
+  padding: 30rpx;
+  background: #fff;
+  border-radius: 32rpx;
+}
+.section-title {
+  display: block;
+  margin-bottom: 24rpx;
+  font-size: 29rpx;
+  font-weight: 750;
+}
+.section-note {
+  display: block;
+  margin: 0 0 24rpx;
+  color: #999;
+  font-size: 21rpx;
+}
+.field {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 24rpx;
+}
+.field:last-child {
+  margin-bottom: 0;
+}
+.field > text,
+.label-row > text {
+  display: block;
+  margin-bottom: 10rpx;
+  color: #666;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+.field input,
+.field textarea {
+  width: 100%;
+  height: 86rpx;
+  padding: 0 20rpx;
+  background: #f6f7f9;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+.field textarea {
+  height: 140rpx;
+  padding: 20rpx;
+  line-height: 1.5;
+}
+.two-cols,
+.three-cols {
+  display: flex;
+}
+.two-cols .field + .field,
+.three-cols .field + .field {
+  margin-left: 14rpx;
+}
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.label-row button {
+  margin-bottom: 8rpx;
+  color: #18b566;
+  font-size: 21rpx;
+}
+.label-row button::after,
+.submit::after,
+.result-card button::after {
+  border: 0;
+}
+.submit,
+.result-card button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 98rpx;
+  margin-top: 28rpx;
+  color: #fff;
+  background: #18b566;
+  border-radius: 28rpx;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.result-card {
+  margin-top: 120rpx;
+  padding: 48rpx 34rpx;
+  background: #fff;
+  border-radius: 36rpx;
+  text-align: center;
+}
+.result-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104rpx;
+  height: 104rpx;
+  margin: auto;
+  color: #fff;
+  background: #18b566;
+  border-radius: 34rpx;
+  font-size: 48rpx;
+}
+.result-title,
+.result-text,
+.result-meta {
+  display: block;
+}
+.result-title {
+  margin-top: 30rpx;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+.result-text {
+  margin-top: 14rpx;
+  color: #18b566;
+  font-size: 25rpx;
+}
+.result-meta {
+  margin-top: 12rpx;
+  color: #999;
+  font-size: 21rpx;
+}

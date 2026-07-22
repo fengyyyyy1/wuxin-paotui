@@ -4,7 +4,7 @@
     <image class="avatar" src="{{avatarUrl}}" mode="aspectFill" binderror="handleAvatarError" />
   </view>
   <view class="hello"><text class="hello-caption">你好，{{displayName}}</text><text class="hello-title">今天想要点什么？</text></view>
-  <button class="search-entry" bindtap="goToSearch"><image src="/assets/images/icons/search-line.svg" /><text>搜索门店或商品</text></button>
+  <view class="search-entry" hover-class="search-entry--pressed" bindtap="goToSearch"><image src="/assets/images/icons/search-line.svg" /><text>搜索门店或商品</text></view>
 
   <view wx:if="{{loading}}" class="skeleton-wrap">
     <view class="skeleton banner-skeleton"></view><view class="skeleton service-skeleton"></view><view class="skeleton card-skeleton"></view>
@@ -15,7 +15,7 @@
     </swiper>
 
     <view class="service-grid">
-      <button class="service-item" wx:for="{{serviceEntries}}" wx:key="id" data-id="{{item.id}}" bindtap="handleServiceTap"><text class="service-icon">{{item.iconText}}</text><text class="service-title">{{item.title}}</text><text class="service-description">{{item.description}}</text></button>
+      <view class="service-item" wx:for="{{serviceEntries}}" wx:key="id" data-id="{{item.id}}" hover-class="service-item--pressed" bindtap="handleServiceTap"><text class="service-icon">{{item.iconText}}</text><text class="service-title">{{item.title}}</text><text class="service-description">{{item.description}}</text></view>
     </view>
 
     <view class="home-section">
@@ -29,8 +29,8 @@
       <page-state error="{{errorMessage}}" empty="{{!errorMessage && stores.length === 0}}" empty-title="附近暂无门店" empty-description="稍后再来看看" bind:retry="retry" />
     </view>
 
-    <view wx:if="{{hotProducts.length}}" class="home-section"><section-header title="热门商品" subtitle="按真实商品销量排序" /><view class="product-grid"><product-card wx:for="{{hotProducts}}" wx:key="productId" product="{{item}}" bind:select="goToProductDetail" bind:add="addProduct" bind:imageerror="handleProductImageError" /></view></view>
-    <view wx:if="{{recommendedProducts.length}}" class="home-section"><section-header title="推荐商品" subtitle="来自附近营业门店" /><view class="product-grid"><product-card wx:for="{{recommendedProducts}}" wx:key="productId" product="{{item}}" bind:select="goToProductDetail" bind:add="addProduct" bind:imageerror="handleProductImageError" /></view></view>
-    <view wx:if="{{favoriteProducts.length}}" class="home-section"><section-header title="猜你喜欢" subtitle="继续发现更多本地好物" /><view class="product-grid"><product-card wx:for="{{favoriteProducts}}" wx:key="productId" product="{{item}}" bind:select="goToProductDetail" bind:add="addProduct" bind:imageerror="handleProductImageError" /></view></view>
+    <view wx:if="{{hotProducts.length}}" class="home-section"><section-header title="热门商品" subtitle="按真实商品销量排序" /><view class="product-grid"><view class="product-grid__item" wx:for="{{hotProducts}}" wx:key="productId"><product-card product="{{item}}" bind:select="goToProductDetail" bind:add="addProduct" bind:imageerror="handleProductImageError" /></view></view></view>
+    <view wx:if="{{recommendedProducts.length}}" class="home-section"><section-header title="推荐商品" subtitle="来自附近营业门店" /><view class="product-grid"><view class="product-grid__item" wx:for="{{recommendedProducts}}" wx:key="productId"><product-card product="{{item}}" bind:select="goToProductDetail" bind:add="addProduct" bind:imageerror="handleProductImageError" /></view></view></view>
+    <view wx:if="{{favoriteProducts.length}}" class="home-section"><section-header title="猜你喜欢" subtitle="继续发现更多本地好物" /><view class="product-grid"><view class="product-grid__item" wx:for="{{favoriteProducts}}" wx:key="productId"><product-card product="{{item}}" bind:select="goToProductDetail" bind:add="addProduct" bind:imageerror="handleProductImageError" /></view></view></view>
   </block>
 </view>
