@@ -2509,25 +2509,46 @@ Mock模式说明：
 
 ## 五、V1.8骑手端与商家端回归
 
-测试时间：2026-07-22。临时使用当前工作树后端的`8081`端口，正常开发配置仍为`8080`。
+测试时间：2026-07-22 17:09至17:12，环境`http://localhost:8080`。15号SQL已由用户人工执行。
 
-使用`test001 / 123456`登录并携带Bearer Token后，以下真实请求通过：
+建议环境变量：
 
-- `GET /api/merchant/me`
-- `GET /api/merchant/order/page`
-- `GET /api/merchant/order/7`
-- `GET /api/merchant/category/list`
-- `GET /api/merchant/product/list`
-- `GET /api/rider/order/hall`
-- `GET /api/rider/ranking`
-- `GET /api/rider/1/statistics`
-- 不携带Token访问商家接口返回HTTP 401
+| 变量 | 用途 |
+| --- | --- |
+| `baseUrl` | 后端地址 |
+| `userToken` | 普通用户JWT |
+| `riderToken` | 骑手JWT |
+| `merchantToken` | 商家JWT |
+| `adminToken` | 管理员JWT |
+| `userId`、`riderId` | 用户和骑手ID |
+| `merchantId`、`storeId` | 商家和店铺ID |
+| `orderId` | 配送订单ID |
 
-以下请求因`15_update_rider_application.sql`尚未人工执行而受阻：
+Token均通过`POST /api/user/login`或本地Mock `POST /api/user/wechat/login`动态获取，禁止写入仓库。
 
-- `GET /api/rider/profile`
-- `GET /api/rider/order/my`
+### 数据库升级后实际结果
 
-服务端日志明确为`Unknown column 'reject_reason' in 'field list'`。人工执行脚本后需要重新验证以上两个接口，并继续验证骑手申请、管理员审核、骑手接单/完成/放弃以及商家接单/拒单/出餐写流程。
+| 场景 | 请求 | 参数摘要 | 结果 |
+| --- | --- | --- | --- |
+| 未登录访问 | `GET /api/rider/profile` | 无Token | HTTP 401，`code=401` |
+| 原骑手资料 | `GET /api/rider/profile` | `riderToken` | `code=200`，`riderId=1` |
+| 我的配送 | `GET /api/rider/order/my?pageNum=1&pageSize=10` | `riderToken` | `code=200`，`total=4` |
+| 配送详情 | `GET /api/rider/order/7` | `riderToken` | `code=200`，订单7、已接单 |
+| 骑手申请 | `POST /api/rider/apply` | 姓名、身份证号、正反面HTTPS URL | `code=200`，创建`riderId=2`、审核中 |
+| 重复申请 | `POST /api/rider/apply` | 相同用户再次提交 | `code=409` |
+| 审核拒绝 | `POST /api/admin/rider/2/reject` | `reason=V1.8拒绝原因回归` | `code=200`，Profile真实返回原因 |
+| 拒绝后重申 | `POST /api/rider/apply` | 更新原记录 | `code=200`，恢复审核中且清空原因 |
+| 审核通过 | `POST /api/admin/rider/2/approve` | 无请求体 | `code=200`，审核通过、正常 |
+| 禁用骑手 | `POST /api/admin/rider/2/disable` | `reason=V1.8禁用权限回归` | `code=200`，已禁用且原因可查询 |
+| 禁用后访问大厅 | `GET /api/rider/order/hall` | 禁用骑手Token | `code=403 当前用户不是骑手` |
+| 禁用后接单 | `POST /api/rider/order/accept/999999` | 禁用骑手Token | `code=403`，未进入订单处理 |
+| 启用骑手 | `POST /api/admin/rider/2/enable` | 无请求体 | `code=200`，恢复正常并清空原因 |
+| 重复启用 | `POST /api/admin/rider/2/enable` | 无请求体 | `code=409` |
+| 非管理员越权 | `POST /api/admin/rider/1/approve` | 普通用户Token | HTTP 403，`code=403` |
+| 非骑手访问大厅 | `GET /api/rider/order/hall` | 管理员Token | `code=403` |
 
-本轮为避免改变共享测试订单状态，没有重放历史写操作闭环。订单7的商家接单、出餐、骑手接单以及订单8的商家拒单继续以已有Postman和数据库验收记录为依据；两个新小程序仍需微信开发者工具人工验收。
+当前最终测试数据：`riderId=1`和`riderId=2`均为审核通过、正常启用，`reject_reason=NULL`。原骑手1及已有订单没有被修改。
+
+### 未通过项目
+
+当前Controller不存在管理员骑手列表和详情GET接口。实际探测`GET /api/admin/rider`和`GET /api/admin/rider/1`均进入全局未知异常并返回业务码500，因此不得写成已通过；该能力进入V1.9总控端。

@@ -218,8 +218,9 @@ POST /api/user/wechat/login
 
 | 端 | 登录账号 | 真实身份与ID | 说明 |
 | --- | --- | --- | --- |
-| 骑手端 | `test001 / 123456` | `userId=2`、`riderId=1` | 当前数据库唯一骑手，已审核启用 |
+| 骑手端 | `test001 / 123456` | `userId=2`、`riderId=1` | 原有稳定骑手，已审核启用 |
 | 商家端 | `test001 / 123456` | `merchantId=1`、`storeId=1` | 当前测试账号同时拥有商家与骑手身份 |
 | 总控端 | `admin / 123456` | 管理员角色 | 用于`/api/admin/rider/**`权限回归 |
+| 骑手申请回归 | 本地Mock微信身份 | `userId=3`、`riderId=2` | 申请、拒绝、重申、通过、禁用和启用已验证，最终正常启用 |
 
-Token继续通过`POST /api/user/login`动态获取，不写入代码或文档。正式微信端身份需在配置正式AppID后验证，当前`touristappid`不能用于发布。
+Token继续通过`POST /api/user/login`或本地Mock微信登录动态获取，不写入代码或文档。两个新小程序当前共用同一测试AppID，生产发布前必须分别配置独立正式AppID。

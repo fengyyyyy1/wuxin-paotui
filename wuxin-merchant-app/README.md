@@ -18,8 +18,8 @@ npm run lint
 npm run build
 ```
 
-在微信开发者工具中导入本目录。当前 `project.config.json` 使用
-`touristappid`，发布前必须替换为正式商家端 AppID，并把
+在微信开发者工具中导入本目录。当前 `project.config.json` 已配置测试
+AppID；骑手端和商家端生产发布前必须分别配置独立AppID，并把
 `miniprogram/config/env.ts` 的接口地址替换为已备案的 HTTPS 合法域名。
 
 本地联调默认连接 `http://localhost:8080`。登录后根据真实商家审核状态

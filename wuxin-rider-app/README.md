@@ -17,13 +17,14 @@ npm run lint
 npm run build
 ```
 
-在微信开发者工具中导入本目录。当前 `project.config.json` 使用
-`touristappid`，发布前必须替换为正式骑手端 AppID，并把
+在微信开发者工具中导入本目录。当前 `project.config.json` 已配置测试
+AppID；骑手端和商家端生产发布前必须分别配置独立AppID，并把
 `miniprogram/config/env.ts` 的接口地址替换为已备案的 HTTPS 合法域名。
 
 本地联调默认连接 `http://localhost:8080`。骑手申请和资料接口依赖
 `wuxin-paotui-server/src/main/resources/sql/15_update_rider_application.sql`，
-该脚本必须由维护人员在 Navicat 中人工执行，应用不会自动迁移数据库。
+该脚本已于2026-07-22由用户在Navicat中人工执行并通过结构、接口回归；
+应用仍不会自动迁移数据库。
 
 ## 业务边界
 
