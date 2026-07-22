@@ -1,0 +1,22 @@
+{
+  "name": "wuxin-merchant-app",
+  "version": "1.8.0",
+  "private": true,
+  "type": "module",
+  "description": "五鑫跑腿商家微信小程序",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint \"miniprogram/**/*.ts\"",
+    "build": "npm run type-check && npm run lint",
+    "format": "prettier --write \"miniprogram/**/*.{ts,json,wxml,wxss}\" \"*.{json,js,md}\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@eslint/js": "^9.31.0",
+    "eslint": "^9.31.0",
+    "miniprogram-api-typings": "^4.0.7",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.37.0"
+  }
+}

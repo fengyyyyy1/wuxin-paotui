@@ -1,0 +1,26 @@
+{
+  "pages": [
+    "pages/dashboard/index",
+    "pages/orders/index",
+    "pages/profile/index",
+    "pages/login/index",
+    "pages/apply/index",
+    "pages/review/index",
+    "pages/order-detail/index",
+    "pages/store/index",
+    "pages/categories/index",
+    "pages/products/index",
+    "pages/product-edit/index",
+    "pages/analytics/index"
+  ],
+  "window": { "navigationBarTitleText": "五鑫商家", "navigationBarBackgroundColor": "#ffffff", "navigationBarTextStyle": "black", "backgroundColor": "#f5f7f6", "backgroundTextStyle": "dark" },
+  "tabBar": {
+    "color": "#8a918e", "selectedColor": "#18a660", "backgroundColor": "#ffffff", "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/dashboard/index", "text": "工作台", "iconPath": "assets/tabbar/home.png", "selectedIconPath": "assets/tabbar/home-active.png" },
+      { "pagePath": "pages/orders/index", "text": "订单", "iconPath": "assets/tabbar/order.png", "selectedIconPath": "assets/tabbar/order-active.png" },
+      { "pagePath": "pages/profile/index", "text": "我的", "iconPath": "assets/tabbar/profile.png", "selectedIconPath": "assets/tabbar/profile-active.png" }
+    ]
+  },
+  "style": "v2", "sitemapLocation": "sitemap.json", "lazyCodeLoading": "requiredComponents"
+}

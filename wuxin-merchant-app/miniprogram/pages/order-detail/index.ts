@@ -1,0 +1,16 @@
+import { acceptMerchantOrder, getMerchantOrderDetail, readyMerchantOrder, rejectMerchantOrder } from '../../api/orders';
+import { ORDER_STATUS } from '../../constants/status';
+import type { MerchantOrderDetail } from '../../types/order';
+import { dateTime, money } from '../../utils/format';
+import { errorMessage } from '../../utils/request';
+
+Page({
+  data: { id: 0, loading: true, error: '', order: null as MerchantOrderDetail | null, totalText: '0.00', createText: '', payText: '', acceptText: '', readyText: '', rejectText: '', rejectReason: '', submitting: false, canAccept: false, canReady: false },
+  onLoad(options: Record<string, string>) { const id = Number(options.id); if (!Number.isInteger(id) || id <= 0) { this.setData({ loading: false, error: '订单参数错误' }); return; } this.setData({ id }); },
+  onShow() { if (this.data.id) void this.load(); },
+  onReason(event: WechatMiniprogram.TextareaInput) { this.setData({ rejectReason: event.detail.value }); },
+  async load() { this.setData({ loading: true, error: '' }); try { const order = await getMerchantOrderDetail(this.data.id); this.setData({ order, totalText: money(order.totalAmount), createText: dateTime(order.createTime), payText: dateTime(order.payTime), acceptText: dateTime(order.merchantAcceptTime), readyText: dateTime(order.readyTime), rejectText: dateTime(order.merchantRejectTime), rejectReason: order.merchantRejectReason || '', canAccept: order.status === ORDER_STATUS.waiting && order.payStatus === 1, canReady: order.status === ORDER_STATUS.preparing && order.payStatus === 1 }); } catch (error) { this.setData({ error: errorMessage(error) }); } finally { this.setData({ loading: false }); } },
+  async onAccept() { if (!this.data.canAccept || this.data.submitting) return; const result = await wx.showModal({ title: '确认接单', content: '接单后请及时备货，确定继续？', confirmColor: '#18a660' }); if (!result.confirm) return; this.setData({ submitting: true }); try { await acceptMerchantOrder(this.data.id); wx.showToast({ title: '接单成功', icon: 'success' }); await this.load(); } catch (error) { wx.showToast({ title: errorMessage(error), icon: 'none' }); } finally { this.setData({ submitting: false }); } },
+  async onReject() { const reason = this.data.rejectReason.trim(); if (!this.data.canAccept || this.data.submitting) return; if (reason.length < 2 || reason.length > 200) { wx.showToast({ title: '拒单原因需为2到200字', icon: 'none' }); return; } const result = await wx.showModal({ title: '确认拒单', content: '拒单后订单进入待退款状态，不代表已经退款。', confirmColor: '#e5484d' }); if (!result.confirm) return; this.setData({ submitting: true }); try { await rejectMerchantOrder(this.data.id, reason); wx.showToast({ title: '已拒单，等待退款', icon: 'none' }); await this.load(); } catch (error) { wx.showToast({ title: errorMessage(error), icon: 'none' }); } finally { this.setData({ submitting: false }); } },
+  async onReady() { if (!this.data.canReady || this.data.submitting) return; const result = await wx.showModal({ title: '确认出餐', content: '确认商品已备妥，可交给骑手配送？', confirmColor: '#18a660' }); if (!result.confirm) return; this.setData({ submitting: true }); try { await readyMerchantOrder(this.data.id); wx.showToast({ title: '已出餐', icon: 'success' }); await this.load(); } catch (error) { wx.showToast({ title: errorMessage(error), icon: 'none' }); } finally { this.setData({ submitting: false }); } }
+});

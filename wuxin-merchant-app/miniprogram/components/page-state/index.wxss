@@ -1,0 +1,5 @@
+.state { padding: 100rpx 32rpx; text-align: center; color: #929b96; }
+.state__mark { display: flex; align-items: center; justify-content: center; width: 88rpx; height: 88rpx; margin: 0 auto 20rpx; border-radius: 44rpx; background: #eaf8f1; color: #18a660; font-size: 34rpx; font-weight: 700; }
+.state__title { color: #39413d; font-size: 30rpx; font-weight: 650; }
+.state__description { margin-top: 12rpx; line-height: 1.6; }
+.state__action { width: 240rpx; margin-top: 28rpx; border: 0; border-radius: 22rpx; background: #18a660; color: #fff; font-size: 27rpx; }

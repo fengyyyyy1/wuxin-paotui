@@ -1,0 +1,1 @@
+{ "navigationBarTitleText": "商家订单", "enablePullDownRefresh": true, "onReachBottomDistance": 120, "usingComponents": { "page-state": "/components/page-state/index" } }

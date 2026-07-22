@@ -1,0 +1,11 @@
+page { min-height: 100%; background: var(--page); color: var(--text); font-size: 28rpx; }
+.page { min-height: 100vh; padding: 24rpx 24rpx calc(40rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.page--tab { padding-bottom: calc(52rpx + env(safe-area-inset-bottom)); }
+.title { font-size: 44rpx; font-weight: 700; line-height: 1.2; }
+.subtitle { margin-top: 10rpx; color: var(--text-secondary); line-height: 1.6; }
+.section-title { margin: 32rpx 4rpx 18rpx; font-size: 32rpx; font-weight: 650; }
+.muted { color: var(--text-muted); }
+.danger { color: var(--danger); }
+.nowrap { white-space: nowrap; }
+view, text, button, input, textarea, image, scroll-view { box-sizing: border-box; }
+button::after { border: 0; }

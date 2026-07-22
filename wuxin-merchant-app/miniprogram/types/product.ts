@@ -1,0 +1,3 @@
+export interface Category { categoryId: number; categoryName: string; sort: number; status: number; statusText: string; createTime: string; }
+export interface Product { productId: number; storeId: number; categoryId: number; categoryName: string; productName: string; productImage: string | null; productDescription: string | null; price: number; originalPrice: number | null; stock: number; sales: number; productStatus: number; productStatusText: string; sort: number; createTime: string; updateTime: string; }
+export interface ProductRequest { categoryId: number; productName: string; productImage?: string; productDescription?: string; price: number; originalPrice?: number; stock: number; sort?: number; }
