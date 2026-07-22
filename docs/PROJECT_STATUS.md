@@ -10,9 +10,28 @@
 
 项目状态：目标已从继续扩展企业级功能调整为尽快达到真实上线条件。本轮仅完成全项目上线审计和上线文档，不新增业务模块、不修改业务代码、不提交Git。
 
-当前上线完成率：62%。
+当前上线完成率：68%。
 
-当前断点：V2.0-P0 生产配置、真实微信支付闭环、退款、对象存储、HTTPS域名、部署与微信审核准备。
+当前断点：V2.0-P0-02 真实微信支付网关与支付回调。
+
+## V2.0-P0-01 生产环境配置与三端 API 地址治理
+
+- 后端配置已拆分为`application.yml`、`application-dev.yml`和`application-prod.yml`，公共配置和敏感配置统一通过环境变量注入。
+- 新增`ProductionConfigurationValidator`，`prod`激活时强制校验`DB_URL`、`DB_USERNAME`、`DB_PASSWORD`、`JWT_SECRET`和`SERVER_PORT`；真实微信登录或支付启用时再校验对应变量。
+- JWT密钥已从静态开发常量改为`wuxin.jwt.secret`配置注入，生产环境禁止使用缺失、默认或弱密钥。
+- 新增`logback-spring.xml`，开发环境允许项目和SQL DEBUG，生产环境关闭Mapper/MyBatis DEBUG并按天和大小滚动`application-info.log`、`application-error.log`。
+- 用户端、商家端、骑手端统一通过`config/env.ts`按微信环境选择API地址：开发版`http://localhost:8080`、体验版`https://test-api.待配置域名`、正式版`https://api.待配置域名`。
+- 商家端和骑手端本地Mock微信登录开关仅在开发环境生效。
+- 新增`deploy/env/application-prod.env.example`，列出数据库、JWT、微信登录、微信支付、对象存储、日志路径、端口和生产域名变量，占位值不包含真实密钥。
+
+### V2.0-P0-01 后剩余P0
+
+- 真实微信支付网关仍未实现。
+- 微信支付回调、验签、解密、金额校验和幂等确认仍未实现。
+- 微信退款仍未实现。
+- 真实微信手机号接口仍未接入。
+- COS/OSS上传接口仍未实现。
+- 服务器Nginx、HTTPS、正式域名和微信审核材料仍需落地。
 
 ## V2.0 上线冲刺审计结论
 
@@ -29,15 +48,15 @@
 
 ### P0 必须完成
 
-- 生产环境小程序和三端 API 地址仍指向`http://localhost:8080`，用户端本地Mock开关仍为默认开发配置。
+- 三端 API 地址已完成环境化，但正式域名仍需替换`待配置域名`并在微信后台配置合法域名。
 - 真实微信支付网关未实现；`PaymentGatewayRouter`启用`WECHAT`时找不到真实网关，当前只有Mock支付网关。
 - 微信支付回调`/api/payment/wechat/notify`未注册，未实现官方验签、解密、金额校验和幂等确认。
 - 微信退款未实现，商家拒单和后台取消已支付订单只能进入待退款状态。
 - 真实微信手机号`getuserphonenumber`尚未接入，当前只有Mock手机号网关。
 - 文件上传和对象存储未实现，商家、骑手资质与商品/门店图片仍依赖手工填写HTTPS图片URL。
-- 尚未提供生产部署脚本、Nginx/HTTPS配置、正式域名配置和微信小程序合法域名配置。
+- 尚未提供Nginx/HTTPS配置、正式域名配置和微信小程序合法域名配置。
 - SQL首次部署需要人工按顺序执行，缺少自动迁移或明确执行验收记录。
-- 生产日志配置存在Mapper DEBUG输出风险，需要上线前切换到生产日志级别。
+- 生产日志已禁止Mapper/MyBatis DEBUG，仍需上线前确认日志目录权限和脱敏策略。
 
 ### P1 建议完成
 

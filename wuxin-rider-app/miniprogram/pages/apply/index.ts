@@ -1,6 +1,6 @@
 import { bindPhone } from '../../api/auth';
 import { applyRider } from '../../api/rider';
-import { MOCK_WECHAT_LOGIN_STORAGE_KEY } from '../../config/env';
+import { IS_DEVELOPMENT_ENV, MOCK_WECHAT_LOGIN_STORAGE_KEY } from '../../config/env';
 import { ROUTES } from '../../constants/routes';
 import { restoreSession } from '../../services/auth';
 import { errorMessage } from '../../utils/request';
@@ -12,7 +12,7 @@ Page({
   onInput(event: WechatMiniprogram.Input) { const field = String(event.currentTarget.dataset.field); this.setData({ [field]: event.detail.value.trim() }); },
   async onBindPhone(event: any) {
     if (event.detail.errMsg?.includes('deny')) { wx.showToast({ title: '已取消手机号授权', icon: 'none' }); return; }
-    const useMock = wx.getStorageSync<boolean>(MOCK_WECHAT_LOGIN_STORAGE_KEY) === true;
+    const useMock = IS_DEVELOPMENT_ENV && wx.getStorageSync<boolean>(MOCK_WECHAT_LOGIN_STORAGE_KEY) === true;
     const code = useMock ? 'mock-phone-code-13800000003' : event.detail.code;
     if (!code) { wx.showToast({ title: '未获取到手机号授权凭证', icon: 'none' }); return; }
     this.setData({ binding: true });

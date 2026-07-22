@@ -1,0 +1,21 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    root: INFO
+    com.wuxin: INFO
+    com.wuxin.mapper: INFO
+    com.baomidou.mybatisplus: WARN
+    org.mybatis: WARN
+    org.mybatis.spring: WARN
+
+wuxin:
+  mock-wechat-login:
+    enabled: false
+  mock-wechat-phone:
+    enabled: false
+  mock-payment:
+    enabled: false

@@ -2,7 +2,7 @@
 
 最后更新时间：2026-07-22
 
-本文档用于V2.0上线冲刺阶段的首次部署准备。当前项目尚存在真实微信支付、退款和对象存储等P0阻塞，本文档先固化部署路径和检查点。
+本文档用于V2.0上线冲刺阶段的首次部署准备。V2.0-P0-01已完成生产配置分层、日志治理、三端API地址环境化和生产环境变量示例。当前项目仍存在真实微信支付、退款和对象存储等P0阻塞。
 
 ## 一、部署前提
 
@@ -22,8 +22,8 @@
 - 微信支付回调接口未注册，支付成功无法由微信侧可靠通知后端。
 - 微信退款未实现，已支付订单取消或拒单不能正式退款。
 - 上传接口未实现，资质和图片目前只能手填HTTPS URL。
-- 三个小程序默认API仍为`http://localhost:8080`，必须上线前替换。
-- `application.properties`存在Mapper DEBUG日志，生产环境需关闭。
+- 三个小程序已按微信环境自动切换API地址，但`https://test-api.待配置域名`和`https://api.待配置域名`必须上线前替换为真实域名。
+- 生产日志已关闭Mapper DEBUG，仍需确认服务器`LOG_PATH`权限和日志保留策略。
 
 ## 三、SQL执行顺序
 
@@ -72,11 +72,47 @@ WECHAT_PAY_PRIVATE_KEY_PATH=/secure/path/apiclient_key.pem
 WECHAT_PAY_API_V3_KEY=APIv3Key
 WECHAT_PAY_NOTIFY_URL=https://api.example.com/api/payment/wechat/notify
 MOCK_PAYMENT_ENABLED=false
+
+OBJECT_STORAGE_ENABLED=false
+OBJECT_STORAGE_PROVIDER=COS
+OBJECT_STORAGE_REGION=replace-with-region
+OBJECT_STORAGE_BUCKET=replace-with-bucket
+OBJECT_STORAGE_SECRET_ID=replace-with-secret-id
+OBJECT_STORAGE_SECRET_KEY=replace-with-secret-key
+OBJECT_STORAGE_PUBLIC_BASE_URL=https://cdn.待配置域名
 ```
 
 注意：当前真实微信支付网关和回调尚未完成，上述支付变量只能作为上线目标配置，不能代表当前代码已经可收款。
 
-## 五、构建命令
+完整安全示例见：`deploy/env/application-prod.env.example`。
+
+生产启动方式：
+
+```bash
+SPRING_PROFILES_ACTIVE=prod java -jar wuxin-paotui-server.jar
+```
+
+开发启动方式：
+
+```bash
+SPRING_PROFILES_ACTIVE=dev java -jar wuxin-paotui-server.jar
+```
+
+`prod`启动时会强制检查`DB_URL`、`DB_USERNAME`、`DB_PASSWORD`、`JWT_SECRET`和`SERVER_PORT`。真实微信登录或真实微信支付启用时，再检查对应微信变量；Mock模式不会要求尚未启用的真实支付变量。
+
+## 五、三端API地址
+
+三端统一在`miniprogram/config/env.ts`配置：
+
+| 微信环境 | API地址 |
+| --- | --- |
+| 开发版 develop | `http://localhost:8080` |
+| 体验版 trial | `https://test-api.待配置域名` |
+| 正式版 release | `https://api.待配置域名` |
+
+上线前必须将`待配置域名`替换为真实HTTPS域名，并在微信公众平台配置合法请求域名。
+
+## 六、构建命令
 
 ### 后端
 
@@ -128,7 +164,7 @@ npm run lint
 npm run type-check
 ```
 
-## 六、Nginx与HTTPS
+## 七、Nginx与HTTPS
 
 生产建议结构：
 
@@ -144,7 +180,7 @@ npm run type-check
 - 上传文件大小限制满足资质图片需求。
 - 后端真实IP和代理头处理符合日志审计要求。
 
-## 七、微信小程序后台配置
+## 八、微信小程序后台配置
 
 - 配置request合法域名。
 - 配置uploadFile合法域名。
@@ -154,7 +190,7 @@ npm run type-check
 - 配置服务类目、客服联系方式和审核说明。
 - 支付能力需绑定商户号并配置支付回调域名。
 
-## 八、上线验证
+## 九、上线验证
 
 ### 用户端
 
@@ -184,14 +220,14 @@ npm run type-check
 - 订单、用户、商家、骑手、商品、财务、配置和日志中心查询。
 - 修改客服电话、公告、Banner和费用配置后，用户端无需发版即可读取。
 
-## 九、回滚建议
+## 十、回滚建议
 
 - 每次上线前备份数据库。
 - 保留上一版后端Jar和管理后台静态包。
 - 小程序正式发布前保留上一版线上版本。
 - 如支付、订单或登录出现P0故障，优先回滚后端并暂停小程序发布。
 
-## 十、上线前最低通过标准
+## 十一、上线前最低通过标准
 
 - P0问题全部关闭。
 - 后端测试、四端Build、Lint、TypeScript全部通过。

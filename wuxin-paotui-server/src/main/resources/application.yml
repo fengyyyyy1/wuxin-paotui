@@ -2,6 +2,8 @@ server:
   port: ${SERVER_PORT:8080}
 
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/wuxin_paotui?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false}
     username: ${DB_USERNAME:root}
@@ -27,3 +29,13 @@ wuxin:
     notify-url: ${WECHAT_PAY_NOTIFY_URL:}
   mock-payment:
     enabled: ${MOCK_PAYMENT_ENABLED:true}
+  jwt:
+    secret: ${JWT_SECRET:wuxin-paotui-jwt-secret-key-for-development-2026}
+  object-storage:
+    enabled: ${OBJECT_STORAGE_ENABLED:false}
+    provider: ${OBJECT_STORAGE_PROVIDER:COS}
+    region: ${OBJECT_STORAGE_REGION:}
+    bucket: ${OBJECT_STORAGE_BUCKET:}
+    secret-id: ${OBJECT_STORAGE_SECRET_ID:}
+    secret-key: ${OBJECT_STORAGE_SECRET_KEY:}
+    public-base-url: ${OBJECT_STORAGE_PUBLIC_BASE_URL:}

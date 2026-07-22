@@ -10,13 +10,22 @@ import java.util.Date;
 
 public final class JwtUtils {
 
-    private static final String SECRET = "wuxin-paotui-jwt-secret-key-for-development-2026";
+    private static final String DEFAULT_SECRET =
+            "wuxin-paotui-jwt-secret-key-for-development-2026";
 
     private static final long EXPIRE_TIME = 7L * 24 * 60 * 60 * 1000;
 
-    private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    private static volatile SecretKey secretKey = buildSecretKey(DEFAULT_SECRET);
 
     private JwtUtils() {
+    }
+
+    public static void configureSecret(String secret) {
+        if (secret == null || secret.isBlank()) {
+            secretKey = buildSecretKey(DEFAULT_SECRET);
+            return;
+        }
+        secretKey = buildSecretKey(secret);
     }
 
     public static String generateToken(Long userId, String username) {
@@ -27,7 +36,7 @@ public final class JwtUtils {
                 .claim("username", username)
                 .issuedAt(now)
                 .expiration(expiration)
-                .signWith(SECRET_KEY)
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -50,9 +59,13 @@ public final class JwtUtils {
 
     private static Claims parseClaims(String token) {
         return Jwts.parser()
-                .verifyWith(SECRET_KEY)
+                .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    private static SecretKey buildSecretKey(String secret) {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }

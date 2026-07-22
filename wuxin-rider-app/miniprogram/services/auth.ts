@@ -1,6 +1,6 @@
 import { passwordLogin, wechatLogin } from '../api/auth';
 import { getRiderProfile as fetchRiderProfile } from '../api/rider';
-import { MOCK_WECHAT_LOGIN_STORAGE_KEY } from '../config/env';
+import { IS_DEVELOPMENT_ENV, MOCK_WECHAT_LOGIN_STORAGE_KEY } from '../config/env';
 import { ROUTES } from '../constants/routes';
 import { RIDER_AUDIT, RIDER_STATUS } from '../constants/status';
 import type { PasswordLoginRequest, UserInfo } from '../types/auth';
@@ -29,7 +29,7 @@ export async function loginWithPassword(payload: PasswordLoginRequest): Promise<
 }
 
 export async function loginWithWechat(): Promise<void> {
-  const useMock = wx.getStorageSync<boolean>(MOCK_WECHAT_LOGIN_STORAGE_KEY) === true;
+  const useMock = IS_DEVELOPMENT_ENV && wx.getStorageSync<boolean>(MOCK_WECHAT_LOGIN_STORAGE_KEY) === true;
   const code = useMock ? 'mock-code-test001' : await new Promise<string>((resolve, reject) => wx.login({ success: r => r.code ? resolve(r.code) : reject(new Error('未获取到微信登录凭证')), fail: reject }));
   const result = await wechatLogin(code); saveAuth(result.token, result.userInfo); restoreSession(); await routeByIdentity();
 }

@@ -1,0 +1,25 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    root: INFO
+    com.wuxin: DEBUG
+    com.wuxin.mapper: DEBUG
+    com.baomidou.mybatisplus: DEBUG
+    org.mybatis: DEBUG
+    org.mybatis.spring: DEBUG
+
+wuxin:
+  wechat-mini-program:
+    enabled: ${WECHAT_MINI_PROGRAM_ENABLED:false}
+  mock-wechat-login:
+    enabled: ${MOCK_WECHAT_LOGIN_ENABLED:false}
+  mock-wechat-phone:
+    enabled: ${MOCK_WECHAT_PHONE_ENABLED:false}
+  wechat-pay:
+    enabled: ${WECHAT_PAY_ENABLED:false}
+  mock-payment:
+    enabled: ${MOCK_PAYMENT_ENABLED:true}

@@ -21,10 +21,18 @@
 
 - 当前阶段：V2.0 上线冲刺审计。
 - 当前目标：停止扩展大型后台、RBAC、BI和非上线必需模块，优先补齐微信小程序真实上线条件。
-- 当前上线完成率：62%。
+- 当前上线完成率：68%。
 - 已完成：用户端、商家端、骑手端、Admin后台和Spring Boot核心业务代码侧闭环。
-- P0阻塞：真实微信支付网关、支付回调、退款、真实手机号、对象存储上传、生产API域名、HTTPS/Nginx部署、首次部署SQL验收和生产日志配置。
+- 本轮完成：V2.0-P0-01生产环境配置、dev/prod配置拆分、生产启动变量校验、日志治理、三端API地址环境化和生产环境变量示例。
+- P0阻塞：真实微信支付网关、支付回调、退款、真实手机号、对象存储上传、HTTPS/Nginx部署、正式域名、微信审核材料和首次部署SQL验收。
 - 新增上线文档：`ONLINE_CHECKLIST.md`和`DEPLOY_GUIDE.md`。
+
+### 环境切换
+
+- 后端开发：`SPRING_PROFILES_ACTIVE=dev`，默认允许本地MySQL和Mock支付。
+- 后端生产：`SPRING_PROFILES_ACTIVE=prod`，必须注入`DB_URL`、`DB_USERNAME`、`DB_PASSWORD`、`JWT_SECRET`和`SERVER_PORT`。
+- 用户端、商家端、骑手端：开发版自动使用`http://localhost:8080`，体验版自动使用`https://test-api.待配置域名`，正式版自动使用`https://api.待配置域名`。
+- 示例变量：`deploy/env/application-prod.env.example`。禁止提交真实密码、Token、AppSecret、商户号、APIv3 Key和私钥。
 
 ## 项目特点
 
@@ -296,7 +304,10 @@ src/main/java
 └── utils         # 工具类
 
 src/main/resources
-├── application.yml / application.properties
+├── application.yml
+├── application-dev.yml
+├── application-prod.yml
+├── logback-spring.xml
 ├── application-local.example.yml
 └── sql           # 数据库升级脚本
 ```
@@ -312,7 +323,7 @@ src/main/resources
 ### 启动步骤
 
 1. 创建数据库 `wuxin_paotui`。
-2. 数据库密码通过环境变量注入：`spring.datasource.password=${DB_PASSWORD:}`。本地和生产环境分别配置，不在代码或文档记录真实密码。
+2. 数据库密码通过环境变量注入：`DB_PASSWORD`。本地和生产环境分别配置，不在代码或文档记录真实密码。
 3. 导入数据库初始化脚本和增量 SQL。
 4. 运行启动类：
 
