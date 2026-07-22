@@ -102,7 +102,8 @@
 }
 
 .search-entry--pressed,
-.service-item--pressed {
+.service-item--pressed,
+.errand-item--pressed {
   opacity: 0.72;
 }
 
@@ -167,6 +168,93 @@
   margin-top: 12rpx;
   font-size: 24rpx;
   line-height: 1.5;
+}
+
+.errand-section {
+  width: 100%;
+  margin-top: 40rpx;
+}
+
+.errand-grid {
+  width: 100%;
+  margin-top: 20rpx;
+}
+
+.errand-row {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+.errand-row + .errand-row {
+  margin-top: 14rpx;
+}
+
+.errand-item {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  min-height: 116rpx;
+  padding: 18rpx;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1rpx solid #f0f1f2;
+  border-radius: 26rpx;
+  box-shadow: 0 6rpx 22rpx rgba(0, 0, 0, 0.04);
+}
+
+.errand-item + .errand-item {
+  margin-left: 14rpx;
+}
+
+.errand-icon {
+  display: flex;
+  flex: 0 0 58rpx;
+  align-items: center;
+  justify-content: center;
+  width: 58rpx;
+  height: 58rpx;
+  color: #18b566;
+  background: #eaf8f0;
+  border-radius: 18rpx;
+  font-size: 21rpx;
+  font-weight: 700;
+}
+
+.errand-copy {
+  flex: 1;
+  min-width: 0;
+  margin-left: 14rpx;
+}
+
+.errand-title,
+.errand-description {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.errand-title {
+  color: #111111;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.errand-description {
+  margin-top: 6rpx;
+  color: #999999;
+  font-size: 19rpx;
+}
+
+.errand-arrow {
+  flex-shrink: 0;
+  margin-left: 6rpx;
+  color: #c5c7c9;
+  font-size: 26rpx;
 }
 
 .service-grid {

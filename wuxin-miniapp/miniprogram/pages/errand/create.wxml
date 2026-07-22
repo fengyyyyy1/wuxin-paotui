@@ -1,0 +1,39 @@
+<view class="create-page">
+  <view class="create-heading"><text class="create-title">填写跑腿信息</text><text class="create-subtitle">请准确填写物品与收送地址</text></view>
+
+  <view class="form-card">
+    <text class="section-title">服务类型</text>
+    <scroll-view class="service-scroll" scroll-x enhanced show-scrollbar="{{false}}"><view class="service-tabs"><view class="service-tab {{serviceType === item.id ? 'service-tab--active' : ''}}" wx:for="{{services}}" wx:key="id" data-id="{{item.id}}" bindtap="selectService">{{item.title}}</view></view></scroll-view>
+
+    <view class="form-row">
+      <view class="form-row__copy"><text class="form-label">物品类型</text><text class="form-hint">请选择最接近的类型</text></view>
+      <picker class="form-picker" mode="selector" range="{{itemTypes}}" value="{{itemTypeIndex}}" bindchange="selectItemType"><view>{{itemTypes[itemTypeIndex]}} <text>›</text></view></picker>
+    </view>
+
+    <view class="weight-block">
+      <view class="weight-heading"><view><text class="form-label">重量</text><text class="form-hint">不清楚可填写大概重量</text></view><text class="weight-value">{{weight}} 公斤</text></view>
+      <slider value="{{weight}}" min="1" max="20" step="1" activeColor="#18b566" backgroundColor="#edf0ee" block-color="#ffffff" block-size="22" bindchange="changeWeight" />
+    </view>
+
+    <view class="remark-block"><text class="form-label">备注</text><textarea value="{{remark}}" maxlength="300" placeholder="补充物品规格、取件方式或配送要求" bindinput="updateRemark" /></view>
+
+    <view class="image-block">
+      <view class="image-heading"><view><text class="form-label">物品图片</text><text class="form-hint">最多选择 3 张</text></view><text class="image-count">{{imagePaths.length}}/3</text></view>
+      <view class="image-list">
+        <view class="image-preview" wx:for="{{imagePaths}}" wx:key="*this"><image src="{{item}}" mode="aspectFill" /><view class="image-remove" data-index="{{index}}" bindtap="removeImage">×</view></view>
+        <view wx:if="{{imagePaths.length < 3}}" class="image-add" hover-class="image-add--pressed" bindtap="chooseImages"><text>＋</text><text>添加图片</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="address-card">
+    <text class="section-title">收送地址</text>
+    <view class="address-row" data-target="pickup" hover-class="address-row--pressed" bindtap="chooseAddress"><text class="address-dot address-dot--pickup">取</text><view class="address-copy"><text class="address-label">取货地址</text><text class="address-main">{{pickupAddress ? pickupAddress.summary : '请选择取货地址'}}</text><text wx:if="{{pickupAddress}}" class="address-contact">{{pickupAddress.contact}}</text></view><text class="address-arrow">›</text></view>
+    <view class="address-divider"></view>
+    <view class="address-row" data-target="delivery" hover-class="address-row--pressed" bindtap="chooseAddress"><text class="address-dot address-dot--delivery">送</text><view class="address-copy"><text class="address-label">送达地址</text><text class="address-main">{{deliveryAddress ? deliveryAddress.summary : '请选择送达地址'}}</text><text wx:if="{{deliveryAddress}}" class="address-contact">{{deliveryAddress.contact}}</text></view><text class="address-arrow">›</text></view>
+  </view>
+
+  <view class="fee-card"><view><text class="fee-label">预计费用</text><text class="fee-note">以平台计价结果为准</text></view><text class="fee-value">待计价</text></view>
+
+  <view class="submit-bar"><button class="submit-button" bindtap="submitOrder">立即下单</button></view>
+</view>

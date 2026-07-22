@@ -106,7 +106,7 @@ Page({
 
     const nextQuantity = item.quantity + delta;
     if (nextQuantity < 1) {
-      wx.showToast({ title: '商品数量至少为1', icon: 'none' });
+      this.confirmRemoveItem(cartId);
       return;
     }
     if (typeof item.stock === 'number' && nextQuantity > item.stock) {
@@ -119,15 +119,15 @@ Page({
     );
   },
 
-  deleteItem(event: WechatMiniprogram.BaseEvent) {
-    const cartId = Number(event.currentTarget.dataset.id);
+  confirmRemoveItem(cartId: number) {
     if (!Number.isFinite(cartId) || this.data.operationKey) {
       return;
     }
     wx.showModal({
-      title: '删除商品',
-      content: '确认删除该购物车商品？',
-      confirmText: '删除',
+      title: '移除商品',
+      content: '是否移除商品？',
+      confirmText: '移除',
+      confirmColor: '#ff4d4f',
       success: (result) => {
         if (!result.confirm) {
           return;
@@ -151,7 +151,9 @@ Page({
         if (!result.confirm) {
           return;
         }
-        void this.runOperation('clear-invalid', () => clearInvalidCart().then(() => this.loadCart()));
+        void this.runOperation('clear-invalid', () =>
+          clearInvalidCart().then(() => this.loadCart())
+        );
       }
     });
   },

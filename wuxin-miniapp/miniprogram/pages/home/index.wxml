@@ -14,6 +14,19 @@
       <swiper-item wx:for="{{banners}}" wx:key="id"><view class="banner-item" data-id="{{item.id}}" bindtap="handleBannerTap"><image src="{{item.imageUrl}}" mode="aspectFill" /><view class="banner-copy"><text class="banner-title">{{item.title}}</text><text class="banner-subtitle">{{item.subtitle}}</text></view></view></swiper-item>
     </swiper>
 
+    <view class="errand-section">
+      <section-header title="跑腿服务" subtitle="同城办事，一键直达" action-text="全部服务" bind:action="goToErrandServices" />
+      <view class="errand-grid">
+        <view class="errand-row" wx:for="{{errandRows}}" wx:for-item="row" wx:key="id">
+          <view class="errand-item" wx:for="{{row.items}}" wx:for-item="service" wx:key="id" data-id="{{service.id}}" hover-class="errand-item--pressed" bindtap="handleErrandTap">
+            <text class="errand-icon">{{service.iconText}}</text>
+            <view class="errand-copy"><text class="errand-title">{{service.title}}</text><text class="errand-description">{{service.description}}</text></view>
+            <text class="errand-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <view class="service-grid">
       <view class="service-item" wx:for="{{serviceEntries}}" wx:key="id" data-id="{{item.id}}" hover-class="service-item--pressed" bindtap="handleServiceTap"><text class="service-icon">{{item.iconText}}</text><text class="service-title">{{item.title}}</text><text class="service-description">{{item.description}}</text></view>
     </view>

@@ -1,6 +1,13 @@
 import { ROUTES } from '../../constants/routes';
+import { STORAGE_KEYS } from '../../constants/storage';
 import { getCartCount, refreshCartSummary, restoreCartSummary } from '../../services/cart';
-import { bindMockPhone, bindPhoneWithCode, getAuthState, logout as clearAndLogout, refreshProfile } from '../../services/auth';
+import {
+  bindMockPhone,
+  bindPhoneWithCode,
+  getAuthState,
+  logout as clearAndLogout,
+  refreshProfile
+} from '../../services/auth';
 import type { UserInfo } from '../../types/user';
 import { DEFAULT_AVATAR, normalizeImageUrl } from '../../utils/image';
 import { maskPhone } from '../../utils/phone';
@@ -48,10 +55,19 @@ Page({
     wx.navigateTo({ url: ROUTES.cart });
   },
 
-  goToOrders() { wx.switchTab({ url: ROUTES.orderList }); },
-  goToPublic() { wx.navigateTo({ url: ROUTES.publicService }); },
-  goToAbout() { wx.navigateTo({ url: ROUTES.about }); },
-  goToSettings() { wx.navigateTo({ url: ROUTES.settings }); },
+  goToOrders() {
+    wx.setStorageSync(STORAGE_KEYS.orderFilter, 'all');
+    wx.switchTab({ url: ROUTES.orderList });
+  },
+  goToPublic() {
+    wx.navigateTo({ url: ROUTES.publicService });
+  },
+  goToAbout() {
+    wx.navigateTo({ url: ROUTES.about });
+  },
+  goToSettings() {
+    wx.navigateTo({ url: ROUTES.settings });
+  },
 
   goToMerchantApply() {
     wx.navigateTo({ url: ROUTES.merchantApply });
@@ -142,7 +158,11 @@ Page({
   },
 
   async refreshUser() {
-    try { this.applyUserInfo(await refreshProfile()); } catch { this.applyUserInfo(getAuthState().userInfo); }
+    try {
+      this.applyUserInfo(await refreshProfile());
+    } catch {
+      this.applyUserInfo(getAuthState().userInfo);
+    }
   }
 });
 

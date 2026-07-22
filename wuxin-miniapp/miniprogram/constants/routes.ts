@@ -20,5 +20,7 @@ export const ROUTES = {
   paymentFailure: '/pages/payment/failure/index',
   publicService: '/pages/public/index',
   about: '/pages/about/index',
-  settings: '/pages/settings/index'
+  settings: '/pages/settings/index',
+  errand: '/pages/errand/index',
+  errandCreate: '/pages/errand/create'
 } as const;

@@ -1,7 +1,7 @@
 .profile-page {
   width: 100%;
   min-height: 100vh;
-  padding: 24rpx 32rpx 48rpx;
+  padding: 24rpx 24rpx 48rpx;
   overflow-x: hidden;
   background: #f6f7f9;
 }
@@ -146,8 +146,9 @@
 }
 
 .menu-card {
-  padding: 6rpx 28rpx;
+  padding: 6rpx 0;
   overflow: hidden;
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.04);
 }
 .menu-row {
   display: flex;
@@ -155,12 +156,16 @@
   width: 100%;
   min-width: 0;
   min-height: 100rpx;
-  padding: 0;
+  margin: 0;
+  padding: 0 24rpx;
   color: #111111;
   background: transparent;
   border-bottom: 1rpx solid #eeeeee;
   font-size: 26rpx;
   text-align: left;
+}
+.menu-row--pressed {
+  background: #f7f8f9;
 }
 .menu-row:last-child {
   border-bottom: 0;
@@ -226,7 +231,7 @@
 }
 .menu-value {
   flex-shrink: 0;
-  max-width: 210rpx;
+  max-width: 240rpx;
   margin-left: 12rpx;
   overflow: hidden;
   color: #999999;

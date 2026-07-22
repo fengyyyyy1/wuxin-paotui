@@ -6,5 +6,6 @@ export const STORAGE_KEYS = {
   cartCount: 'WUXIN_MINIAPP_CART_COUNT',
   searchHistory: 'WUXIN_MINIAPP_SEARCH_HISTORY',
   recentStores: 'WUXIN_MINIAPP_RECENT_STORES',
-  checkoutAddressId: 'WUXIN_MINIAPP_CHECKOUT_ADDRESS_ID'
+  checkoutAddressId: 'WUXIN_MINIAPP_CHECKOUT_ADDRESS_ID',
+  orderFilter: 'WUXIN_MINIAPP_ORDER_FILTER'
 } as const;

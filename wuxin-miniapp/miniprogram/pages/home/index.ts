@@ -1,5 +1,12 @@
-import { addCart, clearCart, getAddressList, getStoreList, getStoreProducts } from '../../api/index';
+import {
+  addCart,
+  clearCart,
+  getAddressList,
+  getStoreList,
+  getStoreProducts
+} from '../../api/index';
 import { HOME_BANNERS, PUBLIC_ENTRIES, SERVICE_ENTRIES } from '../../constants/home';
+import { HOME_ERRAND_SERVICES } from '../../constants/errand';
 import { ROUTES } from '../../constants/routes';
 import { saveRecentStore } from '../../services/discovery';
 import { getAuthState, refreshProfile } from '../../services/auth';
@@ -30,6 +37,10 @@ Page({
     addressText: '请选择收货地址',
     banners: HOME_BANNERS,
     serviceEntries: SERVICE_ENTRIES,
+    errandRows: [
+      { id: 'primary', items: HOME_ERRAND_SERVICES.slice(0, 3) },
+      { id: 'secondary', items: HOME_ERRAND_SERVICES.slice(3) }
+    ],
     publicEntries: PUBLIC_ENTRIES,
     stores: [] as StoreCardView[],
     hotProducts: [] as HomeProduct[],
@@ -41,7 +52,7 @@ Page({
   },
 
   async onShow() {
-    if (!await requireLogin()) return;
+    if (!(await requireLogin())) return;
     this.applyUser(getAuthState().userInfo);
     await this.loadHome();
   },
@@ -60,14 +71,18 @@ Page({
     ]);
 
     if (profileResult.status === 'fulfilled') this.applyUser(profileResult.value);
-    if (addressResult.status === 'fulfilled') this.applyAddress(findDefaultAddress(addressResult.value));
+    if (addressResult.status === 'fulfilled')
+      this.applyAddress(findDefaultAddress(addressResult.value));
 
     if (storeResult.status === 'fulfilled') {
       const stores = storeResult.value.records.map(toStoreCard);
       this.setData({ stores });
       await this.loadHomeProducts(stores);
     } else {
-      this.setData({ errorMessage: storeResult.reason instanceof Error ? storeResult.reason.message : '首页数据加载失败' });
+      this.setData({
+        errorMessage:
+          storeResult.reason instanceof Error ? storeResult.reason.message : '首页数据加载失败'
+      });
     }
     this.setData({ loading: false });
   },
@@ -82,10 +97,16 @@ Page({
       if (result.status !== 'fulfilled') return;
       const store = candidates[index];
       result.value.records.forEach((product) => {
-        products.push({ ...toProductCard(product, { storeId: store.storeId, storeName: store.storeName }), storeId: store.storeId, storeName: store.storeName });
+        products.push({
+          ...toProductCard(product, { storeId: store.storeId, storeName: store.storeName }),
+          storeId: store.storeId,
+          storeName: store.storeName
+        });
       });
     });
-    const bySales = [...products].sort((left, right) => Number(right.sales || 0) - Number(left.sales || 0));
+    const bySales = [...products].sort(
+      (left, right) => Number(right.sales || 0) - Number(left.sales || 0)
+    );
     this.setData({
       hotProducts: bySales.slice(0, 4),
       recommendedProducts: products.slice(4, 8),
@@ -93,9 +114,15 @@ Page({
     });
   },
 
-  goToAddress() { wx.navigateTo({ url: ROUTES.addressList }); },
-  goToSearch() { wx.navigateTo({ url: ROUTES.search }); },
-  goToStoreList() { wx.navigateTo({ url: ROUTES.storeList }); },
+  goToAddress() {
+    wx.navigateTo({ url: ROUTES.addressList });
+  },
+  goToSearch() {
+    wx.navigateTo({ url: ROUTES.search });
+  },
+  goToStoreList() {
+    wx.navigateTo({ url: ROUTES.storeList });
+  },
 
   handleBannerTap(event: WechatMiniprogram.BaseEvent) {
     const banner = this.data.banners.find((item) => item.id === event.currentTarget.dataset.id);
@@ -103,8 +130,20 @@ Page({
   },
 
   handleServiceTap(event: WechatMiniprogram.BaseEvent) {
-    const entry = this.data.serviceEntries.find((item) => item.id === event.currentTarget.dataset.id);
+    const entry = this.data.serviceEntries.find(
+      (item) => item.id === event.currentTarget.dataset.id
+    );
     if (entry) wx.navigateTo({ url: entry.target });
+  },
+
+  handleErrandTap(event: WechatMiniprogram.BaseEvent) {
+    const type = String(event.currentTarget.dataset.id || 'send');
+    const url = type === 'more' ? ROUTES.errand : `${ROUTES.errandCreate}?type=${type}`;
+    wx.navigateTo({ url });
+  },
+
+  goToErrandServices() {
+    wx.navigateTo({ url: ROUTES.errand });
   },
 
   goToPublicPage(event: WechatMiniprogram.BaseEvent) {
@@ -122,7 +161,9 @@ Page({
   goToProductDetail(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
     const product = this.findProduct(Number(event.detail.id));
     if (!product) return;
-    wx.navigateTo({ url: `${ROUTES.productDetail}?id=${product.productId}&storeId=${product.storeId}&storeName=${encodeURIComponent(product.storeName)}&storeCanSell=1` });
+    wx.navigateTo({
+      url: `${ROUTES.productDetail}?id=${product.productId}&storeId=${product.storeId}&storeName=${encodeURIComponent(product.storeName)}&storeCanSell=1`
+    });
   },
 
   async addProduct(event: WechatMiniprogram.CustomEvent<{ id: number }>) {
@@ -152,9 +193,15 @@ Page({
       confirmText: '清空并加入',
       success: (result) => {
         if (!result.confirm) return;
-        void clearCart().then(() => addCart({ productId, quantity: 1 })).then(() => refreshCartSummary()).then(() => {
-          wx.showToast({ title: '已加入购物车', icon: 'success' });
-        }).catch((error: Error) => wx.showToast({ title: error.message || '加入失败', icon: 'none' }));
+        void clearCart()
+          .then(() => addCart({ productId, quantity: 1 }))
+          .then(() => refreshCartSummary())
+          .then(() => {
+            wx.showToast({ title: '已加入购物车', icon: 'success' });
+          })
+          .catch((error: Error) =>
+            wx.showToast({ title: error.message || '加入失败', icon: 'none' })
+          );
       }
     });
   },
@@ -172,17 +219,29 @@ Page({
     });
   },
 
-  handleAvatarError() { this.setData({ avatarUrl: DEFAULT_AVATAR }); },
-  retry() { void this.loadHome(); },
-
-  applyUser(userInfo: UserInfo | null) {
-    this.setData({ displayName: userInfo?.nickname || '微信用户', avatarUrl: normalizeImageUrl(userInfo?.avatar, DEFAULT_AVATAR) });
+  handleAvatarError() {
+    this.setData({ avatarUrl: DEFAULT_AVATAR });
+  },
+  retry() {
+    void this.loadHome();
   },
 
-  applyAddress(address: Address | null) { this.setData({ addressText: buildAddressSummary(address) }); },
+  applyUser(userInfo: UserInfo | null) {
+    this.setData({
+      displayName: userInfo?.nickname || '微信用户',
+      avatarUrl: normalizeImageUrl(userInfo?.avatar, DEFAULT_AVATAR)
+    });
+  },
+
+  applyAddress(address: Address | null) {
+    this.setData({ addressText: buildAddressSummary(address) });
+  },
 
   findProduct(productId: number): HomeProduct | undefined {
-    return [...this.data.hotProducts, ...this.data.recommendedProducts, ...this.data.favoriteProducts]
-      .find((item) => item.productId === productId);
+    return [
+      ...this.data.hotProducts,
+      ...this.data.recommendedProducts,
+      ...this.data.favoriteProducts
+    ].find((item) => item.productId === productId);
   }
 });

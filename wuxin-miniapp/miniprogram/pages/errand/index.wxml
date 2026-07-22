@@ -1,0 +1,20 @@
+<view class="errand-page">
+  <view class="errand-hero">
+    <text class="errand-eyebrow">五鑫跑腿</text>
+    <text class="errand-title">需要帮忙，交给五鑫</text>
+    <text class="errand-subtitle">同城取送、代买代办，选择服务后填写需求</text>
+  </view>
+
+  <view class="service-panel">
+    <view class="service-heading"><text>全部服务</text><text>选择一项开始下单</text></view>
+    <view class="service-row" wx:for="{{serviceRows}}" wx:for-item="row" wx:key="id">
+      <view class="service-card" wx:for="{{row.items}}" wx:for-item="service" wx:key="id" data-id="{{service.id}}" hover-class="service-card--pressed" bindtap="selectService">
+        <text class="service-icon">{{service.iconText}}</text>
+        <text class="service-title">{{service.title}}</text>
+        <text class="service-description">{{service.description}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="service-notice"><text class="notice-mark">i</text><text>请勿发布违法、危险或超出配送能力的需求</text></view>
+</view>
