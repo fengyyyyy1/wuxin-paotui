@@ -1,7 +1,8 @@
 import { getStoreList } from '../../api/index';
 import { ROUTES } from '../../constants/routes';
 import { clearSearchHistory, getRecentStores, getSearchHistory, saveRecentStore, saveSearchKeyword } from '../../services/discovery';
-import { replaceStoreImage, toStoreCard, type StoreCardView } from '../../utils/catalog';
+import { replaceStoreImage, toStoreCard } from '../../utils/catalog';
+import type { StoreCardView } from '../../utils/catalog';
 
 Page({
   data: {

@@ -1,19 +1,42 @@
 {
   "description": "五鑫跑腿骑手端",
   "compileType": "miniprogram",
-  "libVersion": "latest",
+  "libVersion": "3.15.3",
   "appid": "wx781c0689b7f3fb70",
   "projectname": "wuxin-rider-app",
   "miniprogramRoot": "miniprogram/",
   "setting": {
-    "useCompilerPlugins": ["typescript"],
+    "useCompilerPlugins": [
+      "typescript"
+    ],
     "urlCheck": false,
     "es6": true,
     "postcss": true,
     "minified": true,
     "enhance": true,
     "packNpmManually": true,
-    "packNpmRelationList": []
+    "packNpmRelationList": [],
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

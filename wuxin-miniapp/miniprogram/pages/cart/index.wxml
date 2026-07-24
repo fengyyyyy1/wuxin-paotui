@@ -6,7 +6,13 @@
     </view>
     <view class="cart-header__actions">
       <button wx:if="{{hasInvalidItems}}" class="cart-header__action" bindtap="clearInvalid">清理失效</button>
-      <button wx:if="{{hasItems}}" class="cart-header__action cart-header__action--danger" hover-class="cart-header__action--danger-pressed" bindtap="clearAll">清空</button>
+      <view
+  wx:if="{{hasItems}}"
+  class="cart-header__action cart-header__action--danger"
+  bindtap="clearAll"
+>
+  清空
+</view>
     </view>
   </view>
 

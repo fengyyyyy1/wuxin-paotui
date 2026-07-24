@@ -26,7 +26,7 @@ public class SystemConfigEntity {
     @TableField("config_description")
     private String configDescription;
     @TableField("is_sensitive")
-    private Integer sensitive;
+    private Integer isSensitive;
     private Integer status;
     @TableField("update_admin_id")
     private Long updateAdminId;

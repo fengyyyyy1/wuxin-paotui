@@ -22,12 +22,15 @@
   display: flex;
   align-items: center;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-top: 28rpx;
   padding: 28rpx;
   color: #111;
   background: #fff;
   border-radius: 32rpx;
   text-align: left;
+  overflow: hidden;
 }
 .address-card::after {
   border: 0;

@@ -1,7 +1,7 @@
 export type ApiEnvironment = 'dev' | 'test' | 'prod';
 
 export const API_BASE_URLS: Record<ApiEnvironment, string> = {
-  dev: 'http://localhost:8080',
+  dev: "http://localhost:8080",
   test: 'https://test-api.待配置域名',
   prod: 'https://api.待配置域名'
 };

@@ -15,7 +15,6 @@
     "minified": true,
     "enhance": true,
     "showShadowRootInWxmlPanel": true,
-  
     "packNpmManually": true,
     "packNpmRelationList": [
       {
@@ -23,7 +22,6 @@
         "miniprogramNpmDistDir": "./miniprogram"
       }
     ],
-  
     "compileWorklet": false,
     "uglifyFileName": false,
     "uploadWithSourceMap": true,
@@ -41,7 +39,7 @@
     }
   },
   "compileType": "miniprogram",
-  "libVersion": "latest",
+  "libVersion": "3.15.2",
   "appid": "wx781c0689b7f3fb70",
   "projectname": "wuxin-miniapp",
   "miniprogramRoot": "miniprogram/",

@@ -288,7 +288,7 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
                 .stream().map(this::toRecommendation).toList());
         result.setConfigs(configMapper.selectList(new LambdaQueryWrapper<SystemConfigEntity>()
                         .eq(SystemConfigEntity::getStatus, 1)
-                        .eq(SystemConfigEntity::getSensitive, 0)
+                        .eq(SystemConfigEntity::getIsSensitive, 0)
                         .in(SystemConfigEntity::getConfigGroup, "ERRAND", "USER", "HOME")
                         .orderByAsc(SystemConfigEntity::getId))
                 .stream().map(this::toConfig).toList());
@@ -296,7 +296,7 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
     }
 
     private String normalizeConfigValue(SystemConfigEntity config, String value) {
-        if (Integer.valueOf(1).equals(config.getSensitive()) && MASKED_VALUE.equals(value)) {
+        if (Integer.valueOf(1).equals(config.getIsSensitive()) && MASKED_VALUE.equals(value)) {
             return config.getConfigValue();
         }
         String normalized = value == null ? "" : value.trim();
@@ -347,11 +347,11 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
         result.setId(entity.getId());
         result.setConfigGroup(entity.getConfigGroup());
         result.setConfigKey(entity.getConfigKey());
-        result.setConfigValue(Integer.valueOf(1).equals(entity.getSensitive()) ? MASKED_VALUE : entity.getConfigValue());
+        result.setConfigValue(Integer.valueOf(1).equals(entity.getIsSensitive()) ? MASKED_VALUE : entity.getConfigValue());
         result.setValueType(entity.getValueType());
         result.setConfigName(entity.getConfigName());
         result.setConfigDescription(entity.getConfigDescription());
-        result.setSensitive(entity.getSensitive());
+        result.setSensitive(entity.getIsSensitive());
         result.setStatus(entity.getStatus());
         result.setUpdateAdminId(entity.getUpdateAdminId());
         result.setUpdateTime(entity.getUpdateTime());
@@ -446,7 +446,7 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
         SystemConfigEntity copy = new SystemConfigEntity();
         copy.setId(value.getId());
         copy.setConfigKey(value.getConfigKey());
-        copy.setConfigValue(Integer.valueOf(1).equals(value.getSensitive()) ? MASKED_VALUE : value.getConfigValue());
+        copy.setConfigValue(Integer.valueOf(1).equals(value.getIsSensitive()) ? MASKED_VALUE : value.getConfigValue());
         copy.setStatus(value.getStatus());
         return copy;
     }

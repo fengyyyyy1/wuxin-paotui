@@ -83,6 +83,9 @@
 .keyword-list button::after {
   border: 0;
 }
+.clear-btn:active {
+  opacity: 0.7;
+}
 .suggestions button text:first-child {
   flex: 1;
   min-width: 0;
@@ -110,14 +113,16 @@
   font-size: 31rpx;
   font-weight: 700;
 }
-.section-title-row button {
+.clear-btn {
   flex-shrink: 0;
-  padding: 8rpx;
-  color: #999999;
-  background: transparent;
+  padding: 6rpx 14rpx;
+  color: #18b566;
+  background: #eaf8f0;
+  border-radius: 16rpx;
   font-size: 22rpx;
   white-space: nowrap;
 }
+
 .keyword-list {
   display: flex;
   flex-wrap: wrap;

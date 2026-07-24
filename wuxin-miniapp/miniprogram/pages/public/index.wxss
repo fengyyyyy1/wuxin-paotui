@@ -36,14 +36,26 @@
   margin-top: 22rpx;
 }
 .tabs button {
+  display: flex;
   flex: 1;
   min-width: 0;
   height: 72rpx;
+  padding: 0;
+  margin: 0;
+
+  align-items: center;
+  justify-content: center;
+
   color: #666;
   background: #fff;
   border-radius: 22rpx;
   font-size: 21rpx;
+  line-height: 72rpx;
   white-space: nowrap;
+  box-sizing: border-box;
+}
+.tabs button::after {
+  border: 0;
 }
 .tabs button + button {
   margin-left: 12rpx;
@@ -53,7 +65,7 @@
 }
 .tabs .active {
   color: #fff;
-  background: #111;
+  background: #18b566;
 }
 .guide-card,
 .notice,

@@ -3,7 +3,12 @@
   <view wx:if="{{suggestions.length}}" class="suggestions"><button wx:for="{{suggestions}}" wx:key="*this" data-value="{{item}}" bindtap="useKeyword"><text>{{item}}</text><text>›</text></button></view>
 
   <block wx:if="{{!searched}}">
-    <view wx:if="{{history.length}}" class="search-section"><view class="section-title-row"><text>搜索历史</text><button bindtap="clearHistory">清空</button></view><view class="keyword-list"><button wx:for="{{history}}" wx:key="*this" data-value="{{item}}" bindtap="useKeyword">{{item}}</button></view></view>
+    <view wx:if="{{history.length}}" class="search-section">
+      <view class="section-title-row">
+  <text>搜索历史</text>
+  <view class="clear-btn" bindtap="clearHistory">清空</view>
+</view>
+    <view class="keyword-list"><button wx:for="{{history}}" wx:key="*this" data-value="{{item}}" bindtap="useKeyword">{{item}}</button></view></view>
     <view wx:if="{{discoveryStores.length}}" class="search-section"><view class="section-title-row"><text>热门搜索</text></view><view class="keyword-list"><button wx:for="{{discoveryStores}}" wx:key="storeId" wx:if="{{index < 8}}" data-value="{{item.storeName}}" bindtap="useKeyword">{{item.storeName}}</button></view></view>
     <view wx:if="{{recentStores.length}}" class="search-section"><view class="section-title-row"><text>最近浏览</text></view><view class="store-list"><store-card wx:for="{{recentStores}}" wx:key="storeId" store="{{item}}" bind:select="openStore" bind:imageerror="handleImageError" /></view></view>
   </block>
